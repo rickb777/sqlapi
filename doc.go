@@ -1,4 +1,4 @@
-// Package sqlgen2 contains a small API plus a tool that generates SQL functions
+// Package sqlapi contains a small API for a tool (sqlgen2) that generates SQL functions
 // for specified struct types.
 //
 // Lighter than a full-blown ORM and simpler than hand-written code, the output
