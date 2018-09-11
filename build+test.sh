@@ -7,7 +7,9 @@ function announce
   echo $@
 }
 
-PATH=$HOME/gopath/bin:$PATH
+PATH=$HOME/go/bin:$PATH
+
+unset GOPATH
 
 go mod download
 
