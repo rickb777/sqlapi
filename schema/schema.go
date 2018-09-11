@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
-	. "github.com/rickb777/sqlapi/schema/parse"
+	. "github.com/rickb777/sqlapi/types"
 	"sort"
 	"strings"
 )

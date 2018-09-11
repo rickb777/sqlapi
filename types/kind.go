@@ -1,4 +1,4 @@
-package parse
+package types
 
 import "go/types"
 

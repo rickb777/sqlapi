@@ -3,7 +3,7 @@ package schema
 import (
 	"bytes"
 	"fmt"
-	"github.com/rickb777/sqlapi/schema/parse"
+	"github.com/rickb777/sqlapi/types"
 	"io"
 	"strconv"
 	"strings"
@@ -40,34 +40,34 @@ func (dialect postgres) FieldAsColumn(field *Field) string {
 	dflt := field.Tags.Default
 
 	switch field.Type.Base {
-	case parse.Int, parse.Int64:
+	case types.Int, types.Int64:
 		column = "bigint"
-	case parse.Int8:
+	case types.Int8:
 		column = "int8"
-	case parse.Int16:
+	case types.Int16:
 		column = "smallint"
-	case parse.Int32:
+	case types.Int32:
 		column = "integer"
-	case parse.Uint, parse.Uint64:
+	case types.Uint, types.Uint64:
 		// Some DBs (including postgresql) do not support unsigned integers. Rejecting
 		// uint64 >= 1<<63 prevents them becoming indistinguishable from int64s < 0. If you need
 		// to insert such int64 anyway, you have to explicitly convert in on input to int64 and
 		// convert it back to uint64 on output - and take care to never insert a signed integer
 		// into the same column.
 		column = "bigint" // incomplete number range but more storage efficiency
-	case parse.Uint8:
+	case types.Uint8:
 		column = "smallint"
-	case parse.Uint16:
+	case types.Uint16:
 		column = "integer"
-	case parse.Uint32:
+	case types.Uint32:
 		column = "bigint"
-	case parse.Float32:
+	case types.Float32:
 		column = "real"
-	case parse.Float64:
+	case types.Float64:
 		column = "double precision"
-	case parse.Bool:
+	case types.Bool:
 		column = "boolean"
-	case parse.String:
+	case types.String:
 		column = varchar(field.Tags.Size)
 		dflt = fmt.Sprintf("'%s'", field.Tags.Default)
 	}
@@ -76,7 +76,7 @@ func (dialect postgres) FieldAsColumn(field *Field) string {
 	// for autoincrementing keys.
 	if field.Tags.Auto {
 		switch field.Type.Base {
-		case parse.Int, parse.Int64, parse.Uint64:
+		case types.Int, types.Int64, types.Uint64:
 			column = "bigserial"
 		default:
 			column = "serial"

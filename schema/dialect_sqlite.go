@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
-	"github.com/rickb777/sqlapi/schema/parse"
+	"github.com/rickb777/sqlapi/types"
 	"io"
 )
 
@@ -47,30 +47,30 @@ func (dialect sqlite) FieldAsColumn(field *Field) string {
 	dflt := field.Tags.Default
 
 	switch field.Type.Base {
-	case parse.Int, parse.Int64:
+	case types.Int, types.Int64:
 		column = "bigint"
 		dflt = field.Tags.Default
-	case parse.Int8:
+	case types.Int8:
 		column = "tinyint"
-	case parse.Int16:
+	case types.Int16:
 		column = "smallint"
-	case parse.Int32:
+	case types.Int32:
 		column = "int"
-	case parse.Uint, parse.Uint64:
+	case types.Uint, types.Uint64:
 		column = "bigint unsigned"
-	case parse.Uint8:
+	case types.Uint8:
 		column = "tinyint unsigned"
-	case parse.Uint16:
+	case types.Uint16:
 		column = "smallint unsigned"
-	case parse.Uint32:
+	case types.Uint32:
 		column = "int unsigned"
-	case parse.Float32:
+	case types.Float32:
 		column = "float"
-	case parse.Float64:
+	case types.Float64:
 		column = "double"
-	case parse.Bool:
+	case types.Bool:
 		column = "boolean"
-	case parse.String:
+	case types.String:
 		column = "text"
 		dflt = fmt.Sprintf("'%s'", field.Tags.Default)
 	}
