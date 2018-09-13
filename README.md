@@ -1,5 +1,10 @@
 # sqlapi
 
+[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/rickb777/sqlapi)
+[![Build Status](https://travis-ci.org/rickb777/sqlapi.svg?branch=master)](https://travis-ci.org/rickb777/sqlapi)
+[![Code Coverage](https://img.shields.io/coveralls/rickb777/sqlapi.svg)](https://coveralls.io/r/rickb777/sqlapi)
+[![Issues](https://img.shields.io/github/issues/rickb777/sqlapi.svg)](https://github.com/rickb777/sqlapi/issues)
+
 **sqlgen** generates SQL statements and database helper functions from your Go structs. It can be used in
 place of a simple ORM or hand-written SQL. **sqlapi** (this package) supports the generated code.
 
