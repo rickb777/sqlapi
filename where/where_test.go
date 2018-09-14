@@ -26,7 +26,7 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 		{where.NoOp(), "", "", "", nil},
 
 		{
-			where.Condition{"name", " not nil", nil},
+			where.Condition{Column: "name", Predicate: " not nil", Args: nil},
 			"WHERE `name` not nil",
 			`WHERE "name" not nil`,
 			`WHERE name not nil`,
@@ -34,7 +34,7 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 		},
 
 		{
-			where.Condition{"p.name", " not nil", nil},
+			where.Condition{Column: "p.name", Predicate: " not nil", Args: nil},
 			"WHERE `p`.`name` not nil",
 			`WHERE "p"."name" not nil`,
 			`WHERE p.name not nil`,
@@ -58,7 +58,7 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 		},
 
 		{
-			where.Condition{"name", " <>?", []interface{}{"Boo"}},
+			where.Condition{Column: "name", Predicate: " <>?", Args: []interface{}{"Boo"}},
 			"WHERE `name` <>?",
 			`WHERE "name" <>$1`,
 			`WHERE name <>'Boo'`,
