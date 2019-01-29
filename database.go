@@ -516,7 +516,7 @@ func showTables(dialect schema.Dialect) string {
 		return `SELECT name FROM sqlite_master WHERE type = "table"`
 	case schema.MysqlIndex:
 		return `SHOW TABLES`
-	case schema.PostgresIndex:
+	case schema.PostgresIndex, schema.PgxIndex:
 		return `SELECT tablename FROM pg_catalog.pg_tables`
 	}
 	panic(dialect.String())

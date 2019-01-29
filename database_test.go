@@ -43,3 +43,9 @@ func TestLoggingError(t *testing.T) {
 		t.Errorf("Got %q\n", s)
 	}
 }
+
+func TestSchemaSupport(t *testing.T) {
+	for _, s := range schema.AllDialects {
+		showTables(s)
+	}
+}
