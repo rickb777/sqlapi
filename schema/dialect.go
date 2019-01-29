@@ -32,12 +32,13 @@ const (
 	SqliteIndex = iota
 	MysqlIndex
 	PostgresIndex
+	PgxIndex
 )
 
 //-------------------------------------------------------------------------------------------------
 
 // AllDialects lists all currently-supported dialects.
-var AllDialects = []Dialect{Sqlite, Mysql, Postgres}
+var AllDialects = []Dialect{Sqlite, Mysql, Postgres, Pgx}
 
 // PickDialect finds a dialect that matches by name, ignoring letter case.
 // It returns nil if not found.

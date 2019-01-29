@@ -7,7 +7,7 @@ import (
 )
 
 func TestSplitAndQuote(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		di       Dialect
@@ -19,12 +19,12 @@ func TestSplitAndQuote(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.di.SplitAndQuote("A,Bb,Ccc")
-		Ω(s).Should(Equal(c.expected), c.di.String())
+		g.Expect(s).Should(Equal(c.expected), c.di.String())
 	}
 }
 
 func TestQuote(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		di       Dialect
@@ -36,16 +36,16 @@ func TestQuote(t *testing.T) {
 	}
 	for _, c := range cases {
 		s1 := c.di.Quote("Aaaa")
-		Ω(s1).Should(Equal(c.expected), c.di.String())
+		g.Expect(s1).Should(Equal(c.expected), c.di.String())
 
 		b2 := &bytes.Buffer{}
 		c.di.QuoteW(b2, "Aaaa")
-		Ω(b2.String()).Should(Equal(c.expected), c.di.String())
+		g.Expect(b2.String()).Should(Equal(c.expected), c.di.String())
 	}
 }
 
 func TestQuoteWithPlaceholder(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		di       Dialect
@@ -58,12 +58,12 @@ func TestQuoteWithPlaceholder(t *testing.T) {
 	for _, c := range cases {
 		b := &bytes.Buffer{}
 		c.di.QuoteWithPlaceholder(b, "Aaaa", 3)
-		Ω(b.String()).Should(Equal(c.expected), c.di.String())
+		g.Expect(b.String()).Should(Equal(c.expected), c.di.String())
 	}
 }
 
 func TestPlaceholders(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		di       Dialect
@@ -82,22 +82,22 @@ func TestPlaceholders(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.di.Placeholders(c.n)
-		Ω(s).Should(Equal(c.expected))
+		g.Expect(s).Should(Equal(c.expected))
 	}
 }
 
 func TestReplacePlaceholders(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	s := Mysql.ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
-	Ω(s).Should(Equal("?,?,?,?,?,?,?,?,?,?,?"))
+	g.Expect(s).Should(Equal("?,?,?,?,?,?,?,?,?,?,?"))
 
 	s = Postgres.ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
-	Ω(s).Should(Equal("$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"))
+	g.Expect(s).Should(Equal("$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"))
 }
 
 func TestPickDialect(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		di   Dialect
@@ -111,6 +111,6 @@ func TestPickDialect(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := PickDialect(c.name)
-		Ω(s).Should(Equal(c.di))
+		g.Expect(s).Should(Equal(c.di))
 	}
 }

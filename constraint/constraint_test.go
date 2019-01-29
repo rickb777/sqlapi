@@ -45,7 +45,7 @@ func cleanup() {
 }
 
 func TestIdsUsedAsForeignKeys(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 	connect()
 	defer cleanup()
 
@@ -61,41 +61,41 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	setupSql := strings.Replace(createTables, "¬", "`", -1)
 	_, err := d.Exec(setupSql)
-	Ω(err).Should(BeNil())
+	g.Expect(err).Should(BeNil())
 
-	aid1 := insertOne(d, address1)
-	aid2 := insertOne(d, address2)
-	aid3 := insertOne(d, address3)
-	aid4 := insertOne(d, address4)
+	aid1 := insertOne(g, d, address1)
+	aid2 := insertOne(g, d, address2)
+	aid3 := insertOne(g, d, address3)
+	aid4 := insertOne(g, d, address4)
 
-	insertOne(d, fmt.Sprintf(person1a, aid1))
-	insertOne(d, fmt.Sprintf(person1b, aid1))
-	insertOne(d, fmt.Sprintf(person2a, aid2))
+	insertOne(g, d, fmt.Sprintf(person1a, aid1))
+	insertOne(g, d, fmt.Sprintf(person1b, aid1))
+	insertOne(g, d, fmt.Sprintf(person2a, aid2))
 
 	fkc := persons.Constraints().FkConstraints()[0]
 
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
-	Ω(err).Should(BeNil())
-	Ω(m1).Should(HaveLen(2))
-	Ω(m1.Contains(aid1)).Should(BeTrue())
-	Ω(m1.Contains(aid2)).Should(BeTrue())
+	g.Expect(err).Should(BeNil())
+	g.Expect(m1).Should(HaveLen(2))
+	g.Expect(m1.Contains(aid1)).Should(BeTrue())
+	g.Expect(m1.Contains(aid2)).Should(BeTrue())
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
-	Ω(err).Should(BeNil())
-	Ω(m2).Should(HaveLen(2))
-	Ω(m2.Contains(aid3)).Should(BeTrue())
-	Ω(m2.Contains(aid4)).Should(BeTrue())
+	g.Expect(err).Should(BeNil())
+	g.Expect(m2).Should(HaveLen(2))
+	g.Expect(m2.Contains(aid3)).Should(BeTrue())
+	g.Expect(m2.Contains(aid4)).Should(BeTrue())
 }
 
-func insertOne(d *sqlapi.Database, query string) int64 {
+func insertOne(g *GomegaWithT, d *sqlapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
 	r, err := d.Exec(query)
-	Ω(err).Should(BeNil())
+	g.Expect(err).Should(BeNil())
 
 	id, err := r.LastInsertId()
-	Ω(err).Should(BeNil())
+	g.Expect(err).Should(BeNil())
 	return id
 }
 
