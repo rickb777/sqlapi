@@ -2,6 +2,7 @@ package constraint
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/util"
 )
@@ -150,7 +151,7 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, e
 func fetchIds(tbl sqlapi.Table, query string) (util.Int64Set, error) {
 	rows, err := tbl.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, tbl.Database().LogIfError(errors.Wrap(err, query))
 	}
 	defer rows.Close()
 

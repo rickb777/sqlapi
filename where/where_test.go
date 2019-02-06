@@ -1,11 +1,11 @@
 package where_test
 
 import (
-	"testing"
 	"github.com/benmoss/matchers"
+	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/where"
-	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func TestBuildWhereClause_happyCases(t *testing.T) {

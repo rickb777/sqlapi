@@ -49,7 +49,7 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	connect()
 	defer cleanup()
 
-	fkc0 := constraint.FkConstraint{"addressid", constraint.Reference{"addresses", "id"}, "cascade", "cascade"}
+	fkc0 := constraint.FkConstraint{ForeignKeyColumn: "addressid", Parent: constraint.Reference{TableName: "addresses", Column: "id"}, Update: "cascade", Delete: "cascade"}
 
 	d := sqlapi.NewDatabase(db, dialect, nil, nil)
 	if testing.Verbose() {

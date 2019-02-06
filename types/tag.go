@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 	"strings"
 
@@ -140,7 +141,7 @@ func validate(tag *Tag) error {
 	}
 
 	if buf.Len() > 0 {
-		return fmt.Errorf(buf.String())
+		return errors.Errorf(buf.String())
 	}
 	return nil
 }
@@ -165,7 +166,7 @@ func ParseTag(raw string) (*Tag, error) {
 	// unmarshals the Yaml formatted string into the Tag structure.
 	var err = yaml.Unmarshal([]byte(yamlValue), tag)
 	if err != nil {
-		return tag, err
+		return tag, errors.Wrapf(err, "parse tag YAML %q", raw)
 	}
 
 	normalize(tag)
@@ -197,19 +198,19 @@ func ReadTagsFile(file string) (Tags, error) {
 
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "opening tags file %s", file)
 	}
 
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "reading tags file %s", file)
 	}
 
 	tags := make(Tags)
 
 	err = yaml.Unmarshal(b, tags)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "parsing YAML tags file %s", file)
 	}
 
 	//DevInfo("tags from %s\n%s\n", file, tags)

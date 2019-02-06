@@ -1,9 +1,9 @@
 package require
 
 import (
+	"fmt"
 	. "github.com/onsi/gomega"
 	"testing"
-	"fmt"
 )
 
 var e0 = fmt.Errorf("foo")

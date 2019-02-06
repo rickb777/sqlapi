@@ -1,6 +1,9 @@
 package require
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+)
 
 // Sizer is any type that provides the result set size. This is used here for
 // errors where the actual size did not meet the requirements.
@@ -52,6 +55,7 @@ func ActualResultSize(err error) (int64, bool) {
 	if err == nil {
 		return 0, false
 	}
+	err = errors.Cause(err)
 	w, ok := err.(wrongResultSize)
 	if !ok {
 		return 0, false

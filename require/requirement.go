@@ -4,7 +4,10 @@
 // The errors arising when requirements are not met are Sizer values.
 package require
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+)
 
 // Requirement set an expectation on the outcome of a query.
 type Requirement interface {
@@ -14,7 +17,7 @@ type Requirement interface {
 
 // ChainErrorIfQueryNotSatisfiedBy matches a requirement against the actual result size for
 // a select query. The requirement may be nil in which case there will be no error.
-// This function accepts an existing potential error, passig it on if not nil.
+// This function accepts an existing potential error, passing it on if not nil.
 func ChainErrorIfQueryNotSatisfiedBy(err error, r Requirement, actual int64) error {
 	if err != nil {
 		return err
@@ -28,12 +31,12 @@ func ErrorIfQueryNotSatisfiedBy(r Requirement, actual int64) error {
 	if r == nil {
 		return nil
 	}
-	return r.errorIfNotSatisfiedBy(actual, "fetch", "got")
+	return errors.WithStack(r.errorIfNotSatisfiedBy(actual, "fetch", "got"))
 }
 
 // ChainErrorIfExecNotSatisfiedBy matches a requirement against the actual result size for
 // an exec query. The requirement may be nil in which case there will be no error.
-// This function accepts an existing potential error, passig it on if not nil.
+// This function accepts an existing potential error, passing it on if not nil.
 func ChainErrorIfExecNotSatisfiedBy(err error, r Requirement, actual int64) error {
 	if err != nil {
 		return err
@@ -47,7 +50,7 @@ func ErrorIfExecNotSatisfiedBy(r Requirement, actual int64) error {
 	if r == nil {
 		return nil
 	}
-	return r.errorIfNotSatisfiedBy(actual, "change", "changed")
+	return errors.WithStack(r.errorIfNotSatisfiedBy(actual, "change", "changed"))
 }
 
 //-------------------------------------------------------------------------------------------------

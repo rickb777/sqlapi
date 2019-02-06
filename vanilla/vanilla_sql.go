@@ -40,7 +40,7 @@ func NewRecordTable(name string, d *sqlapi.Database) RecordTable {
 	}
 	var constraints constraint.Constraints
 	return RecordTable{
-		name:        sqlapi.TableName{"", name},
+		name:        sqlapi.TableName{Name: name},
 		database:    d,
 		db:          d.DB(),
 		constraints: constraints,
