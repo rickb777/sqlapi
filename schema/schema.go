@@ -231,20 +231,20 @@ func (list FieldList) NoPointers() FieldList {
 // NoSkips returns only the fields without the skip flag set.
 func (list FieldList) NoSkips() FieldList {
 	return list.Filter(func(field *Field) bool {
-		return field.Tags != nil && !field.Tags.Skip
+		return field.Tags == nil || !field.Tags.Skip
 	})
 }
 
 // NoPrimary returns all the fields except any marked primary.
 func (list FieldList) NoPrimary() FieldList {
 	return list.Filter(func(field *Field) bool {
-		return field.Tags != nil && !field.Tags.Primary
+		return field.Tags == nil || !field.Tags.Primary
 	})
 }
 
 // NoPrimary returns all the fields except any marked auto-increment.
 func (list FieldList) NoAuto() FieldList {
 	return list.Filter(func(field *Field) bool {
-		return field.Tags != nil && !field.Tags.Auto
+		return field.Tags == nil || !field.Tags.Auto
 	})
 }

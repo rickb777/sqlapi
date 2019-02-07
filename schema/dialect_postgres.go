@@ -109,7 +109,7 @@ func (dialect postgres) UpdateDML(table *TableDescription) string {
 
 	comma := ""
 	for j, field := range table.Fields {
-		if !field.Tags.Auto {
+		if field.Tags == nil || !field.Tags.Auto {
 			w.WriteString(comma)
 			w.WriteString(doubleQuoter(field.SqlName))
 			w.WriteString("=")
