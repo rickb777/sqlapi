@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/util"
 )
 
@@ -44,6 +45,21 @@ type FkConstraint struct {
 // FkConstraintOn constructs a foreign key constraint in a fluent style.
 func FkConstraintOn(column string) FkConstraint {
 	return FkConstraint{ForeignKeyColumn: column}
+}
+
+// FkConstraintOfField constructs a foreign key constraint from a struct field.
+func FkConstraintOfField(field *schema.Field) FkConstraint {
+	tags := field.GetTags()
+	tbl, col := tags.ParentReference()
+	return FkConstraint{
+		ForeignKeyColumn: field.SqlName,
+		Parent: Reference{
+			TableName: tbl,
+			Column:    col,
+		},
+		Update: Consequence(tags.OnUpdate),
+		Delete: Consequence(tags.OnDelete),
+	}
 }
 
 // RefersTo sets the parent reference. The column may be blank.

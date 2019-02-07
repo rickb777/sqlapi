@@ -9,20 +9,11 @@ import (
 
 type SqlEncode int
 
-// List of vendor-specific keywords
 const (
-	ENCNONE SqlEncode = iota
-	ENCJSON
-	ENCTEXT
-	ENCDRIVER // SQL driver uses Scan() & Value() to encode & decode
-)
-
-type SqlToken int
-
-// List of vendor-specific keywords
-const (
-	AUTO_INCREMENT SqlToken = iota
-	PRIMARY_KEY
+	ENCNONE   SqlEncode = iota
+	ENCJSON             // For JSON-encoded fields
+	ENCTEXT             // For generic text-encoded fields
+	ENCDRIVER           // SQL driver uses Scan() & Value() to encode & decode
 )
 
 type TableDescription struct {
@@ -50,7 +41,6 @@ type Field struct {
 type Index struct {
 	Name   string
 	Unique bool
-
 	Fields FieldList
 }
 
@@ -114,6 +104,22 @@ func (f *Field) GetTags() Tag {
 		return Tag{}
 	}
 	return *f.Tags
+}
+
+func (f *Field) Skip() bool {
+	return f.Tags != nil && f.Tags.Skip
+}
+
+func (f *Field) PrimaryKey() bool {
+	return f.Tags != nil && f.Tags.Primary
+}
+
+func (f *Field) NaturalKey() bool {
+	return f.Tags != nil && f.Tags.Natural
+}
+
+func (f *Field) AutoIncrement() bool {
+	return f.Tags != nil && f.Tags.Auto
 }
 
 //-------------------------------------------------------------------------------------------------

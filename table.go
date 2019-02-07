@@ -83,6 +83,7 @@ type Table interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
+// TableCreator is a table with create/delete/truncate methods.
 type TableCreator interface {
 	Table
 
@@ -96,6 +97,7 @@ type TableCreator interface {
 	Truncate(force bool) (err error)
 }
 
+// TableWithIndexes is a table creator with create/delete methods for the indexes.
 type TableWithIndexes interface {
 	TableCreator
 
@@ -109,6 +111,8 @@ type TableWithIndexes interface {
 	CreateTableWithIndexes(ifNotExist bool) (err error)
 }
 
+// TableWithCrud is a table with a selection of generic access methods. Note that most
+// access methods on concrete table types are strongly-typed so don't appear here.
 type TableWithCrud interface {
 	Table
 

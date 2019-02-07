@@ -10,6 +10,7 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/constraint"
 	"github.com/rickb777/sqlapi/schema"
+	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/sqlapi/vanilla"
 	"log"
 	"os"
@@ -143,6 +144,32 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	g.Expect(m2).To(HaveLen(2))
 	g.Expect(m2.Contains(aid3)).To(BeTrue())
 	g.Expect(m2.Contains(aid4)).To(BeTrue())
+}
+
+func TestFkConstraintOfField(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	i64 := schema.Type{Name: "int64", Base: types.Int64}
+	field := &schema.Field{
+		Node:    schema.Node{Name: "Cat", Type: i64},
+		SqlName: "cat",
+		Tags: &types.Tag{
+			ForeignKey: "something.pk",
+			OnUpdate:   "restrict",
+			OnDelete:   "cascade",
+		},
+	}
+
+	fkc := constraint.FkConstraintOfField(field)
+	g.Expect(fkc).To(Equal(constraint.FkConstraint{
+		ForeignKeyColumn: "cat",
+		Parent: constraint.Reference{
+			TableName: "something",
+			Column:    "pk",
+		},
+		Update: "restrict",
+		Delete: "cascade",
+	}))
 }
 
 func insertOne(g *GomegaWithT, d *sqlapi.Database, query string) int64 {

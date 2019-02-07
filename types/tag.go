@@ -1,15 +1,15 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
-	"reflect"
-	"strings"
-
-	"bytes"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"strings"
 )
 
 const TagKey = "sql"
@@ -27,7 +27,7 @@ type Tag struct {
 	Index      string `json:",omitempty" yaml:"index"`    // the name of an index
 	Unique     string `json:",omitempty" yaml:"unique"`   // the name of a unique index
 	ForeignKey string `json:",omitempty" yaml:"fk"`       // relationship to another table
-	OnUpdate   string `json:",omitempty" yaml:"onupdate"` // what to do on update
+	OnUpdate   string `json:",omitempty" yaml:"onupdate"` // what to do on update (no action, cascade, delete, restrict, set null, set default)
 	OnDelete   string `json:",omitempty" yaml:"ondelete"` // what to do on delete
 	Size       int    `json:",omitempty" yaml:"size"`     // storage size
 	Encode     string `json:",omitempty" yaml:"encode"`   // used for struct types: one of json | text | driver
@@ -35,20 +35,15 @@ type Tag struct {
 	// TODO Check      string `yaml:"check"` // specify SQL constraint checks
 }
 
-func (tag Tag) ParentTable() string {
-	if tag.ForeignKey == "" {
-		return ""
+func (tag *Tag) ParentReference() (string, string) {
+	if tag == nil || tag.ForeignKey == "" {
+		return "", ""
 	}
-	slice := strings.Split(tag.ForeignKey, ".")
-	return slice[0]
-}
-
-func (tag Tag) ParentPK() string {
-	if tag.ForeignKey == "" {
-		return ""
+	ss := strings.Split(tag.ForeignKey, ".")
+	if len(ss) < 2 {
+		return ss[0], ""
 	}
-	slice := strings.Split(tag.ForeignKey, ".")
-	return slice[1]
+	return ss[0], ss[1]
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -78,65 +73,76 @@ func normalize(tag *Tag) *Tag {
 	return tag
 }
 
-func validate(tag *Tag) error {
+func (tag *Tag) Validate() error {
 	sep := ""
 	buf := &bytes.Buffer{}
 
 	if tag.Primary && tag.Natural {
-		fmt.Fprintf(buf, "%sprimary key cannot also be a natural key", sep)
+		io.WriteString(buf, sep)
+		io.WriteString(buf, "primary key cannot also be a natural key")
 		sep = "; "
 	}
 
 	if tag.Auto && tag.Natural {
-		fmt.Fprintf(buf, "%snatural key cannot use auto-increment", sep)
+		io.WriteString(buf, sep)
+		io.WriteString(buf, "natural key cannot use auto-increment")
 		sep = "; "
 	}
 
 	if tag.Auto && !tag.Primary {
-		fmt.Fprintf(buf, "%sauto-increment can only be used on primary keys", sep)
+		io.WriteString(buf, sep)
+		io.WriteString(buf, "auto-increment can only be used on primary keys")
 		sep = "; "
 	}
 
 	if tag.Natural && tag.Index != "" {
-		fmt.Fprintf(buf, "%snatural key cannot be used with index", sep)
+		io.WriteString(buf, sep)
+		io.WriteString(buf, "natural key cannot be used with index")
 		sep = "; "
 	}
 
 	if tag.Natural && tag.Unique != "" {
-		fmt.Fprintf(buf, "%snatural key should not be used with unique", sep)
+		io.WriteString(buf, sep)
+		io.WriteString(buf, "natural key should not be used with unique")
 		sep = "; "
 	}
 
 	if tag.Size < 0 {
-		fmt.Fprintf(buf, "%ssize cannot be negative (%d)", sep, tag.Size)
+		io.WriteString(buf, sep)
+		fmt.Fprintf(buf, "size cannot be negative (%d)", tag.Size)
 		sep = "; "
 	}
 
 	if !inSet(tag.Encode, "", "json", "text", "driver") {
-		fmt.Fprintf(buf, "%sunrecognised encode value %q", sep, tag.Encode)
+		io.WriteString(buf, sep)
+		fmt.Fprintf(buf, "unrecognised encode value %q", tag.Encode)
 		sep = "; "
 	}
 
 	if tag.ForeignKey != "" {
 		if tag.Primary || tag.Natural {
-			fmt.Fprintf(buf, "%sforeign key cannot also be a primary key nor a natural key", sep)
+			io.WriteString(buf, sep)
+			io.WriteString(buf, "foreign key cannot also be a primary key nor a natural key")
 			sep = "; "
 		}
 
 		slice := strings.Split(tag.ForeignKey, ".")
 		if len(slice) < 1 || 2 < len(slice) {
-			fmt.Fprintf(buf, "%sfk value (%q) must be in 'tablename' or 'tablename.column' form", sep, tag.ForeignKey)
+			io.WriteString(buf, sep)
+			fmt.Fprintf(buf, "fk value (%q) must be in 'tablename' or 'tablename.column' form", tag.ForeignKey)
 			sep = "; "
 		}
 	}
 
 	if !inSet(tag.OnUpdate, "", "cascade", "delete", "restrict", "set null", "set default") {
-		fmt.Fprintf(buf, "%sunrecognised onupdate value %q", sep, tag.OnUpdate)
+		io.WriteString(buf, sep)
+		fmt.Fprintf(buf, "unrecognised onupdate value %q", tag.OnUpdate)
 		sep = "; "
 	}
 
 	if !inSet(tag.OnDelete, "", "cascade", "delete", "restrict", "set null", "set default") {
-		fmt.Fprintf(buf, "%sunrecognised ondelete value %q", sep, tag.OnDelete)
+		io.WriteString(buf, sep)
+		fmt.Fprintf(buf, "unrecognised ondelete value %q", tag.OnDelete)
 		sep = "; "
 	}
 
@@ -170,8 +176,10 @@ func ParseTag(raw string) (*Tag, error) {
 	}
 
 	normalize(tag)
-	return tag, validate(tag)
+	return tag, tag.Validate()
 }
+
+//-------------------------------------------------------------------------------------------------
 
 type Tags map[string]*Tag
 
