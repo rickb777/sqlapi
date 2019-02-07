@@ -44,7 +44,7 @@ type Field struct {
 	Node
 	SqlName string
 	Encode  SqlEncode `json:",omitempty"`
-	Tags    Tag       `json:",omitempty"`
+	Tags    *Tag      `json:",omitempty"`
 }
 
 type Index struct {
