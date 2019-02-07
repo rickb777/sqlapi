@@ -61,7 +61,7 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	setupSql := strings.Replace(createTables, "¬", "`", -1)
 	_, err := d.Exec(setupSql)
-	g.Expect(err).Should(BeNil())
+	g.Expect(err).To(BeNil())
 
 	aid1 := insertOne(g, d, address1)
 	aid2 := insertOne(g, d, address2)
@@ -76,26 +76,26 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
-	g.Expect(err).Should(BeNil())
-	g.Expect(m1).Should(HaveLen(2))
-	g.Expect(m1.Contains(aid1)).Should(BeTrue())
-	g.Expect(m1.Contains(aid2)).Should(BeTrue())
+	g.Expect(err).To(BeNil())
+	g.Expect(m1).To(HaveLen(2))
+	g.Expect(m1.Contains(aid1)).To(BeTrue())
+	g.Expect(m1.Contains(aid2)).To(BeTrue())
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
-	g.Expect(err).Should(BeNil())
-	g.Expect(m2).Should(HaveLen(2))
-	g.Expect(m2.Contains(aid3)).Should(BeTrue())
-	g.Expect(m2.Contains(aid4)).Should(BeTrue())
+	g.Expect(err).To(BeNil())
+	g.Expect(m2).To(HaveLen(2))
+	g.Expect(m2.Contains(aid3)).To(BeTrue())
+	g.Expect(m2.Contains(aid4)).To(BeTrue())
 }
 
 func insertOne(g *GomegaWithT, d *sqlapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
 	r, err := d.Exec(query)
-	g.Expect(err).Should(BeNil())
+	g.Expect(err).To(BeNil())
 
 	id, err := r.LastInsertId()
-	g.Expect(err).Should(BeNil())
+	g.Expect(err).To(BeNil())
 	return id
 }
 

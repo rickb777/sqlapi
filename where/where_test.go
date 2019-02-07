@@ -9,7 +9,7 @@ import (
 )
 
 func TestBuildWhereClause_happyCases(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	nameEqFred := where.Eq("name", "Fred")
 	nameEqJohn := where.Eq("name", "John")
@@ -285,22 +285,22 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 	for _, c := range cases {
 		sql, args := c.wh.Build(schema.Mysql)
 
-		Ω(sql).Should(Equal(c.expMysql))
-		Ω(args).Should(matchers.DeepEqual(c.args))
+		g.Expect(sql).To(Equal(c.expMysql))
+		g.Expect(args).To(matchers.DeepEqual(c.args))
 
 		sql, args = c.wh.Build(schema.Postgres)
 
-		Ω(sql).Should(Equal(c.expPostgres))
-		Ω(args).Should(matchers.DeepEqual(c.args))
+		g.Expect(sql).To(Equal(c.expPostgres))
+		g.Expect(args).To(matchers.DeepEqual(c.args))
 
 		s := c.wh.String()
 
-		Ω(s).Should(Equal(c.expString))
+		g.Expect(s).To(Equal(c.expString))
 	}
 }
 
 func TestQueryConstraint(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		qc          where.QueryConstraint
@@ -327,18 +327,18 @@ func TestQueryConstraint(t *testing.T) {
 			sql = where.BuildQueryConstraint(c.qc, schema.Sqlite)
 		}
 
-		Ω(sql).Should(Equal(c.expSqlite))
+		g.Expect(sql).To(Equal(c.expSqlite))
 
 		if c.qc != nil {
 			sql = where.BuildQueryConstraint(c.qc, schema.Mysql)
 		}
 
-		Ω(sql).Should(Equal(c.expMysql))
+		g.Expect(sql).To(Equal(c.expMysql))
 
 		if c.qc != nil {
 			sql = where.BuildQueryConstraint(c.qc, schema.Postgres)
 		}
 
-		Ω(sql).Should(Equal(c.expPostgres))
+		g.Expect(sql).To(Equal(c.expPostgres))
 	}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseTag(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	tagTests := []struct {
 		raw string
@@ -66,13 +66,13 @@ func TestParseTag(t *testing.T) {
 
 	for _, test := range tagTests {
 		got, err := ParseTag(test.raw)
-		Ω(err).Should(BeNil(), test.raw)
-		Ω(got).Should(Equal(test.tag), test.raw)
+		g.Expect(err).To(BeNil(), test.raw)
+		g.Expect(got).To(Equal(test.tag), test.raw)
 	}
 }
 
 func TestParseValidation(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	tagTests := []struct {
 		raw string
@@ -138,13 +138,13 @@ func TestParseValidation(t *testing.T) {
 
 	for _, test := range tagTests {
 		_, err := ParseTag(test.raw)
-		Ω(err).Should(Not(BeNil()), test.raw)
-		Ω(err.Error()).Should(Equal(test.err), test.raw)
+		g.Expect(err).To(Not(BeNil()), test.raw)
+		g.Expect(err.Error()).To(Equal(test.err), test.raw)
 	}
 }
 
 func TestReadTagsFile(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	file := os.TempDir() + "/sqlgen2-test.yaml"
 	defer os.Remove(file)
@@ -160,15 +160,15 @@ Foo:
 `
 
 	err := ioutil.WriteFile(file, []byte(yml), 0644)
-	Ω(err).Should(BeNil())
+	g.Expect(err).To(BeNil())
 
 	tags, err := ReadTagsFile(file)
-	Ω(err).Should(BeNil())
-	Ω(tags).Should(HaveLen(2))
+	g.Expect(err).To(BeNil())
+	g.Expect(tags).To(HaveLen(2))
 
 	id := tags["Id"]
-	Ω(id).Should(Equal(Tag{Primary: true, Auto: true}))
+	g.Expect(id).To(Equal(&Tag{Primary: true, Auto: true}))
 
 	foo := tags["Foo"]
-	Ω(foo).Should(Equal(Tag{Name: "fooish", Type: "blob"}))
+	g.Expect(foo).To(Equal(&Tag{Name: "fooish", Type: "blob"}))
 }

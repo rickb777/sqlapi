@@ -173,7 +173,7 @@ func ParseTag(raw string) (*Tag, error) {
 	return tag, validate(tag)
 }
 
-type Tags map[string]Tag
+type Tags map[string]*Tag
 
 func (tags Tags) String() string {
 	b := &bytes.Buffer{}

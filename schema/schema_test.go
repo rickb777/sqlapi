@@ -1,10 +1,13 @@
 package schema
 
 import (
+	. "github.com/onsi/gomega"
 	"testing"
 )
 
 func TestDistinctTypes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	cases := []struct {
 		list     FieldList
 		expected TypeSet
@@ -27,8 +30,6 @@ func TestDistinctTypes(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.list.DistinctTypes()
-		if !NewTypeSet(s...).Equals(c.expected) {
-			t.Errorf("expected %d::%+v but got %d::%+v", len(c.expected), c.expected, len(s), s)
-		}
+		g.Expect(NewTypeSet(s...)).To(Equal(c.expected))
 	}
 }

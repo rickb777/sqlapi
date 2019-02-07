@@ -9,7 +9,7 @@ import (
 var e0 = fmt.Errorf("foo")
 
 func TestChainErrorIfQueryNotSatisfiedBy_and_ChainErrorIfExecNotSatisfiedBy(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	cases := []struct {
 		input    error
@@ -42,20 +42,20 @@ func TestChainErrorIfQueryNotSatisfiedBy_and_ChainErrorIfExecNotSatisfiedBy(t *t
 	for _, c := range cases {
 		e1 := ChainErrorIfQueryNotSatisfiedBy(c.input, c.req, c.actual)
 		if c.req != nil {
-			Ω(c.req.String()).Should(Equal(c.sMessage))
+			g.Expect(c.req.String()).To(Equal(c.sMessage))
 		}
 
 		if c.expected {
-			Ω(e1.Error()).Should(Equal(c.qMessage))
+			g.Expect(e1.Error()).To(Equal(c.qMessage))
 		} else {
-			Ω(e1).Should(BeNil())
+			g.Expect(e1).To(BeNil())
 		}
 
 		e2 := ChainErrorIfExecNotSatisfiedBy(c.input, c.req, c.actual)
 		if c.expected {
-			Ω(e2.Error()).Should(Equal(c.eMessage))
+			g.Expect(e2.Error()).To(Equal(c.eMessage))
 		} else {
-			Ω(e2).Should(BeNil())
+			g.Expect(e2).To(BeNil())
 		}
 	}
 }

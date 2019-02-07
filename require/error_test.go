@@ -6,21 +6,21 @@ import (
 )
 
 func TestWrongSizeZero(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	err := ErrWrongSize(0, "wanted %d", 5)
-	Ω(err.Error()).Should(Equal("wanted 5"))
-	Ω(err.(Sizer).Size()).Should(BeEquivalentTo(0))
-	Ω(IsNotFound(err)).Should(BeTrue())
-	Ω(IsNotUnique(err)).Should(BeFalse())
+	g.Expect(err.Error()).To(Equal("wanted 5"))
+	g.Expect(err.(Sizer).Size()).To(BeEquivalentTo(0))
+	g.Expect(IsNotFound(err)).To(BeTrue())
+	g.Expect(IsNotUnique(err)).To(BeFalse())
 }
 
 func TestWrongSizeMany(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewGomegaWithT(t)
 
 	err := ErrWrongSize(3, "wanted %d", 5)
-	Ω(err.Error()).Should(Equal("wanted 5"))
-	Ω(err.(Sizer).Size()).Should(BeEquivalentTo(3))
-	Ω(IsNotFound(err)).Should(BeFalse())
-	Ω(IsNotUnique(err)).Should(BeTrue())
+	g.Expect(err.Error()).To(Equal("wanted 5"))
+	g.Expect(err.(Sizer).Size()).To(BeEquivalentTo(3))
+	g.Expect(IsNotFound(err)).To(BeFalse())
+	g.Expect(IsNotUnique(err)).To(BeTrue())
 }

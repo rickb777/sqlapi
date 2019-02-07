@@ -3,12 +3,15 @@ package sqlapi
 import (
 	"bytes"
 	"fmt"
+	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/schema"
 	"log"
 	"testing"
 )
 
 func TestLoggingOnOff(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
@@ -20,12 +23,12 @@ func TestLoggingOnOff(t *testing.T) {
 	db.LogQuery("three")
 
 	s := buf.String()
-	if s != "X.one\nX.three\n" {
-		t.Errorf("Got %q\n", s)
-	}
+	g.Expect(s).To(Equal("X.one\nX.three\n"))
 }
 
 func TestLoggingError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
@@ -39,9 +42,7 @@ func TestLoggingError(t *testing.T) {
 	db.LogIfError(fmt.Errorf("four"))
 
 	s := buf.String()
-	if s != "X.Error: one\nX.Error: three\nX.Error: four\n" {
-		t.Errorf("Got %q\n", s)
-	}
+	g.Expect(s).To(Equal("X.Error: one\nX.Error: three\nX.Error: four\n"))
 }
 
 func TestSchemaSupport(t *testing.T) {
