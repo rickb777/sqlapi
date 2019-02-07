@@ -6,13 +6,13 @@ import (
 )
 
 type Type struct {
-	PkgPath   string // package name (full path)
-	PkgName   string // package name (short name)
+	PkgPath   string `json:",omitempty"` // package name (full path)
+	PkgName   string `json:",omitempty"` // package name (short name)
 	Name      string // name of source code type.
-	IsPtr     bool
-	IsScanner bool
-	IsValuer  bool
-	Base      Kind // underlying source code kind.
+	IsPtr     bool   `json:",omitempty"`
+	IsScanner bool   `json:",omitempty"`
+	IsValuer  bool   `json:",omitempty"`
+	Base      Kind   // underlying source code kind.
 }
 
 func (t Type) Tag() string {

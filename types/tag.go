@@ -15,24 +15,24 @@ import (
 const TagKey = "sql"
 
 // Tag stores the parsed data from the tag string in
-// a struct field.
+// a struct field. These are all optional.
 type Tag struct {
-	Name     string `yaml:"name"`
-	Type     string `yaml:"type"`
-	Default  string `yaml:"default"`
-	Prefixed bool   `yaml:"prefixed"`
-	Primary  bool   `yaml:"pk"`
-	Natural  bool   `yaml:"nk"`
-	Auto     bool   `yaml:"auto"`
-	Index    string `yaml:"index"`
-	Unique   string `yaml:"unique"`
-	//Check      string `yaml:"check"` TODO
-	ForeignKey string `yaml:"fk"`
-	OnUpdate   string `yaml:"onupdate"`
-	OnDelete   string `yaml:"ondelete"`
-	Size       int    `yaml:"size"`
-	Skip       bool   `yaml:"skip"`
-	Encode     string `yaml:"encode"`
+	Name       string `json:",omitempty" yaml:"name"`     // explicit column name
+	Type       string `json:",omitempty" yaml:"type"`     // explicit column type (SQL syntax)
+	Default    string `json:",omitempty" yaml:"default"`  // default SQL value
+	Prefixed   bool   `json:",omitempty" yaml:"prefixed"` // use struct nesting to name the column
+	Primary    bool   `json:",omitempty" yaml:"pk"`       // is a primary key
+	Natural    bool   `json:",omitempty" yaml:"nk"`       // is a natural key so a unique index will be added automatically
+	Auto       bool   `json:",omitempty" yaml:"auto"`     // is auto-incremented
+	Index      string `json:",omitempty" yaml:"index"`    // the name of an index
+	Unique     string `json:",omitempty" yaml:"unique"`   // the name of a unique index
+	ForeignKey string `json:",omitempty" yaml:"fk"`       // relationship to another table
+	OnUpdate   string `json:",omitempty" yaml:"onupdate"` // what to do on update
+	OnDelete   string `json:",omitempty" yaml:"ondelete"` // what to do on delete
+	Size       int    `json:",omitempty" yaml:"size"`     // storage size
+	Encode     string `json:",omitempty" yaml:"encode"`   // used for struct types: one of json | text | driver
+	Skip       bool   `json:",omitempty" yaml:"skip"`     // ignore the field
+	// TODO Check      string `yaml:"check"` // specify SQL constraint checks
 }
 
 func (tag Tag) ParentTable() string {
