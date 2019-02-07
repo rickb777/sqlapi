@@ -83,7 +83,7 @@ func (table *TableDescription) ColumnNames(withAuto bool) Identifiers {
 	if withAuto {
 		return table.Fields.SqlNames()
 	}
-	return table.Fields.NonAuto().SqlNames()
+	return table.Fields.NoAuto().SqlNames()
 }
 
 func (t *TableDescription) SimpleFields() FieldList {
@@ -204,7 +204,7 @@ func (list FieldList) SqlNames() Identifiers {
 	return ids
 }
 
-func (list FieldList) FilterNot(predicate func(*Field) bool) FieldList {
+func (list FieldList) Filter(predicate func(*Field) bool) FieldList {
 	filtered := make(FieldList, 0, len(list))
 	for _, field := range list {
 		if predicate(field) {
@@ -214,26 +214,37 @@ func (list FieldList) FilterNot(predicate func(*Field) bool) FieldList {
 	return filtered
 }
 
+// Pointers returns only the fields that have pointer types.
 func (list FieldList) Pointers() FieldList {
-	return list.FilterNot(func(field *Field) bool {
+	return list.Filter(func(field *Field) bool {
+		return field.Type.IsPtr
+	})
+}
+
+// Pointers returns only the fields that have non-pointer types.
+func (list FieldList) NoPointers() FieldList {
+	return list.Filter(func(field *Field) bool {
 		return !field.Type.IsPtr
 	})
 }
 
+// NoSkips returns only the fields without the skip flag set.
 func (list FieldList) NoSkips() FieldList {
-	return list.FilterNot(func(field *Field) bool {
-		return !field.Tags.Skip
+	return list.Filter(func(field *Field) bool {
+		return field.Tags != nil && !field.Tags.Skip
 	})
 }
 
-func (list FieldList) NoSkipOrPrimary() FieldList {
-	return list.FilterNot(func(field *Field) bool {
-		return !field.Tags.Skip && !field.Tags.Primary
+// NoPrimary returns all the fields except any marked primary.
+func (list FieldList) NoPrimary() FieldList {
+	return list.Filter(func(field *Field) bool {
+		return field.Tags != nil && !field.Tags.Primary
 	})
 }
 
-func (list FieldList) NonAuto() FieldList {
-	return list.FilterNot(func(field *Field) bool {
-		return !field.Tags.Auto
+// NoPrimary returns all the fields except any marked auto-increment.
+func (list FieldList) NoAuto() FieldList {
+	return list.Filter(func(field *Field) bool {
+		return field.Tags != nil && !field.Tags.Auto
 	})
 }

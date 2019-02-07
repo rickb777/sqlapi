@@ -44,7 +44,7 @@ func baseInsertDML(table *TableDescription, valuePlaceholders string) string {
 	w := &bytes.Buffer{}
 	w.WriteString(`"(`)
 
-	table.Fields.NonAuto().SqlNames().MkString3W(w, "`", "`,`", "`")
+	table.Fields.NoAuto().SqlNames().MkString3W(w, "`", "`,`", "`")
 
 	w.WriteString(") VALUES (")
 	w.WriteString(valuePlaceholders)
@@ -56,7 +56,7 @@ func baseUpdateDML(table *TableDescription, quoter func(string) string, param fu
 	w := &bytes.Buffer{}
 	w.WriteString(`"`)
 
-	table.Fields.NonAuto().SqlNames().MkString3W(w, "`", "`=?,`", "`=? ")
+	table.Fields.NoAuto().SqlNames().MkString3W(w, "`", "`=?,`", "`=? ")
 
 	w.WriteString(baseWhereClause(FieldList{table.Primary}, 0, quoter, param))
 	w.WriteString(`"`)

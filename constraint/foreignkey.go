@@ -24,6 +24,8 @@ func (cc FkConstraints) Find(fkColumn string) (FkConstraint, bool) {
 
 // Reference holds a table + column reference used by constraints.
 // The table name should not include any schema or other prefix.
+// The column may be blank, but the functionality is then reduced
+// (there will be insufficient metadata to use Relationship methods).
 type Reference struct {
 	TableName string
 	Column    string // only one column is supported
@@ -44,7 +46,7 @@ func FkConstraintOn(column string) FkConstraint {
 	return FkConstraint{ForeignKeyColumn: column}
 }
 
-// RefersTo sets the parent reference.
+// RefersTo sets the parent reference. The column may be blank.
 func (c FkConstraint) RefersTo(tableName string, column string) FkConstraint {
 	c.Parent = Reference{tableName, column}
 	return c
@@ -69,8 +71,12 @@ func (c FkConstraint) ConstraintSql(dialect Dialect, name sqlapi.TableName, inde
 
 // Column constructs the foreign key clause needed to configure the database.
 func (c FkConstraint) Sql(dialect Dialect, prefix string) string {
-	return fmt.Sprintf("foreign key (%s) references %s%s (%s)%s%s",
-		dialect.Quote(c.ForeignKeyColumn), prefix, c.Parent.TableName, dialect.Quote(c.Parent.Column),
+	column := ""
+	if c.Parent.Column != "" {
+		column = " (" + dialect.Quote(c.Parent.Column) + ")"
+	}
+	return fmt.Sprintf("foreign key (%s) references %s%s%s%s%s",
+		dialect.Quote(c.ForeignKeyColumn), prefix, c.Parent.TableName, column,
 		c.Update.Apply(" ", "update"),
 		c.Delete.Apply(" ", "delete"))
 }
@@ -84,8 +90,8 @@ func (c FkConstraint) GoString() string {
 //	return AlterTable{c.Child.TableName, c.ConstraintSql(0)}
 //}
 
-// Disabled changes both the Update and Delete consequences to NoAction.
-func (c FkConstraint) Disabled() FkConstraint {
+// NoCascade changes both the Update and Delete consequences to NoAction.
+func (c FkConstraint) NoCascade() FkConstraint {
 	c.Update = NoAction
 	c.Delete = NoAction
 	return c
@@ -114,6 +120,10 @@ type Relationship struct {
 // in the dependent (child) table. The table tbl provides the database or transaction handle; either
 // the parent or the child table can be used for thi purpose.
 func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, error) {
+	if rel.Parent.Column == "" || rel.Child.Column == "" {
+		return nil, errors.Errorf("IdsUnusedAsForeignKeys requires the column names to be specified")
+	}
+
 	// TODO benchmark two candidates and choose the better
 	// http://stackoverflow.com/questions/3427353/sql-statement-question-how-to-retrieve-records-of-a-table-where-the-primary-ke?rq=1
 	//	s := fmt.Sprintf(
@@ -132,19 +142,30 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set,
 			FROM %s%s a
 			LEFT OUTER JOIN %s%s b ON a.%s = b.%s
 			WHERE b.%s IS null`,
-		rel.Parent.Column, pfx, rel.Parent.TableName, pfx, rel.Child.TableName, rel.Parent.Column, rel.Child.Column, rel.Child.Column)
+		rel.Parent.Column,
+		pfx, rel.Parent.TableName,
+		pfx, rel.Child.TableName,
+		rel.Parent.Column, rel.Child.Column,
+		rel.Child.Column)
 	return fetchIds(tbl, s)
 }
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
 // in the dependent (child) table.
 func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, error) {
+	if rel.Parent.Column == "" || rel.Child.Column == "" {
+		return nil, errors.Errorf("IdsUsedAsForeignKeys requires the column names to be specified")
+	}
+
 	pfx := tbl.Name().Prefix
 	s := fmt.Sprintf(
 		`SELECT DISTINCT a.%s AS Id
 			FROM %s%s a
 			INNER JOIN %s%s b ON a.%s = b.%s`,
-		rel.Parent.Column, pfx, rel.Parent.TableName, pfx, rel.Child.TableName, rel.Parent.Column, rel.Child.Column)
+		rel.Parent.Column,
+		pfx, rel.Parent.TableName,
+		pfx, rel.Child.TableName,
+		rel.Parent.Column, rel.Child.Column)
 	return fetchIds(tbl, s)
 }
 

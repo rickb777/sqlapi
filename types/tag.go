@@ -124,8 +124,8 @@ func validate(tag *Tag) error {
 		}
 
 		slice := strings.Split(tag.ForeignKey, ".")
-		if len(slice) != 2 {
-			fmt.Fprintf(buf, "%sfk value (%q) must be in 'tablename.column' form", sep, tag.ForeignKey)
+		if len(slice) < 1 || 2 < len(slice) {
+			fmt.Fprintf(buf, "%sfk value (%q) must be in 'tablename' or 'tablename.column' form", sep, tag.ForeignKey)
 			sep = "; "
 		}
 	}

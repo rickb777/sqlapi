@@ -44,12 +44,68 @@ func cleanup() {
 	}
 }
 
+func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
+	g := NewGomegaWithT(t)
+	connect()
+	defer cleanup()
+
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addresspk",
+		Parent:           constraint.Reference{TableName: "addresses", Column: "identity"},
+		Update:           "restrict",
+		Delete:           "cascade"}
+
+	d := sqlapi.NewDatabase(db, dialect, nil, nil)
+	if testing.Verbose() {
+		lgr := log.New(os.Stderr, "", log.LstdFlags)
+		d = sqlapi.NewDatabase(db, dialect, lgr, nil)
+	}
+
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	fkc := persons.Constraints().FkConstraints()[0]
+	s := fkc.ConstraintSql(dialect, persons.Name(), 0)
+	g.Expect(s).To(ContainSubstring("CONSTRAINT pfx_persons_c0 foreign key ("), s)
+	g.Expect(s).To(ContainSubstring("addresspk"), s)
+	g.Expect(s).To(ContainSubstring("identity"), s)
+	g.Expect(s).To(ContainSubstring(") references pfx_addresses ("), s)
+	g.Expect(s).To(ContainSubstring(") on update restrict on delete cascade"), s)
+}
+
+func TestForeignKeyConstraint_withoutParentColumn(t *testing.T) {
+	g := NewGomegaWithT(t)
+	connect()
+	defer cleanup()
+
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addresspk",
+		Parent:           constraint.Reference{TableName: "addresses", Column: ""},
+		Update:           "restrict",
+		Delete:           "cascade"}
+
+	d := sqlapi.NewDatabase(db, dialect, nil, nil)
+	if testing.Verbose() {
+		lgr := log.New(os.Stderr, "", log.LstdFlags)
+		d = sqlapi.NewDatabase(db, dialect, lgr, nil)
+	}
+
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	fkc := persons.Constraints().FkConstraints()[0]
+	s := fkc.ConstraintSql(dialect, persons.Name(), 0)
+	g.Expect(s).To(ContainSubstring("CONSTRAINT pfx_persons_c0 foreign key ("), s)
+	g.Expect(s).To(ContainSubstring("addresspk"), s)
+	g.Expect(s).To(ContainSubstring(") references pfx_addresses on update restrict on delete cascade"), s)
+}
+
 func TestIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
 	connect()
 	defer cleanup()
 
-	fkc0 := constraint.FkConstraint{ForeignKeyColumn: "addressid", Parent: constraint.Reference{TableName: "addresses", Column: "id"}, Update: "cascade", Delete: "cascade"}
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addressid",
+		Parent:           constraint.Reference{TableName: "addresses", Column: "id"},
+		Update:           "cascade",
+		Delete:           "cascade"}
 
 	d := sqlapi.NewDatabase(db, dialect, nil, nil)
 	if testing.Verbose() {

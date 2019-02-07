@@ -59,8 +59,8 @@ func TestParseTag(t *testing.T) {
 			&Tag{ForeignKey: "alpha.ID", OnUpdate: "set null", OnDelete: "set default"},
 		},
 		{
-			TagKey + `:"fk: alpha.ID, onupdate: 'set null', ondelete: 'set default'"`,
-			&Tag{ForeignKey: "alpha.ID", OnUpdate: "set null", OnDelete: "set default"},
+			TagKey + `:"fk: alpha, onupdate: 'set null', ondelete: 'set default'"`,
+			&Tag{ForeignKey: "alpha", OnUpdate: "set null", OnDelete: "set default"},
 		},
 	}
 
@@ -95,8 +95,8 @@ func TestParseValidation(t *testing.T) {
 			`primary key cannot also be a natural key`,
 		},
 		{
-			TagKey + `:"fk: x"`,
-			`fk value ("x") must be in 'tablename.column' form`,
+			TagKey + `:"fk: x.x.x"`,
+			`fk value ("x.x.x") must be in 'tablename' or 'tablename.column' form`,
 		},
 		{
 			TagKey + `:"pk: true, fk: a.b"`,
