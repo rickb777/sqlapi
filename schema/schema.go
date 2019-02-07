@@ -72,7 +72,7 @@ func (t *TableDescription) SafePrimary() Field {
 func (t *TableDescription) NumColumnNames(withAuto bool) int {
 	num := 0
 	for _, f := range t.Fields {
-		if withAuto || !f.Tags.Auto {
+		if withAuto || !f.GetTags().Auto {
 			num++
 		}
 	}
@@ -107,6 +107,13 @@ func (t *TableDescription) SimpleFields() FieldList {
 func (f *Field) IsExported() bool {
 	name0 := f.Name[0]
 	return 'A' <= name0 && name0 <= 'Z'
+}
+
+func (f *Field) GetTags() Tag {
+	if f.Tags == nil {
+		return Tag{}
+	}
+	return *f.Tags
 }
 
 //-------------------------------------------------------------------------------------------------

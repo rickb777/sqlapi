@@ -25,15 +25,16 @@ func (d mysql) Alias() string {
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
 
 func (dialect mysql) FieldAsColumn(field *Field) string {
+	tags := field.GetTags()
 	switch field.Encode {
 	case ENCJSON:
 		return "json"
 	case ENCTEXT:
-		return varchar(field.Tags.Size)
+		return varchar(tags.Size)
 	}
 
 	column := "mediumblob"
-	dflt := field.Tags.Default
+	dflt := tags.Default
 
 	switch field.Type.Base {
 	case types.Int, types.Int64:
@@ -59,13 +60,13 @@ func (dialect mysql) FieldAsColumn(field *Field) string {
 	case types.Bool:
 		column = "tinyint(1)"
 	case types.String:
-		column = varchar(field.Tags.Size)
-		dflt = fmt.Sprintf("'%s'", field.Tags.Default)
+		column = varchar(tags.Size)
+		dflt = fmt.Sprintf("'%s'", tags.Default)
 	}
 
-	column = fieldTags(field, column, dflt)
+	column = fieldTags(field.Type.IsPtr, tags, column, dflt)
 
-	if field.Tags.Auto {
+	if tags.Auto {
 		column += " auto_increment"
 	}
 

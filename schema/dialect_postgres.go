@@ -29,15 +29,16 @@ func (d postgres) Alias() string {
 // https://www.convert-in.com/mysql-to-postgres-types-mapping.htm
 
 func (dialect postgres) FieldAsColumn(field *Field) string {
+	tags := field.GetTags()
 	switch field.Encode {
 	case ENCJSON:
 		return "json"
 	case ENCTEXT:
-		return varchar(field.Tags.Size)
+		return varchar(tags.Size)
 	}
 
 	column := "bytea"
-	dflt := field.Tags.Default
+	dflt := tags.Default
 
 	switch field.Type.Base {
 	case types.Int, types.Int64:
@@ -68,13 +69,13 @@ func (dialect postgres) FieldAsColumn(field *Field) string {
 	case types.Bool:
 		column = "boolean"
 	case types.String:
-		column = varchar(field.Tags.Size)
-		dflt = fmt.Sprintf("'%s'", field.Tags.Default)
+		column = varchar(tags.Size)
+		dflt = fmt.Sprintf("'%s'", tags.Default)
 	}
 
 	// postgres uses a special column type
 	// for autoincrementing keys.
-	if field.Tags.Auto {
+	if tags.Auto {
 		switch field.Type.Base {
 		case types.Int, types.Int64, types.Uint64:
 			column = "bigserial"
@@ -83,7 +84,7 @@ func (dialect postgres) FieldAsColumn(field *Field) string {
 		}
 	}
 
-	return fieldTags(field, column, dflt)
+	return fieldTags(field.Type.IsPtr, tags, column, dflt)
 }
 
 func (dialect postgres) TableDDL(table *TableDescription) string {
@@ -109,7 +110,7 @@ func (dialect postgres) UpdateDML(table *TableDescription) string {
 
 	comma := ""
 	for j, field := range table.Fields {
-		if field.Tags == nil || !field.Tags.Auto {
+		if !field.GetTags().Auto {
 			w.WriteString(comma)
 			w.WriteString(doubleQuoter(field.SqlName))
 			w.WriteString("=")

@@ -1,7 +1,4 @@
 // Updated automatically
 package util
 
-const Version = "(unavailable)"
-const GitBranch = "(unavailable)"
-const GitOrigin = "git@github.com:rickb777/sqlapi.git"
-const BuildDate = "(unavailable)"
+const Version = "0.11.0-5-g2b48b8c"

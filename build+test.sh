@@ -53,4 +53,4 @@ go test . -covermode=count -coverprofile=reports/dot.out .
 go tool cover -func=reports/dot.out
 [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
-git checkout util/version.go
+#git checkout util/version.go
