@@ -15,6 +15,10 @@ func TestParseTag(t *testing.T) {
 		tag *Tag
 	}{
 		{
+			TagKey + `:""`,
+			nil,
+		},
+		{
 			TagKey + `:"-"`,
 			&Tag{Skip: true},
 		},

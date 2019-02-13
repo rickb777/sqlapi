@@ -73,7 +73,7 @@ func normalize(tag *Tag) *Tag {
 	return tag
 }
 
-func (tag *Tag) Validate() error {
+func (tag *Tag) validate() error {
 	sep := ""
 	buf := &bytes.Buffer{}
 
@@ -152,6 +152,15 @@ func (tag *Tag) Validate() error {
 	return nil
 }
 
+var zero = Tag{}
+
+func (t *Tag) checkZero() *Tag {
+	if *t == zero {
+		return nil
+	}
+	return t
+}
+
 // ParseTag parses a tag string from the struct
 // field and unmarshals into a Tag struct.
 func ParseTag(raw string) (*Tag, error) {
@@ -176,7 +185,7 @@ func ParseTag(raw string) (*Tag, error) {
 	}
 
 	normalize(tag)
-	return tag, tag.Validate()
+	return tag.checkZero(), tag.validate()
 }
 
 //-------------------------------------------------------------------------------------------------
