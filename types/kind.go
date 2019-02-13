@@ -29,23 +29,36 @@ const (
 	Struct    = 104
 )
 
-func (k Kind) IsShort() bool {
+// BitWidth returns the bit width of a given Go type.
+func (k Kind) BitWidth() int {
 	switch k {
-	case Int8,
-		Int16,
-		Uint8,
-		Uint16:
-		return true
+	case Int8, Uint8:
+		return 8
+	case Int16, Uint16:
+		return 16
+	case Int32, Uint32, Float32:
+		return 32
+	case Int64, Uint64, Float64, Complex64:
+		return 64
+	case Complex128:
+		return 128
+	case Bool:
+		return 1
 	}
-	return false
+	return 0
 }
 
+// IsInteger is true for all Go integer types.
 func (k Kind) IsInteger() bool {
 	switch k {
 	case Int,
+		Int8,
+		Int16,
 		Int32,
 		Int64,
 		Uint,
+		Uint8,
+		Uint16,
 		Uint32,
 		Uint64:
 		return true
@@ -53,15 +66,29 @@ func (k Kind) IsInteger() bool {
 	return false
 }
 
-func (k Kind) IsFloat() bool {
+// IsUnsigned returns true only for Go's unsigned integer types.
+func (k Kind) IsUnsigned() bool {
 	switch k {
-	case Float32,
-		Float64:
+	case Uint,
+		Uint8,
+		Uint16,
+		Uint32,
+		Uint64:
 		return true
 	}
 	return false
 }
 
+// IsInteger is true for both Go float types.
+func (k Kind) IsFloat() bool {
+	switch k {
+	case Float32, Float64:
+		return true
+	}
+	return false
+}
+
+// IsInteger is true for all Go primitive types, only.
 func (k Kind) IsSimpleType() bool {
 	switch k {
 	case Bool,
@@ -81,43 +108,44 @@ func (k Kind) IsSimpleType() bool {
 	return false
 }
 
-func (k Kind) Token() string {
-	switch k {
-	case Bool:
-		return "bool"
-	case Int:
-		return "int"
-	case Int8:
-		return "int8"
-	case Int16:
-		return "int16"
-	case Int32:
-		return "int32"
-	case Int64:
-		return "int64"
-	case Uint:
-		return "uint"
-	case Uint8:
-		return "uint8"
-	case Uint16:
-		return "uint16"
-	case Uint32:
-		return "uint32"
-	case Uint64:
-		return "uint64"
-	case String:
-		return "string"
-	case Interface:
-		return "Interface"
-	case Map:
-		return "Map"
-	case Slice:
-		return "Slice"
-	case Struct:
-		return "Struct"
-	}
-	return "<unknown>"
-}
+// Token returns a type as its string token.
+//func (k Kind) Token() string {
+//	switch k {
+//	case Bool:
+//		return "bool"
+//	case Int:
+//		return "int"
+//	case Int8:
+//		return "int8"
+//	case Int16:
+//		return "int16"
+//	case Int32:
+//		return "int32"
+//	case Int64:
+//		return "int64"
+//	case Uint:
+//		return "uint"
+//	case Uint8:
+//		return "uint8"
+//	case Uint16:
+//		return "uint16"
+//	case Uint32:
+//		return "uint32"
+//	case Uint64:
+//		return "uint64"
+//	case String:
+//		return "string"
+//	case Interface:
+//		return "Interface"
+//	case Map:
+//		return "Map"
+//	case Slice:
+//		return "Slice"
+//	case Struct:
+//		return "Struct"
+//	}
+//	return "<unknown>"
+//}
 
 // EncodableTypes lists the types that must be encoded for storage (native floats are not supported)
 //var EncodableTypes = map[string]Kind{
