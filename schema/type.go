@@ -6,12 +6,12 @@ import (
 )
 
 type Type struct {
-	PkgPath   string `json:",omitempty"` // package name (full path)
-	PkgName   string `json:",omitempty"` // package name (short name)
 	Name      string // name of source code type.
-	IsPtr     bool   `json:",omitempty"`
-	IsScanner bool   `json:",omitempty"`
-	IsValuer  bool   `json:",omitempty"`
+	PkgPath   string `json:",omitempty" yaml:",omitempty"` // package name (full path)
+	PkgName   string `json:",omitempty" yaml:",omitempty"` // package name (short name)
+	IsPtr     bool   `json:",omitempty" yaml:",omitempty"`
+	IsScanner bool   `json:",omitempty" yaml:",omitempty"`
+	IsValuer  bool   `json:",omitempty" yaml:",omitempty"`
 	Base      Kind   // underlying source code kind.
 }
 

@@ -209,7 +209,7 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (*sql.Rows, erro
 	database := tbl.Database()
 	database.LogQuery(query, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), query, args...)
-	return rows, database.LogIfError(errors.WithStack(err))
+	return rows, database.LogIfError(errors.Wrap(err, query))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -220,7 +220,7 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 	database.LogQuery(query, args...)
 	res, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
 	if err != nil {
-		return 0, database.LogError(errors.WithStack(err))
+		return 0, database.LogError(errors.Wrap(err, query))
 	}
 	n, err := res.RowsAffected()
 	return n, database.LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))

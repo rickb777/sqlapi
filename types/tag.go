@@ -17,21 +17,21 @@ const TagKey = "sql"
 // Tag stores the parsed data from the tag string in
 // a struct field. These are all optional.
 type Tag struct {
-	Name       string `json:",omitempty" yaml:"name"`     // explicit column name
-	Type       string `json:",omitempty" yaml:"type"`     // explicit column type (SQL syntax)
-	Default    string `json:",omitempty" yaml:"default"`  // default SQL value
-	Prefixed   bool   `json:",omitempty" yaml:"prefixed"` // use struct nesting to name the column
-	Primary    bool   `json:",omitempty" yaml:"pk"`       // is a primary key
-	Natural    bool   `json:",omitempty" yaml:"nk"`       // is a natural key so a unique index will be added automatically
-	Auto       bool   `json:",omitempty" yaml:"auto"`     // is auto-incremented
-	Index      string `json:",omitempty" yaml:"index"`    // the name of an index
-	Unique     string `json:",omitempty" yaml:"unique"`   // the name of a unique index
-	ForeignKey string `json:",omitempty" yaml:"fk"`       // relationship to another table
-	OnUpdate   string `json:",omitempty" yaml:"onupdate"` // what to do on update (no action, cascade, delete, restrict, set null, set default)
-	OnDelete   string `json:",omitempty" yaml:"ondelete"` // what to do on delete
-	Size       int    `json:",omitempty" yaml:"size"`     // storage size
-	Encode     string `json:",omitempty" yaml:"encode"`   // used for struct types: one of json | text | driver
-	Skip       bool   `json:",omitempty" yaml:"skip"`     // ignore the field
+	Name       string `json:",omitempty" yaml:"name,omitempty"`     // explicit column name
+	Type       string `json:",omitempty" yaml:"type,omitempty"`     // explicit column type (SQL syntax)
+	Default    string `json:",omitempty" yaml:"default,omitempty"`  // default SQL value
+	Prefixed   bool   `json:",omitempty" yaml:"prefixed,omitempty"` // use struct nesting to name the column
+	Primary    bool   `json:",omitempty" yaml:"pk,omitempty"`       // is a primary key
+	Natural    bool   `json:",omitempty" yaml:"nk,omitempty"`       // is a natural key so a unique index will be added automatically
+	Auto       bool   `json:",omitempty" yaml:"auto,omitempty"`     // is auto-incremented
+	Index      string `json:",omitempty" yaml:"index,omitempty"`    // the name of an index
+	Unique     string `json:",omitempty" yaml:"unique,omitempty"`   // the name of a unique index
+	ForeignKey string `json:",omitempty" yaml:"fk,omitempty"`       // relationship to another table
+	OnUpdate   string `json:",omitempty" yaml:"onupdate,omitempty"` // what to do on update (no action, cascade, delete, restrict, set null, set default)
+	OnDelete   string `json:",omitempty" yaml:"ondelete,omitempty"` // what to do on delete
+	Size       int    `json:",omitempty" yaml:"size,omitempty"`     // storage size
+	Encode     string `json:",omitempty" yaml:"encode,omitempty"`   // used for struct types: one of json | text | driver
+	Skip       bool   `json:",omitempty" yaml:"skip,omitempty"`     // ignore the field
 	// TODO Check      string `yaml:"check"` // specify SQL constraint checks
 }
 

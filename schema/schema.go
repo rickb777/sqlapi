@@ -21,21 +21,21 @@ type TableDescription struct {
 	Name string
 
 	Fields  FieldList
-	Index   []*Index `json:",omitempty"`
-	Primary *Field   `json:",omitempty"` // compound primaries are not supported
+	Index   []*Index `json:",omitempty" yaml:",omitempty"`
+	Primary *Field   `json:",omitempty" yaml:",omitempty"` // compound primaries are not supported
 }
 
 type Node struct {
 	Name   string
 	Type   Type
-	Parent *Node `json:",omitempty"`
+	Parent *Node `json:",omitempty" yaml:",omitempty"`
 }
 
 type Field struct {
 	Node
 	SqlName string
-	Encode  SqlEncode `json:",omitempty"`
-	Tags    *Tag      `json:",omitempty"`
+	Encode  SqlEncode `json:",omitempty" yaml:",omitempty"`
+	Tags    *Tag      `json:",omitempty" yaml:",omitempty"`
 }
 
 type Index struct {
