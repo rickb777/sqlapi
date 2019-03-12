@@ -1,4 +1,4 @@
-package schema
+package dialect
 
 type pgx struct {
 	postgres

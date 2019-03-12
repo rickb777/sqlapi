@@ -1,29 +1,27 @@
-package schema
+package dialect
 
 import (
-	"io"
+	"github.com/rickb777/sqlapi/schema"
 	"strings"
 )
 
+// Dialect is an abstraction of a type of database.
 type Dialect interface {
 	Index() int
 	String() string
 	Alias() string
 
-	TableDDL(*TableDescription) string
-	FieldDDL(w io.Writer, field *Field, comma string) string
+	TableDDL(*schema.TableDescription) string
+	FieldDDL(w StringWriter, field *schema.Field, comma string) string
 	TruncateDDL(tableName string, force bool) []string
 	CreateTableSettings() string
-	FieldAsColumn(*Field) string
+	FieldAsColumn(*schema.Field) string
 	InsertHasReturningPhrase() bool
+	ShowTables() string
 
-	SplitAndQuote(csv string) string
-	Quote(string) string
-	QuoteW(w io.Writer, identifier string)
-	QuoteWithPlaceholder(w io.Writer, identifier string, j int)
 	ReplacePlaceholders(sql string, args []interface{}) string
-	Placeholder(name string, j int) string
 	Placeholders(n int) string
+	HasNumberedPlaceholders() bool
 }
 
 //-------------------------------------------------------------------------------------------------

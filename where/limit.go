@@ -2,19 +2,19 @@ package where
 
 import (
 	"bytes"
-	"fmt"
+	"strconv"
 )
 
 // QueryConstraint is a value that is appended to a SELECT statement.
 type QueryConstraint interface {
-	Build(dialect Dialect) string
+	Build() string
 }
 
-func BuildQueryConstraint(qc QueryConstraint, dialect Dialect) string {
+func BuildQueryConstraint(qc QueryConstraint) string {
 	if qc == nil {
 		return ""
 	}
-	return qc.Build(dialect)
+	return qc.Build()
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ func Literal(sqlPart string) QueryConstraint {
 	return literal(sqlPart)
 }
 
-func (qc literal) Build(dialect Dialect) string {
+func (qc literal) Build() string {
 	return string(qc)
 }
 
@@ -87,28 +87,33 @@ func (qc *queryConstraint) Offset(n int) *queryConstraint {
 	return qc
 }
 
-func (qc *queryConstraint) Build(dialect Dialect) string {
+func (qc *queryConstraint) Build() string {
 	b := &bytes.Buffer{}
 	spacer := ""
 	if len(qc.orderBy) > 0 {
 		b.WriteString("ORDER BY ")
-		comma := ""
+		separater := `"`
 		for _, col := range qc.orderBy {
-			b.WriteString(comma)
-			b.WriteString(dialect.Quote(col))
-			comma = ","
+			b.WriteString(separater)
+			b.WriteString(col)
+			separater = `","`
 		}
+		b.WriteString(`"`)
 		if qc.desc {
 			b.WriteString(" DESC")
 		}
 		spacer = " "
 	}
 	if qc.limit > 0 {
-		fmt.Fprintf(b, "%sLIMIT %d", spacer, qc.limit)
+		b.WriteString(spacer)
+		b.WriteString("LIMIT ")
+		b.WriteString(strconv.Itoa(qc.limit))
 		spacer = " "
 	}
 	if qc.offset > 0 {
-		fmt.Fprintf(b, "%sOFFSET %d", spacer, qc.offset)
+		b.WriteString(spacer)
+		b.WriteString("OFFSET ")
+		b.WriteString(strconv.Itoa(qc.offset))
 	}
 	return b.String()
 }

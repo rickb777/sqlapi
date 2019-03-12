@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/sqlapi/where"
 	"strings"
@@ -189,11 +190,10 @@ func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 	return tbl.Database().ScanFloat64List(req, rows)
 }
 
-func sliceSql(tbl sqlapi.Table, sqlname string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
-	dialect := tbl.Dialect()
-	whs, args := where.BuildExpression(wh, dialect)
-	orderBy := where.BuildQueryConstraint(qc, dialect)
-	return fmt.Sprintf("SELECT %s FROM %s %s %s", dialect.Quote(sqlname), tbl.Name(), whs, orderBy), args
+func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
+	whs, args := where.Where(wh)
+	orderBy := where.BuildQueryConstraint(qc)
+	return fmt.Sprintf("SELECT %s FROM %s %s %s", dialect.Quote(column), tbl.Name(), whs, orderBy), args
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -206,21 +206,23 @@ func sliceSql(tbl sqlapi.Table, sqlname string, wh where.Expression, qc where.Qu
 //
 // The caller must call rows.Close() on the result.
 func Query(tbl sqlapi.Table, query string, args ...interface{}) (*sql.Rows, error) {
+	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
-	database.LogQuery(query, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), query, args...)
-	return rows, database.LogIfError(errors.Wrap(err, query))
+	database.LogQuery(q2, args...)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	return rows, database.LogIfError(errors.Wrap(err, q2))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
 //
 // The query is logged using whatever logger is configured. If an error arises, this too is logged.
 func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
+	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
-	database.LogQuery(query, args...)
-	res, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
+	database.LogQuery(q2, args...)
+	res, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
 	if err != nil {
-		return 0, database.LogError(errors.Wrap(err, query))
+		return 0, database.LogError(errors.Wrap(err, q2))
 	}
 	n, err := res.RowsAffected()
 	return n, database.LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
@@ -228,10 +230,15 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
 func UpdateFields(tbl sqlapi.Table, req require.Requirement, wh where.Expression, fields ...sql.NamedArg) (int64, error) {
-	list := sqlapi.NamedArgList(fields)
-	assignments := strings.Join(list.Assignments(tbl.Dialect(), 1), ", ")
-	whs, wargs := where.BuildExpression(wh, tbl.Dialect())
-	query := fmt.Sprintf("UPDATE %s SET %s %s", tbl.Name(), assignments, whs)
-	args := append(list.Values(), wargs...)
+	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect(), wh, fields...)
 	return Exec(tbl, req, query, args...)
+}
+
+func updateFieldsSQL(tblName string, d dialect.Dialect, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
+	list := sqlapi.NamedArgList(fields)
+	assignments := strings.Join(list.Assignments(d, 1), ", ")
+	whs, wargs := where.Where(wh)
+	query := fmt.Sprintf("UPDATE %s SET %s %s", dialect.Quote(tblName), assignments, whs)
+	args := append(list.Values(), wargs...)
+	return query, args
 }

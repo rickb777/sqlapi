@@ -3,8 +3,8 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/where"
 	"log"
 )
@@ -39,7 +39,7 @@ type Table interface {
 	Ctx() context.Context
 
 	// Dialect gets the database dialect.
-	Dialect() schema.Dialect
+	Dialect() dialect.Dialect
 
 	// Logger gets the trace logger.
 	Logger() *log.Logger

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/util"
 )
@@ -81,12 +82,12 @@ func (c FkConstraint) OnDelete(consequence Consequence) FkConstraint {
 }
 
 // ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
-func (c FkConstraint) ConstraintSql(dialect Dialect, name sqlapi.TableName, index int) string {
-	return fmt.Sprintf("CONSTRAINT %s_c%d %s", name, index, c.Sql(dialect, name.Prefix))
+func (c FkConstraint) ConstraintSql(name sqlapi.TableName, index int) string {
+	return fmt.Sprintf("CONSTRAINT %s_c%d %s", name, index, c.Sql(name.Prefix))
 }
 
 // Column constructs the foreign key clause needed to configure the database.
-func (c FkConstraint) Sql(dialect Dialect, prefix string) string {
+func (c FkConstraint) Sql(prefix string) string {
 	column := ""
 	if c.Parent.Column != "" {
 		column = " (" + dialect.Quote(c.Parent.Column) + ")"

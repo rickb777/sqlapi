@@ -1,9 +1,9 @@
-package schema
+package dialect
 
 import (
 	"fmt"
+	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"io"
 )
 
 type mysql struct{}
@@ -24,12 +24,12 @@ func (d mysql) Alias() string {
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
 
-func (dialect mysql) FieldAsColumn(field *Field) string {
+func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
-	case ENCJSON:
+	case schema.ENCJSON:
 		return "json"
-	case ENCTEXT:
+	case schema.ENCTEXT:
 		return varchar(tags.Size)
 	}
 
@@ -84,20 +84,20 @@ func varchar(size int) string {
 
 // see https://dev.mysql.com/doc/refman/5.7/en/integer-types.html
 
-func (dialect mysql) TableDDL(table *TableDescription) string {
+func (dialect mysql) TableDDL(table *schema.TableDescription) string {
 	return baseTableDDL(table, dialect, " \"\\n\"+\n", `"`)
 }
 
-func (dialect mysql) FieldDDL(w io.Writer, field *Field, comma string) string {
-	return backTickFieldDDL(w, field, comma, dialect)
+func (dialect mysql) FieldDDL(w StringWriter, field *schema.Field, comma string) string {
+	return baseFieldDDL(w, field, comma, dialect)
 }
 
 func (dialect mysql) InsertHasReturningPhrase() bool {
 	return false
 }
 
-func (dialect mysql) UpdateDML(table *TableDescription) string {
-	return baseUpdateDML(table, backTickQuoted, baseParamIsQuery)
+func (dialect mysql) UpdateDML(table *schema.TableDescription) string {
+	return baseUpdateDML(table)
 }
 
 func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
@@ -113,25 +113,14 @@ func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
 	}
 }
 
-func (dialect mysql) SplitAndQuote(csv string) string {
-	return baseSplitAndQuote(csv, "`", "`,`", "`")
+func (dialect mysql) ShowTables() string {
+	return `SHOW TABLES`
 }
 
-func (dialect mysql) Quote(identifier string) string {
-	return backTickQuoted(identifier)
-}
+//-------------------------------------------------------------------------------------------------
 
-func (dialect mysql) QuoteW(w io.Writer, identifier string) {
-	backTickQuotedW(w, identifier)
-}
-
-func (dialect mysql) QuoteWithPlaceholder(w io.Writer, identifier string, idx int) {
-	backTickQuotedW(w, identifier)
-	io.WriteString(w, "=?")
-}
-
-func (dialect mysql) Placeholder(name string, j int) string {
-	return "?"
+func (dialect mysql) HasNumberedPlaceholders() bool {
+	return false
 }
 
 func (dialect mysql) Placeholders(n int) string {

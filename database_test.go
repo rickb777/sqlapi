@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/schema"
+	"github.com/rickb777/sqlapi/dialect"
 	"log"
 	"testing"
 )
@@ -15,7 +15,7 @@ func TestLoggingOnOff(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
-	db := NewDatabase(nil, schema.Sqlite, logger, nil)
+	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
 	db.LogQuery("one")
 	db.TraceLogging(false)
 	db.LogQuery("two")
@@ -32,7 +32,7 @@ func TestLoggingError(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
-	db := NewDatabase(nil, schema.Sqlite, logger, nil)
+	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
 	db.LogError(fmt.Errorf("one"))
 	db.TraceLogging(false)
 	db.LogError(fmt.Errorf("two"))
@@ -43,10 +43,4 @@ func TestLoggingError(t *testing.T) {
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error: one\nX.Error: three\nX.Error: four\n"))
-}
-
-func TestSchemaSupport(t *testing.T) {
-	for _, s := range schema.AllDialects {
-		showTables(s)
-	}
 }

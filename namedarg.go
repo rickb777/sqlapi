@@ -3,7 +3,7 @@ package sqlapi
 import (
 	"database/sql"
 	"fmt"
-	"github.com/rickb777/sqlapi/schema"
+	"github.com/rickb777/sqlapi/dialect"
 	"strings"
 )
 
@@ -98,18 +98,10 @@ func (list NamedArgList) Values() []interface{} {
 }
 
 // Assignments gets the assignment expressions.
-func (list NamedArgList) Assignments(d schema.Dialect, from int) []string {
+func (list NamedArgList) Assignments(d dialect.Dialect, from int) []string {
 	ss := make([]string, len(list))
-	switch d {
-	case schema.Postgres:
-		for i, v := range list {
-			ss[i] = fmt.Sprintf("%s=$%d", v.Name, i+from)
-		}
-
-	default:
-		for i, v := range list {
-			ss[i] = fmt.Sprintf("%s=?", v.Name)
-		}
+	for i, v := range list {
+		ss[i] = fmt.Sprintf("%s=?", dialect.Quote(v.Name))
 	}
 	return ss
 }

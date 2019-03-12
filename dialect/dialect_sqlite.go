@@ -1,14 +1,10 @@
-package schema
+package dialect
 
 import (
 	"fmt"
+	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"io"
 )
-
-//import (
-//	_ "github.com/mattn/go-sqlite3"
-//)
 
 type sqlite struct{}
 
@@ -29,7 +25,7 @@ func (d sqlite) Alias() string {
 // For integers, the value is a signed integer, stored in 1, 2, 3, 4, 6, or 8 bytes depending on the magnitude of the value
 // For reals, the value is a floating point value, stored as an 8-byte IEEE floating point number.
 
-func (dialect sqlite) FieldAsColumn(field *Field) string {
+func (dialect sqlite) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	if tags.Auto {
 		// In sqlite, "autoincrement" is less efficient than built-in "rowid"
@@ -38,9 +34,9 @@ func (dialect sqlite) FieldAsColumn(field *Field) string {
 	}
 
 	switch field.Encode {
-	case ENCJSON:
+	case schema.ENCJSON:
 		return "text"
-	case ENCTEXT:
+	case schema.ENCTEXT:
 		return "text"
 	}
 
@@ -98,20 +94,20 @@ func fieldTags(fieldIsPtr bool, tags types.Tag, column, dflt string) string {
 	return column
 }
 
-func (dialect sqlite) TableDDL(table *TableDescription) string {
+func (dialect sqlite) TableDDL(table *schema.TableDescription) string {
 	return baseTableDDL(table, dialect, " \"\\n\"+\n", `"`)
 }
 
-func (dialect sqlite) FieldDDL(w io.Writer, field *Field, comma string) string {
-	return backTickFieldDDL(w, field, comma, dialect)
+func (dialect sqlite) FieldDDL(w StringWriter, field *schema.Field, comma string) string {
+	return baseFieldDDL(w, field, comma, dialect)
 }
 
 func (dialect sqlite) InsertHasReturningPhrase() bool {
 	return false
 }
 
-func (dialect sqlite) UpdateDML(table *TableDescription) string {
-	return baseUpdateDML(table, backTickQuoted, baseParamIsQuery)
+func (dialect sqlite) UpdateDML(table *schema.TableDescription) string {
+	return baseUpdateDML(table)
 }
 
 func (dialect sqlite) TruncateDDL(tableName string, force bool) []string {
@@ -119,25 +115,14 @@ func (dialect sqlite) TruncateDDL(tableName string, force bool) []string {
 	return []string{truncate}
 }
 
-func (dialect sqlite) SplitAndQuote(csv string) string {
-	return baseSplitAndQuote(csv, "`", "`,`", "`")
+func (dialect sqlite) ShowTables() string {
+	return `SELECT name FROM sqlite_master WHERE type = 'table'`
 }
 
-func (dialect sqlite) Quote(identifier string) string {
-	return backTickQuoted(identifier)
-}
+//-------------------------------------------------------------------------------------------------
 
-func (dialect sqlite) QuoteW(w io.Writer, identifier string) {
-	backTickQuotedW(w, identifier)
-}
-
-func (dialect sqlite) QuoteWithPlaceholder(w io.Writer, identifier string, idx int) {
-	backTickQuotedW(w, identifier)
-	io.WriteString(w, "=?")
-}
-
-func (dialect sqlite) Placeholder(name string, j int) string {
-	return "?"
+func (dialect sqlite) HasNumberedPlaceholders() bool {
+	return false
 }
 
 func (dialect sqlite) Placeholders(n int) string {

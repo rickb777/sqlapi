@@ -3,8 +3,8 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/util"
 	"log"
 	"strings"
@@ -15,7 +15,7 @@ import (
 // It's safe for concurrent use by multiple goroutines.
 type Database struct {
 	db         Execer
-	dialect    schema.Dialect
+	dialect    dialect.Dialect
 	logger     *log.Logger
 	lgrEnabled int32
 	wrapper    interface{}
@@ -31,7 +31,7 @@ type Database struct {
 //
 // The wrapper holds some associated data your application needs for this database, if any.
 // Otherwise this should be nil. As with the logger, it cannot be changed after construction.
-func NewDatabase(db Execer, dialect schema.Dialect, logger *log.Logger, wrapper interface{}) *Database {
+func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) *Database {
 	var enabled int32 = 0
 	if logger != nil {
 		enabled = 1
@@ -67,7 +67,7 @@ func (database *Database) Begin() (*sql.Tx, error) {
 
 // Dialect gets the current SQL dialect. This choice is determined when the Database is
 // constructed and doesn't subsequently change.
-func (database *Database) Dialect() schema.Dialect {
+func (database *Database) Dialect() dialect.Dialect {
 	return database.dialect
 }
 
@@ -477,7 +477,7 @@ func (database *Database) ScanFloat64List(req require.Requirement, rows *sql.Row
 // DoesTableExist gets all the table names in the database/schema.
 func (database *Database) TableExists(name TableName) (yes bool, err error) {
 	wanted := name.String()
-	rows, err := database.db.QueryContext(context.Background(), showTables(database.dialect))
+	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
 		return false, err
 	}
@@ -496,7 +496,7 @@ func (database *Database) TableExists(name TableName) (yes bool, err error) {
 // ListTables gets all the table names in the database/schema.
 func (database *Database) ListTables() (util.StringList, error) {
 	ss := make(util.StringList, 0)
-	rows, err := database.db.QueryContext(context.Background(), showTables(database.dialect))
+	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
 		return nil, err
 	}
@@ -508,16 +508,4 @@ func (database *Database) ListTables() (util.StringList, error) {
 		ss = append(ss, s)
 	}
 	return ss, rows.Err()
-}
-
-func showTables(dialect schema.Dialect) string {
-	switch dialect.Index() {
-	case schema.SqliteIndex:
-		return `SELECT name FROM sqlite_master WHERE type = "table"`
-	case schema.MysqlIndex:
-		return `SHOW TABLES`
-	case schema.PostgresIndex, schema.PgxIndex:
-		return `SELECT tablename FROM pg_catalog.pg_tables`
-	}
-	panic(dialect.String())
 }

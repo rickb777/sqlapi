@@ -1,4 +1,4 @@
-package schema
+package dialect
 
 import (
 	"bytes"
@@ -6,22 +6,8 @@ import (
 	"testing"
 )
 
-func TestSplitAndQuote(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	cases := []struct {
-		di       Dialect
-		expected string
-	}{
-		{Sqlite, "`A`,`Bb`,`Ccc`"},
-		{Mysql, "`A`,`Bb`,`Ccc`"},
-		{Postgres, `"a","bb","ccc"`},
-	}
-	for _, c := range cases {
-		s := c.di.SplitAndQuote("A,Bb,Ccc")
-		g.Expect(s).Should(Equal(c.expected), c.di.String())
-	}
-}
+// assertion of conformance
+var _ StringWriter = &bytes.Buffer{}
 
 func TestQuote(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -30,35 +16,17 @@ func TestQuote(t *testing.T) {
 		di       Dialect
 		expected string
 	}{
-		{Sqlite, "`Aaaa`"},
-		{Mysql, "`Aaaa`"},
-		{Postgres, `"aaaa"`},
+		{Sqlite, `"Aaaa"`},
+		{Mysql, `"Aaaa"`},
+		{Postgres, `"Aaaa"`},
 	}
 	for _, c := range cases {
-		s1 := c.di.Quote("Aaaa")
+		s1 := Quote("Aaaa")
 		g.Expect(s1).Should(Equal(c.expected), c.di.String())
 
 		b2 := &bytes.Buffer{}
-		c.di.QuoteW(b2, "Aaaa")
+		QuoteW(b2, "Aaaa")
 		g.Expect(b2.String()).Should(Equal(c.expected), c.di.String())
-	}
-}
-
-func TestQuoteWithPlaceholder(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	cases := []struct {
-		di       Dialect
-		expected string
-	}{
-		{Sqlite, "`Aaaa`=?"},
-		{Mysql, "`Aaaa`=?"},
-		{Postgres, `"aaaa"=$3`},
-	}
-	for _, c := range cases {
-		b := &bytes.Buffer{}
-		c.di.QuoteWithPlaceholder(b, "Aaaa", 3)
-		g.Expect(b.String()).Should(Equal(c.expected), c.di.String())
 	}
 }
 

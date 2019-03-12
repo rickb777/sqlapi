@@ -1,12 +1,11 @@
-package schema
+package dialect
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"io"
 	"strconv"
-	"strings"
 )
 
 type postgres struct{}
@@ -28,12 +27,12 @@ func (d postgres) Alias() string {
 // https://www.postgresql.org/docs/9.6/static/datatype.html
 // https://www.convert-in.com/mysql-to-postgres-types-mapping.htm
 
-func (dialect postgres) FieldAsColumn(field *Field) string {
+func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
-	case ENCJSON:
+	case schema.ENCJSON:
 		return "json"
-	case ENCTEXT:
+	case schema.ENCTEXT:
 		return varchar(tags.Size)
 	}
 
@@ -87,40 +86,34 @@ func (dialect postgres) FieldAsColumn(field *Field) string {
 	return fieldTags(field.Type.IsPtr, tags, column, dflt)
 }
 
-func (dialect postgres) TableDDL(table *TableDescription) string {
+func (dialect postgres) TableDDL(table *schema.TableDescription) string {
 	return baseTableDDL(table, dialect, " `\n", "`")
 }
 
-func (dialect postgres) FieldDDL(w io.Writer, field *Field, comma string) string {
-	io.WriteString(w, comma)
-	io.WriteString(w, "\t\"")
-	io.WriteString(w, string(field.SqlName))
-	io.WriteString(w, "\"\t")
-	io.WriteString(w, dialect.FieldAsColumn(field))
-	return ",\n" // for next iteration
+func (dialect postgres) FieldDDL(w StringWriter, field *schema.Field, comma string) string {
+	return baseFieldDDL(w, field, comma, dialect)
 }
 
 func (dialect postgres) InsertHasReturningPhrase() bool {
 	return true
 }
 
-func (dialect postgres) UpdateDML(table *TableDescription) string {
+func (dialect postgres) UpdateDML(table *schema.TableDescription) string {
 	w := &bytes.Buffer{}
 	w.WriteString("`")
 
 	comma := ""
-	for j, field := range table.Fields {
+	for _, field := range table.Fields {
 		if !field.GetTags().Auto {
 			w.WriteString(comma)
-			w.WriteString(doubleQuoter(field.SqlName))
-			w.WriteString("=")
-			w.WriteString(postgresParam(j))
+			QuoteW(w, field.SqlName)
+			w.WriteString("=?")
 			comma = ","
 		}
 	}
 
 	w.WriteByte(' ')
-	w.WriteString(baseWhereClause(FieldList{table.Primary}, 0, doubleQuoter, postgresParam))
+	baseWhereClauseW(w, schema.FieldList{table.Primary}, 0)
 	w.WriteByte('`')
 	return w.String()
 }
@@ -133,45 +126,14 @@ func (dialect postgres) TruncateDDL(tableName string, force bool) []string {
 	return []string{fmt.Sprintf("TRUNCATE %s RESTRICT", tableName)}
 }
 
-func postgresParam(i int) string {
-	return fmt.Sprintf("$%d", i+1)
+func (dialect postgres) ShowTables() string {
+	return `SELECT tablename FROM pg_catalog.pg_tables`
 }
 
-func doubleQuoter(identifier string) string {
-	w := bytes.NewBuffer(make([]byte, 0, len(identifier)*2))
-	doubleQuoterW(w, identifier)
-	return w.String()
-}
+//-------------------------------------------------------------------------------------------------
 
-func doubleQuoterW(w io.Writer, identifier string) {
-	elements := strings.Split(strings.ToLower(identifier), ".")
-	baseQuotedW(w, elements, `"`, `"."`, `"`)
-}
-
-func (dialect postgres) SplitAndQuote(csv string) string {
-	return baseSplitAndQuote(strings.ToLower(csv), `"`, `","`, `"`)
-}
-
-func (dialect postgres) Quote(identifier string) string {
-	return doubleQuoter(identifier)
-}
-
-func (dialect postgres) QuoteW(w io.Writer, identifier string) {
-	doubleQuoterW(w, identifier)
-}
-
-func (dialect postgres) QuoteWithPlaceholder(w io.Writer, identifier string, idx int) {
-	doubleQuoterW(w, identifier)
-	io.WriteString(w, "=$")
-	io.WriteString(w, strconv.Itoa(idx))
-}
-
-func (dialect postgres) Quoter() func(identifier string) string {
-	return doubleQuoter
-}
-
-func (dialect postgres) Placeholder(name string, j int) string {
-	return fmt.Sprintf("$%d", j)
+func (dialect postgres) HasNumberedPlaceholders() bool {
+	return true
 }
 
 func (dialect postgres) Placeholders(n int) string {
