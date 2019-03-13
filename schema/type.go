@@ -54,6 +54,10 @@ func (t Type) NullableValue() string {
 	return ""
 }
 
+func (t Type) IsBasicType() bool {
+	return t.PkgPath == "" && t.Base.String() == t.Name
+}
+
 func (t Type) String() string {
 	return fmt.Sprintf("%s%s (%v)", t.Star(), t.Type(), t.Base)
 }

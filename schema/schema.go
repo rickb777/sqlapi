@@ -85,7 +85,9 @@ func (t *TableDescription) SimpleFields() FieldList {
 				Int, Int8, Int16, Int32, Int64,
 				Uint, Uint8, Uint16, Uint32, Uint64,
 				Float32, Float64:
-				list = append(list, f)
+				if f.Type.IsBasicType() {
+					list = append(list, f)
+				}
 			}
 		}
 	}
@@ -259,5 +261,19 @@ func (list FieldList) NoPrimary() FieldList {
 func (list FieldList) NoAuto() FieldList {
 	return list.Filter(func(field *Field) bool {
 		return field.Tags == nil || !field.Tags.Auto
+	})
+}
+
+// BasicType returns all the fields that have basic (primitive) types.
+func (list FieldList) BasicType() FieldList {
+	return list.Filter(func(field *Field) bool {
+		return field.Type.IsBasicType()
+	})
+}
+
+// DerivedType returns all the fields that have have derived types.
+func (list FieldList) DerivedType() FieldList {
+	return list.Filter(func(field *Field) bool {
+		return !field.Type.IsBasicType()
 	})
 }
