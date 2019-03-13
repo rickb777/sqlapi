@@ -108,44 +108,45 @@ func (k Kind) IsSimpleType() bool {
 	return false
 }
 
-// Token returns a type as its string token.
-//func (k Kind) Token() string {
-//	switch k {
-//	case Bool:
-//		return "bool"
-//	case Int:
-//		return "int"
-//	case Int8:
-//		return "int8"
-//	case Int16:
-//		return "int16"
-//	case Int32:
-//		return "int32"
-//	case Int64:
-//		return "int64"
-//	case Uint:
-//		return "uint"
-//	case Uint8:
-//		return "uint8"
-//	case Uint16:
-//		return "uint16"
-//	case Uint32:
-//		return "uint32"
-//	case Uint64:
-//		return "uint64"
-//	case String:
-//		return "string"
-//	case Interface:
-//		return "Interface"
-//	case Map:
-//		return "Map"
-//	case Slice:
-//		return "Slice"
-//	case Struct:
-//		return "Struct"
-//	}
-//	return "<unknown>"
-//}
+// String returns a type as its string token. For the simple kinds, these
+// are the standard Go language types.
+func (k Kind) String() string {
+	switch k {
+	case Bool:
+		return "bool"
+	case Int:
+		return "int"
+	case Int8:
+		return "int8"
+	case Int16:
+		return "int16"
+	case Int32:
+		return "int32"
+	case Int64:
+		return "int64"
+	case Uint:
+		return "uint"
+	case Uint8:
+		return "uint8"
+	case Uint16:
+		return "uint16"
+	case Uint32:
+		return "uint32"
+	case Uint64:
+		return "uint64"
+	case String:
+		return "string"
+	case Interface:
+		return "Interface"
+	case Map:
+		return "Map"
+	case Slice:
+		return "Slice"
+	case Struct:
+		return "Struct"
+	}
+	return ""
+}
 
 // EncodableTypes lists the types that must be encoded for storage (native floats are not supported)
 //var EncodableTypes = map[string]Kind{
