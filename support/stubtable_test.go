@@ -16,7 +16,7 @@ type StubTable struct {
 // Type conformance checks
 var _ sqlapi.Table = &StubTable{}
 
-func (tbl StubTable) Database() *sqlapi.Database {
+func (tbl StubTable) Database() sqlapi.Database {
 	return nil
 }
 

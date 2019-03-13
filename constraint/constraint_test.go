@@ -170,7 +170,7 @@ func TestFkConstraintOfField(t *testing.T) {
 	}))
 }
 
-func insertOne(g *GomegaWithT, d *sqlapi.Database, query string) int64 {
+func insertOne(g *GomegaWithT, d sqlapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
 	r, err := d.Exec(query)
 	g.Expect(err).To(BeNil())

@@ -15,7 +15,7 @@ type Table interface {
 	Name() TableName
 
 	// Database gets the shared database information.
-	Database() *Database
+	Database() Database
 
 	// Execer gets the wrapped database or transaction handle.
 	Execer() Execer

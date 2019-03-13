@@ -19,7 +19,7 @@ import (
 // specify the name of the schema, in which case it should have a trailing '.'.
 type RecordTable struct {
 	name        sqlapi.TableName
-	database    *sqlapi.Database
+	database    sqlapi.Database
 	db          sqlapi.Execer
 	constraints constraint.Constraints
 	ctx         context.Context
@@ -33,7 +33,7 @@ var _ sqlapi.Table = &RecordTable{}
 // NewRecordTable returns a new table instance.
 // If a blank table name is supplied, the default name "records" will be used instead.
 // The request context is initialised with the background.
-func NewRecordTable(name string, d *sqlapi.Database) RecordTable {
+func NewRecordTable(name string, d sqlapi.Database) RecordTable {
 	if name == "" {
 		name = "records"
 	}
@@ -89,7 +89,7 @@ func (tbl RecordTable) WithContext(ctx context.Context) RecordTable {
 }
 
 // Database gets the shared database information.
-func (tbl RecordTable) Database() *sqlapi.Database {
+func (tbl RecordTable) Database() sqlapi.Database {
 	return tbl.database
 }
 

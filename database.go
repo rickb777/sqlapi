@@ -11,9 +11,55 @@ import (
 	"sync/atomic"
 )
 
-// Database wraps a *sql.DB with a dialect and (optionally) a logger.
+// Database typically wraps a *sql.DB with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
-type Database struct {
+// See NewDatabase.
+type Database interface {
+	DB() Execer
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
+	Begin() (SqlTx, error)
+	Dialect() dialect.Dialect
+	Logger() *log.Logger
+	Wrapper() interface{}
+	PingContext(ctx context.Context) error
+	Ping() error
+	Stats() sql.DBStats
+
+	TraceLogging(on bool)
+	LogQuery(query string, args ...interface{})
+	LogIfError(err error) error
+	LogError(err error) error
+
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Prepare(query string) (SqlStmt, error)
+	PrepareContext(ctx context.Context, query string) (SqlStmt, error)
+	Query(query string, args ...interface{}) (SqlRows, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
+	QueryRow(query string, args ...interface{}) SqlRow
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
+
+	ScanStringList(req require.Requirement, rows SqlRows) ([]string, error)
+	ScanIntList(req require.Requirement, rows SqlRows) ([]int, error)
+	ScanUintList(req require.Requirement, rows SqlRows) ([]uint, error)
+	ScanInt64List(req require.Requirement, rows SqlRows) ([]int64, error)
+	ScanUint64List(req require.Requirement, rows SqlRows) ([]uint64, error)
+	ScanInt32List(req require.Requirement, rows SqlRows) ([]int32, error)
+	ScanUint32List(req require.Requirement, rows SqlRows) ([]uint32, error)
+	ScanInt16List(req require.Requirement, rows SqlRows) ([]int16, error)
+	ScanUint16List(req require.Requirement, rows SqlRows) ([]uint16, error)
+	ScanInt8List(req require.Requirement, rows SqlRows) ([]int8, error)
+	ScanUint8List(req require.Requirement, rows SqlRows) ([]uint8, error)
+	ScanFloat32List(req require.Requirement, rows SqlRows) ([]float32, error)
+	ScanFloat64List(req require.Requirement, rows SqlRows) ([]float64, error)
+
+	TableExists(name TableName) (yes bool, err error)
+	ListTables() (util.StringList, error)
+}
+
+// database wraps a *sql.DB with a dialect and (optionally) a logger.
+// It's safe for concurrent use by multiple goroutines.
+type database struct {
 	db         Execer
 	dialect    dialect.Dialect
 	logger     *log.Logger
@@ -31,12 +77,12 @@ type Database struct {
 //
 // The wrapper holds some associated data your application needs for this database, if any.
 // Otherwise this should be nil. As with the logger, it cannot be changed after construction.
-func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) *Database {
+func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) Database {
 	var enabled int32 = 0
 	if logger != nil {
 		enabled = 1
 	}
-	return &Database{
+	return &database{
 		db:         db,
 		dialect:    dialect,
 		logger:     logger,
@@ -46,7 +92,7 @@ func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper
 }
 
 // DB gets the Execer, which is a *sql.DB (except during testing using mocks).
-func (database *Database) DB() Execer {
+func (database *database) DB() Execer {
 	return database.db
 }
 
@@ -61,30 +107,30 @@ func (database *Database) DB() Execer {
 // an error will be returned.
 //
 // Panics if the Execer is not a TxStarter.
-func (database *Database) BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
+func (database *database) BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
 	return database.db.(TxStarter).BeginTx(ctx, opts)
 }
 
 // Begin starts a transaction using default options. The default isolation level is
 // dependent on the driver.
-func (database *Database) Begin() (SqlTx, error) {
+func (database *database) Begin() (SqlTx, error) {
 	return database.BeginTx(context.Background(), nil)
 }
 
-// Dialect gets the current SQL dialect. This choice is determined when the Database is
+// Dialect gets the current SQL dialect. This choice is determined when the database is
 // constructed and doesn't subsequently change.
-func (database *Database) Dialect() dialect.Dialect {
+func (database *database) Dialect() dialect.Dialect {
 	return database.dialect
 }
 
 // Logger gets the trace logger. Note that you can use this to rotate the output writer
 // via its SetOutput method. Also, it can even disable it completely (via ioutil.Discard).
-func (database *Database) Logger() *log.Logger {
+func (database *database) Logger() *log.Logger {
 	return database.logger
 }
 
 // Wrapper gets whatever structure is present, as needed.
-func (database *Database) Wrapper() interface{} {
+func (database *database) Wrapper() interface{} {
 	return database.wrapper
 }
 
@@ -92,25 +138,25 @@ func (database *Database) Wrapper() interface{} {
 
 // PingContext verifies a connection to the database is still alive,
 // establishing a connection if necessary.
-func (database *Database) PingContext(ctx context.Context) error {
+func (database *database) PingContext(ctx context.Context) error {
 	return database.db.(*sql.DB).PingContext(ctx)
 }
 
 // Ping verifies a connection to the database is still alive,
 // establishing a connection if necessary.
-func (database *Database) Ping() error {
+func (database *database) Ping() error {
 	return database.PingContext(context.Background())
 }
 
 // Exec executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-func (database *Database) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (database *database) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return database.ExecContext(context.Background(), query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-func (database *Database) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (database *database) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return database.db.ExecContext(ctx, query, args...)
 }
 
@@ -119,7 +165,7 @@ func (database *Database) ExecContext(ctx context.Context, query string, args ..
 // returned statement.
 // The caller must call the statement's Close method
 // when the statement is no longer needed.
-func (database *Database) Prepare(query string) (SqlStmt, error) {
+func (database *database) Prepare(query string) (SqlStmt, error) {
 	return database.PrepareContext(context.Background(), query)
 }
 
@@ -131,19 +177,19 @@ func (database *Database) Prepare(query string) (SqlStmt, error) {
 //
 // The provided context is used for the preparation of the statement, not for the
 // execution of the statement.
-func (database *Database) PrepareContext(ctx context.Context, query string) (SqlStmt, error) {
+func (database *database) PrepareContext(ctx context.Context, query string) (SqlStmt, error) {
 	return database.db.PrepareContext(ctx, query)
 }
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *Database) Query(query string, args ...interface{}) (SqlRows, error) {
+func (database *database) Query(query string, args ...interface{}) (SqlRows, error) {
 	return database.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *Database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
+func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	return database.db.QueryContext(ctx, query, args...)
 }
 
@@ -153,7 +199,7 @@ func (database *Database) QueryContext(ctx context.Context, query string, args .
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *Database) QueryRow(query string, args ...interface{}) SqlRow {
+func (database *database) QueryRow(query string, args ...interface{}) SqlRow {
 	return database.QueryRowContext(context.Background(), query, args...)
 }
 
@@ -163,20 +209,20 @@ func (database *Database) QueryRow(query string, args ...interface{}) SqlRow {
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *Database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
+func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
 	return database.db.QueryRowContext(ctx, query, args...)
 }
 
 // Stats returns database statistics.
-func (database *Database) Stats() sql.DBStats {
+func (database *database) Stats() sql.DBStats {
 	return database.db.(*sql.DB).Stats()
 }
 
 //-------------------------------------------------------------------------------------------------
 
-// TraceLogging turns query trace logging on or off. This has no effect unless the Database was
+// TraceLogging turns query trace logging on or off. This has no effect unless the database was
 // created with a non-nil logger.
-func (database *Database) TraceLogging(on bool) {
+func (database *database) TraceLogging(on bool) {
 	if on && database.logger != nil {
 		atomic.StoreInt32(&database.lgrEnabled, 1)
 	} else {
@@ -184,12 +230,12 @@ func (database *Database) TraceLogging(on bool) {
 	}
 }
 
-func (database *Database) loggingEnabled() bool {
+func (database *database) loggingEnabled() bool {
 	return atomic.LoadInt32(&database.lgrEnabled) != 0
 }
 
 // LogQuery writes query info to the logger, if it is not nil.
-func (database *Database) LogQuery(query string, args ...interface{}) {
+func (database *database) LogQuery(query string, args ...interface{}) {
 	if database.loggingEnabled() {
 		query = strings.TrimSpace(query)
 		if len(args) > 0 {
@@ -240,7 +286,7 @@ func derefArg(arg interface{}) interface{} {
 
 // LogIfError writes error info to the logger, if both the logger and the error are non-nil.
 // It returns the error.
-func (database *Database) LogIfError(err error) error {
+func (database *database) LogIfError(err error) error {
 	if database.loggingEnabled() && err != nil {
 		database.logger.Printf("Error: %s\n", err)
 	}
@@ -248,7 +294,7 @@ func (database *Database) LogIfError(err error) error {
 }
 
 // LogError writes error info to the logger, if the logger is not nil. It returns the error.
-func (database *Database) LogError(err error) error {
+func (database *database) LogError(err error) error {
 	if database.loggingEnabled() {
 		database.logger.Printf("Error: %s\n", err)
 	}
@@ -259,7 +305,7 @@ func (database *Database) LogError(err error) error {
 
 // ScanStringList processes result rows to extract a list of strings.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanStringList(req require.Requirement, rows SqlRows) ([]string, error) {
+func (database *database) ScanStringList(req require.Requirement, rows SqlRows) ([]string, error) {
 	var v string
 	list := make([]string, 0, 10)
 
@@ -276,7 +322,7 @@ func (database *Database) ScanStringList(req require.Requirement, rows SqlRows) 
 
 // ScanIntList processes result rows to extract a list of ints.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanIntList(req require.Requirement, rows SqlRows) ([]int, error) {
+func (database *database) ScanIntList(req require.Requirement, rows SqlRows) ([]int, error) {
 	var v int
 	list := make([]int, 0, 10)
 
@@ -293,7 +339,7 @@ func (database *Database) ScanIntList(req require.Requirement, rows SqlRows) ([]
 
 // ScanUintList processes result rows to extract a list of uints.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUintList(req require.Requirement, rows SqlRows) ([]uint, error) {
+func (database *database) ScanUintList(req require.Requirement, rows SqlRows) ([]uint, error) {
 	var v uint
 	list := make([]uint, 0, 10)
 
@@ -310,7 +356,7 @@ func (database *Database) ScanUintList(req require.Requirement, rows SqlRows) ([
 
 // ScanInt64List processes result rows to extract a list of int64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt64List(req require.Requirement, rows SqlRows) ([]int64, error) {
+func (database *database) ScanInt64List(req require.Requirement, rows SqlRows) ([]int64, error) {
 	var v int64
 	list := make([]int64, 0, 10)
 
@@ -327,7 +373,7 @@ func (database *Database) ScanInt64List(req require.Requirement, rows SqlRows) (
 
 // ScanUint64List processes result rows to extract a list of uint64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint64List(req require.Requirement, rows SqlRows) ([]uint64, error) {
+func (database *database) ScanUint64List(req require.Requirement, rows SqlRows) ([]uint64, error) {
 	var v uint64
 	list := make([]uint64, 0, 10)
 
@@ -344,7 +390,7 @@ func (database *Database) ScanUint64List(req require.Requirement, rows SqlRows) 
 
 // ScanInt32List processes result rows to extract a list of int32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt32List(req require.Requirement, rows SqlRows) ([]int32, error) {
+func (database *database) ScanInt32List(req require.Requirement, rows SqlRows) ([]int32, error) {
 	var v int32
 	list := make([]int32, 0, 10)
 
@@ -361,7 +407,7 @@ func (database *Database) ScanInt32List(req require.Requirement, rows SqlRows) (
 
 // ScanUint32List processes result rows to extract a list of uint32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint32List(req require.Requirement, rows SqlRows) ([]uint32, error) {
+func (database *database) ScanUint32List(req require.Requirement, rows SqlRows) ([]uint32, error) {
 	var v uint32
 	list := make([]uint32, 0, 10)
 
@@ -378,7 +424,7 @@ func (database *Database) ScanUint32List(req require.Requirement, rows SqlRows) 
 
 // ScanInt16List processes result rows to extract a list of int32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt16List(req require.Requirement, rows SqlRows) ([]int16, error) {
+func (database *database) ScanInt16List(req require.Requirement, rows SqlRows) ([]int16, error) {
 	var v int16
 	list := make([]int16, 0, 10)
 
@@ -395,7 +441,7 @@ func (database *Database) ScanInt16List(req require.Requirement, rows SqlRows) (
 
 // ScanUint16List processes result rows to extract a list of uint16s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint16List(req require.Requirement, rows SqlRows) ([]uint16, error) {
+func (database *database) ScanUint16List(req require.Requirement, rows SqlRows) ([]uint16, error) {
 	var v uint16
 	list := make([]uint16, 0, 10)
 
@@ -412,7 +458,7 @@ func (database *Database) ScanUint16List(req require.Requirement, rows SqlRows) 
 
 // ScanInt8List processes result rows to extract a list of int8s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt8List(req require.Requirement, rows SqlRows) ([]int8, error) {
+func (database *database) ScanInt8List(req require.Requirement, rows SqlRows) ([]int8, error) {
 	var v int8
 	list := make([]int8, 0, 10)
 
@@ -429,7 +475,7 @@ func (database *Database) ScanInt8List(req require.Requirement, rows SqlRows) ([
 
 // ScanUint8List processes result rows to extract a list of uint8s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint8List(req require.Requirement, rows SqlRows) ([]uint8, error) {
+func (database *database) ScanUint8List(req require.Requirement, rows SqlRows) ([]uint8, error) {
 	var v uint8
 	list := make([]uint8, 0, 10)
 
@@ -446,7 +492,7 @@ func (database *Database) ScanUint8List(req require.Requirement, rows SqlRows) (
 
 // ScanFloat32List processes result rows to extract a list of float32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanFloat32List(req require.Requirement, rows SqlRows) ([]float32, error) {
+func (database *database) ScanFloat32List(req require.Requirement, rows SqlRows) ([]float32, error) {
 	var v float32
 	list := make([]float32, 0, 10)
 
@@ -463,7 +509,7 @@ func (database *Database) ScanFloat32List(req require.Requirement, rows SqlRows)
 
 // ScanFloat64List processes result rows to extract a list of float64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanFloat64List(req require.Requirement, rows SqlRows) ([]float64, error) {
+func (database *database) ScanFloat64List(req require.Requirement, rows SqlRows) ([]float64, error) {
 	var v float64
 	list := make([]float64, 0, 10)
 
@@ -481,7 +527,7 @@ func (database *Database) ScanFloat64List(req require.Requirement, rows SqlRows)
 //-------------------------------------------------------------------------------------------------
 
 // DoesTableExist gets all the table names in the database/schema.
-func (database *Database) TableExists(name TableName) (yes bool, err error) {
+func (database *database) TableExists(name TableName) (yes bool, err error) {
 	wanted := name.String()
 	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
@@ -500,7 +546,7 @@ func (database *Database) TableExists(name TableName) (yes bool, err error) {
 }
 
 // ListTables gets all the table names in the database/schema.
-func (database *Database) ListTables() (util.StringList, error) {
+func (database *database) ListTables() (util.StringList, error) {
 	ss := make(util.StringList, 0)
 	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
