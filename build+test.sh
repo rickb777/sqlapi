@@ -30,6 +30,9 @@ if [ ! -f util/string_any_map.go ]; then
   rm util/string_any_map.xx
 fi
 
+[ -f support/functions_gen.go ] || ./support/functions.sh
+#[ -f database_gen.go ] || ./database.sh
+
 ### Build Phase 1 ###
 
 ./version.sh
