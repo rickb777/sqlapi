@@ -13,20 +13,20 @@ func TestQuote(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		di       Dialect
+		q        Quoter
 		expected string
 	}{
-		{Sqlite, `"Aaaa"`},
-		{Mysql, `"Aaaa"`},
-		{Postgres, `"Aaaa"`},
+		{AnsiQuoter, `"x"."Aaaa"`},
+		{MySqlQuoter, "`x`.`Aaaa`"},
+		{NoQuoter, `x.Aaaa`},
 	}
 	for _, c := range cases {
-		s1 := Quote("Aaaa")
-		g.Expect(s1).Should(Equal(c.expected), c.di.String())
+		s1 := c.q.Quote("x.Aaaa")
+		g.Expect(s1).Should(Equal(c.expected))
 
 		b2 := &bytes.Buffer{}
-		QuoteW(b2, "Aaaa")
-		g.Expect(b2.String()).Should(Equal(c.expected), c.di.String())
+		c.q.QuoteW(b2, "x.Aaaa")
+		g.Expect(b2.String()).Should(Equal(c.expected))
 	}
 }
 

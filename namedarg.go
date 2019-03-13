@@ -98,10 +98,10 @@ func (list NamedArgList) Values() []interface{} {
 }
 
 // Assignments gets the assignment expressions.
-func (list NamedArgList) Assignments(d dialect.Dialect, from int) []string {
+func (list NamedArgList) Assignments(q dialect.Quoter, from int) []string {
 	ss := make([]string, len(list))
 	for i, v := range list {
-		ss[i] = fmt.Sprintf("%s=?", dialect.Quote(v.Name))
+		ss[i] = fmt.Sprintf("%s=?", q.Quote(v.Name))
 	}
 	return ss
 }

@@ -191,9 +191,11 @@ func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 }
 
 func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
-	whs, args := where.Where(wh)
-	orderBy := where.BuildQueryConstraint(qc)
-	return fmt.Sprintf("SELECT %s FROM %s %s %s", dialect.Quote(column), tbl.Name(), whs, orderBy), args
+	q := tbl.Dialect().Quoter()
+	whs, args := where.Where(wh, q)
+	orderBy := where.BuildQueryConstraint(qc, q)
+	return fmt.Sprintf("SELECT %s FROM %s %s %s",
+		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -230,15 +232,15 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
 func UpdateFields(tbl sqlapi.Table, req require.Requirement, wh where.Expression, fields ...sql.NamedArg) (int64, error) {
-	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect(), wh, fields...)
+	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect().Quoter(), wh, fields...)
 	return Exec(tbl, req, query, args...)
 }
 
-func updateFieldsSQL(tblName string, d dialect.Dialect, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
+func updateFieldsSQL(tblName string, q dialect.Quoter, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
 	list := sqlapi.NamedArgList(fields)
-	assignments := strings.Join(list.Assignments(d, 1), ", ")
-	whs, wargs := where.Where(wh)
-	query := fmt.Sprintf("UPDATE %s SET %s %s", dialect.Quote(tblName), assignments, whs)
+	assignments := strings.Join(list.Assignments(q, 1), ", ")
+	whs, wargs := where.Where(wh, q)
+	query := fmt.Sprintf("UPDATE %s SET %s %s", q.Quote(tblName), assignments, whs)
 	args := append(list.Values(), wargs...)
 	return query, args
 }

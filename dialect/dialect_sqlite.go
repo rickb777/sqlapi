@@ -6,9 +6,9 @@ import (
 	"github.com/rickb777/sqlapi/types"
 )
 
-type sqlite struct{}
+type sqlite quoter
 
-var Sqlite Dialect = sqlite{}
+var Sqlite Dialect = sqlite(ansiQuoter)
 
 func (d sqlite) Index() int {
 	return SqliteIndex
@@ -20,6 +20,14 @@ func (d sqlite) String() string {
 
 func (d sqlite) Alias() string {
 	return "SQLite3"
+}
+
+func (d sqlite) Quoter() Quoter {
+	return quoter(d)
+}
+
+func (d sqlite) WithQuoter(q Quoter) Dialect {
+	return sqlite(q.(quoter))
 }
 
 // For integers, the value is a signed integer, stored in 1, 2, 3, 4, 6, or 8 bytes depending on the magnitude of the value
@@ -111,7 +119,7 @@ func (dialect sqlite) UpdateDML(table *schema.TableDescription) string {
 }
 
 func (dialect sqlite) TruncateDDL(tableName string, force bool) []string {
-	truncate := fmt.Sprintf("DELETE FROM %s", tableName)
+	truncate := fmt.Sprintf("DELETE FROM %s", dialect.Quoter().Quote(tableName))
 	return []string{truncate}
 }
 

@@ -2,19 +2,24 @@ package where
 
 import (
 	"bytes"
+	"github.com/rickb777/sqlapi/dialect"
 	"strconv"
 )
 
 // QueryConstraint is a value that is appended to a SELECT statement.
 type QueryConstraint interface {
-	Build() string
+	Build(q dialect.Quoter) string
 }
 
-func BuildQueryConstraint(qc QueryConstraint) string {
+func BuildQueryConstraint(qc QueryConstraint, quoter ...dialect.Quoter) string {
 	if qc == nil {
 		return ""
 	}
-	return qc.Build()
+	q := dialect.DefaultQuoter
+	if len(quoter) > 0 {
+		q = quoter[0]
+	}
+	return qc.Build(q)
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -26,7 +31,7 @@ func Literal(sqlPart string) QueryConstraint {
 	return literal(sqlPart)
 }
 
-func (qc literal) Build() string {
+func (qc literal) Build(_ dialect.Quoter) string {
 	return string(qc)
 }
 
@@ -87,18 +92,17 @@ func (qc *queryConstraint) Offset(n int) *queryConstraint {
 	return qc
 }
 
-func (qc *queryConstraint) Build() string {
+func (qc *queryConstraint) Build(q dialect.Quoter) string {
 	b := &bytes.Buffer{}
 	spacer := ""
 	if len(qc.orderBy) > 0 {
 		b.WriteString("ORDER BY ")
-		separater := `"`
+		separater := ""
 		for _, col := range qc.orderBy {
 			b.WriteString(separater)
-			b.WriteString(col)
-			separater = `","`
+			q.QuoteW(b, col)
+			separater = ","
 		}
-		b.WriteString(`"`)
 		if qc.desc {
 			b.WriteString(" DESC")
 		}

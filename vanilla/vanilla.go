@@ -1,6 +1,8 @@
 // Package vanilla provides a re-usable table API.
 package vanilla
 
+//go:generate sqlgen -v -type vanilla.Record vanilla.go
+
 // Record provides access to the primary key only; all other database columns are ignored.
 // This is useful in situations where identity is the only concern.
 type Record struct {

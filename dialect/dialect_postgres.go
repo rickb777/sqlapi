@@ -8,9 +8,9 @@ import (
 	"strconv"
 )
 
-type postgres struct{}
+type postgres quoter
 
-var Postgres Dialect = postgres{}
+var Postgres Dialect = postgres(ansiQuoter)
 
 func (d postgres) Index() int {
 	return PostgresIndex
@@ -22,6 +22,14 @@ func (d postgres) String() string {
 
 func (d postgres) Alias() string {
 	return "PostgreSQL"
+}
+
+func (d postgres) Quoter() Quoter {
+	return quoter(d)
+}
+
+func (d postgres) WithQuoter(q Quoter) Dialect {
+	return postgres(q.(quoter))
 }
 
 // https://www.postgresql.org/docs/9.6/static/datatype.html
@@ -106,7 +114,7 @@ func (dialect postgres) UpdateDML(table *schema.TableDescription) string {
 	for _, field := range table.Fields {
 		if !field.GetTags().Auto {
 			w.WriteString(comma)
-			QuoteW(w, field.SqlName)
+			dialect.Quoter().QuoteW(w, field.SqlName)
 			w.WriteString("=?")
 			comma = ","
 		}
@@ -120,10 +128,10 @@ func (dialect postgres) UpdateDML(table *schema.TableDescription) string {
 
 func (dialect postgres) TruncateDDL(tableName string, force bool) []string {
 	if force {
-		return []string{fmt.Sprintf("TRUNCATE %s CASCADE", tableName)}
+		return []string{fmt.Sprintf("TRUNCATE %s CASCADE", dialect.Quoter().Quote(tableName))}
 	}
 
-	return []string{fmt.Sprintf("TRUNCATE %s RESTRICT", tableName)}
+	return []string{fmt.Sprintf("TRUNCATE %s RESTRICT", dialect.Quoter().Quote(tableName))}
 }
 
 func (dialect postgres) ShowTables() string {

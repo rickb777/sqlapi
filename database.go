@@ -36,7 +36,13 @@ func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper
 	if logger != nil {
 		enabled = 1
 	}
-	return &Database{db, dialect, logger, enabled, wrapper}
+	return &Database{
+		db:         db,
+		dialect:    dialect,
+		logger:     logger,
+		lgrEnabled: enabled,
+		wrapper:    wrapper,
+	}
 }
 
 // DB gets the Execer, which is a *sql.DB (except during testing using mocks).
@@ -55,13 +61,13 @@ func (database *Database) DB() Execer {
 // an error will be returned.
 //
 // Panics if the Execer is not a TxStarter.
-func (database *Database) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+func (database *Database) BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
 	return database.db.(TxStarter).BeginTx(ctx, opts)
 }
 
 // Begin starts a transaction using default options. The default isolation level is
 // dependent on the driver.
-func (database *Database) Begin() (*sql.Tx, error) {
+func (database *Database) Begin() (SqlTx, error) {
 	return database.BeginTx(context.Background(), nil)
 }
 
@@ -113,7 +119,7 @@ func (database *Database) ExecContext(ctx context.Context, query string, args ..
 // returned statement.
 // The caller must call the statement's Close method
 // when the statement is no longer needed.
-func (database *Database) Prepare(query string) (*sql.Stmt, error) {
+func (database *Database) Prepare(query string) (SqlStmt, error) {
 	return database.PrepareContext(context.Background(), query)
 }
 
@@ -125,19 +131,19 @@ func (database *Database) Prepare(query string) (*sql.Stmt, error) {
 //
 // The provided context is used for the preparation of the statement, not for the
 // execution of the statement.
-func (database *Database) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+func (database *Database) PrepareContext(ctx context.Context, query string) (SqlStmt, error) {
 	return database.db.PrepareContext(ctx, query)
 }
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *Database) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (database *Database) Query(query string, args ...interface{}) (SqlRows, error) {
 	return database.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *Database) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (database *Database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	return database.db.QueryContext(ctx, query, args...)
 }
 
@@ -147,7 +153,7 @@ func (database *Database) QueryContext(ctx context.Context, query string, args .
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *Database) QueryRow(query string, args ...interface{}) *sql.Row {
+func (database *Database) QueryRow(query string, args ...interface{}) SqlRow {
 	return database.QueryRowContext(context.Background(), query, args...)
 }
 
@@ -157,7 +163,7 @@ func (database *Database) QueryRow(query string, args ...interface{}) *sql.Row {
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *Database) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (database *Database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
 	return database.db.QueryRowContext(ctx, query, args...)
 }
 
@@ -253,7 +259,7 @@ func (database *Database) LogError(err error) error {
 
 // ScanStringList processes result rows to extract a list of strings.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanStringList(req require.Requirement, rows *sql.Rows) ([]string, error) {
+func (database *Database) ScanStringList(req require.Requirement, rows SqlRows) ([]string, error) {
 	var v string
 	list := make([]string, 0, 10)
 
@@ -270,7 +276,7 @@ func (database *Database) ScanStringList(req require.Requirement, rows *sql.Rows
 
 // ScanIntList processes result rows to extract a list of ints.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanIntList(req require.Requirement, rows *sql.Rows) ([]int, error) {
+func (database *Database) ScanIntList(req require.Requirement, rows SqlRows) ([]int, error) {
 	var v int
 	list := make([]int, 0, 10)
 
@@ -287,7 +293,7 @@ func (database *Database) ScanIntList(req require.Requirement, rows *sql.Rows) (
 
 // ScanUintList processes result rows to extract a list of uints.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUintList(req require.Requirement, rows *sql.Rows) ([]uint, error) {
+func (database *Database) ScanUintList(req require.Requirement, rows SqlRows) ([]uint, error) {
 	var v uint
 	list := make([]uint, 0, 10)
 
@@ -304,7 +310,7 @@ func (database *Database) ScanUintList(req require.Requirement, rows *sql.Rows) 
 
 // ScanInt64List processes result rows to extract a list of int64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt64List(req require.Requirement, rows *sql.Rows) ([]int64, error) {
+func (database *Database) ScanInt64List(req require.Requirement, rows SqlRows) ([]int64, error) {
 	var v int64
 	list := make([]int64, 0, 10)
 
@@ -321,7 +327,7 @@ func (database *Database) ScanInt64List(req require.Requirement, rows *sql.Rows)
 
 // ScanUint64List processes result rows to extract a list of uint64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint64List(req require.Requirement, rows *sql.Rows) ([]uint64, error) {
+func (database *Database) ScanUint64List(req require.Requirement, rows SqlRows) ([]uint64, error) {
 	var v uint64
 	list := make([]uint64, 0, 10)
 
@@ -338,7 +344,7 @@ func (database *Database) ScanUint64List(req require.Requirement, rows *sql.Rows
 
 // ScanInt32List processes result rows to extract a list of int32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt32List(req require.Requirement, rows *sql.Rows) ([]int32, error) {
+func (database *Database) ScanInt32List(req require.Requirement, rows SqlRows) ([]int32, error) {
 	var v int32
 	list := make([]int32, 0, 10)
 
@@ -355,7 +361,7 @@ func (database *Database) ScanInt32List(req require.Requirement, rows *sql.Rows)
 
 // ScanUint32List processes result rows to extract a list of uint32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint32List(req require.Requirement, rows *sql.Rows) ([]uint32, error) {
+func (database *Database) ScanUint32List(req require.Requirement, rows SqlRows) ([]uint32, error) {
 	var v uint32
 	list := make([]uint32, 0, 10)
 
@@ -372,7 +378,7 @@ func (database *Database) ScanUint32List(req require.Requirement, rows *sql.Rows
 
 // ScanInt16List processes result rows to extract a list of int32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt16List(req require.Requirement, rows *sql.Rows) ([]int16, error) {
+func (database *Database) ScanInt16List(req require.Requirement, rows SqlRows) ([]int16, error) {
 	var v int16
 	list := make([]int16, 0, 10)
 
@@ -389,7 +395,7 @@ func (database *Database) ScanInt16List(req require.Requirement, rows *sql.Rows)
 
 // ScanUint16List processes result rows to extract a list of uint16s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint16List(req require.Requirement, rows *sql.Rows) ([]uint16, error) {
+func (database *Database) ScanUint16List(req require.Requirement, rows SqlRows) ([]uint16, error) {
 	var v uint16
 	list := make([]uint16, 0, 10)
 
@@ -406,7 +412,7 @@ func (database *Database) ScanUint16List(req require.Requirement, rows *sql.Rows
 
 // ScanInt8List processes result rows to extract a list of int8s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanInt8List(req require.Requirement, rows *sql.Rows) ([]int8, error) {
+func (database *Database) ScanInt8List(req require.Requirement, rows SqlRows) ([]int8, error) {
 	var v int8
 	list := make([]int8, 0, 10)
 
@@ -423,7 +429,7 @@ func (database *Database) ScanInt8List(req require.Requirement, rows *sql.Rows) 
 
 // ScanUint8List processes result rows to extract a list of uint8s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanUint8List(req require.Requirement, rows *sql.Rows) ([]uint8, error) {
+func (database *Database) ScanUint8List(req require.Requirement, rows SqlRows) ([]uint8, error) {
 	var v uint8
 	list := make([]uint8, 0, 10)
 
@@ -440,7 +446,7 @@ func (database *Database) ScanUint8List(req require.Requirement, rows *sql.Rows)
 
 // ScanFloat32List processes result rows to extract a list of float32s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanFloat32List(req require.Requirement, rows *sql.Rows) ([]float32, error) {
+func (database *Database) ScanFloat32List(req require.Requirement, rows SqlRows) ([]float32, error) {
 	var v float32
 	list := make([]float32, 0, 10)
 
@@ -457,7 +463,7 @@ func (database *Database) ScanFloat32List(req require.Requirement, rows *sql.Row
 
 // ScanFloat64List processes result rows to extract a list of float64s.
 // The result set should have been produced via a SELECT statement on just one column.
-func (database *Database) ScanFloat64List(req require.Requirement, rows *sql.Rows) ([]float64, error) {
+func (database *Database) ScanFloat64List(req require.Requirement, rows SqlRows) ([]float64, error) {
 	var v float64
 	list := make([]float64, 0, 10)
 

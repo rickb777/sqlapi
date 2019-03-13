@@ -80,7 +80,7 @@ type Table interface {
 	// The args are for any placeholder parameters in the query.
 	//
 	// The caller must call rows.Close() on the result.
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Query(query string, args ...interface{}) (SqlRows, error)
 }
 
 // TableCreator is a table with create/delete/truncate methods.

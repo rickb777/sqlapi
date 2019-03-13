@@ -32,3 +32,87 @@ func Adapt(w io.Writer) StringWriter {
 	}
 	return swAdapter{w}
 }
+
+//-------------------------------------------------------------------------------------------------
+
+//func NewBuffer(d Dialect) *Buffer {
+//	return &Buffer{
+//		buf:      &bytes.Buffer{},
+//		quoter:   d.Quoter(),
+//		numbered: d.HasNumberedPlaceholders(),
+//	}
+//}
+//
+//type Buffer struct {
+//	buf      *bytes.Buffer
+//	quoter   Quoter
+//	numbered bool
+//}
+//
+//func (b *Buffer) Len() int {
+//	return b.buf.Len()
+//}
+//
+//func (b *Buffer) Write(bb []byte) (n int, err error) {
+//	return b.buf.Write(bb)
+//}
+//
+//func (b *Buffer) WriteByte(bb byte) error {
+//	return b.buf.WriteByte(bb)
+//}
+//
+//func (b *Buffer) WriteRune(r rune) (n int, err error) {
+//	return b.buf.WriteRune(r)
+//}
+//
+//func (b *Buffer) WriteString(s string) (n int, err error) {
+//	return b.buf.WriteString(s)
+//}
+//
+//// Þ appends a string to the buffer.
+//func (b *Buffer) Þ(s string) *Buffer {
+//	b.buf.WriteString(s)
+//	return b
+//}
+//
+//// Append appends a string to the buffer.
+//func (b *Buffer) Append(s string) *Buffer {
+//	b.buf.WriteString(s)
+//	return b
+//}
+//
+//// Quote appends a quoted identifier to the buffer.
+//func (b *Buffer) Quote(id string) *Buffer {
+//	b.quoter.QuoteW(b.buf, id)
+//	return b
+//}
+//
+//func (b *Buffer) String() string {
+//	return b.buf.String()
+//}
+//
+//// ReplacePlaceholders converts a string containing '?' placeholders to
+//// the form used by PostgreSQL.
+//func (b *Buffer) ReplacePlaceholders() *Buffer {
+//	if !b.numbered {
+//		return b
+//	}
+//
+//	b2 := &Buffer{
+//		buf:      &bytes.Buffer{},
+//		quoter:   b.quoter,
+//		numbered: b.numbered,
+//	}
+//	idx := 1
+//	sql := b.buf.String()
+//	for _, r := range sql {
+//		if r == '?' {
+//			b2.buf.WriteByte('$')
+//			b2.buf.WriteString(strconv.Itoa(idx))
+//			idx++
+//		} else {
+//			b2.buf.WriteRune(r)
+//		}
+//	}
+//	return b2
+//}

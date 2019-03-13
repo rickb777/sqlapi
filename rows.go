@@ -5,6 +5,25 @@ import (
 	"github.com/rickb777/sqlapi/util"
 )
 
+// SqlRow is a precis of *sql.Row.
+type SqlRow interface {
+	Scan(dest ...interface{}) error
+}
+
+// SqlRows is a precis of *sql.Rows.
+type SqlRows interface {
+	SqlRow
+	Next() bool
+	Close() error
+	Err() error
+}
+
+// Type conformance assertions
+var _ SqlRow = &sql.Row{}
+var _ SqlRows = &sql.Rows{}
+
+//-------------------------------------------------------------------------------------------------
+
 // Rows provides a tool for scanning result *sql.Rows of arbitrary or varying length.
 // The internal *sql.Rows field is exported and is usable as per normal via its Next
 // and Scan methods, or the Next and ScanToMap methods can be used instead.

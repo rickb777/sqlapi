@@ -8,12 +8,13 @@ package constraint
 import (
 	"fmt"
 	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/dialect"
 )
 
 // Constraint represents data that augments the data-definition SQL statements such as CREATE TABLE.
 type Constraint interface {
 	// ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
-	ConstraintSql(name sqlapi.TableName, index int) string
+	ConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int) string
 
 	// Expresses the constraint as a constructor + literals for the API type.
 	GoString() string
@@ -44,7 +45,7 @@ type CheckConstraint struct {
 }
 
 // ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
-func (c CheckConstraint) ConstraintSql(name sqlapi.TableName, index int) string {
+func (c CheckConstraint) ConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int) string {
 	return fmt.Sprintf("CONSTRAINT %s_c%d CHECK (%s)", name, index, c.Expression)
 }
 

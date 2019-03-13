@@ -18,28 +18,34 @@ type Expression interface {
 	fmt.Stringer
 	And(Expression) Clause
 	Or(Expression) Clause
-	Build() (string, []interface{})
+	Build(q dialect.Quoter) (string, []interface{})
 }
 
 // Where constructs the sql clause beginning "WHERE ...". It will contain '?' style placeholders;
 // these need to be passed through the relevant dialect ReplacePlaceholders processing.
-func Where(wh Expression) (string, []interface{}) {
-	return Build(WhereAdverb, wh)
+// A quoter may optionally be supplied, otherwise the Default Quoter is used.
+func Where(wh Expression, q ...dialect.Quoter) (string, []interface{}) {
+	return Build(WhereAdverb, wh, q...)
 }
 
 // Having constructs the sql clause beginning "HAVING ...". It will contain '?' style placeholders;
 // these need to be passed through the relevant dialect ReplacePlaceholders processing.
-func Having(wh Expression) (string, []interface{}) {
-	return Build(HavingVerb, wh)
+// A quoter may optionally be supplied, otherwise the Default Quoter is used.
+func Having(wh Expression, q ...dialect.Quoter) (string, []interface{}) {
+	return Build(HavingVerb, wh, q...)
 }
 
 // Build constructs the sql clause beginning with some verb/adverb. It will contain '?' style placeholders;
 // these need to be passed through the relevant dialect ReplacePlaceholders processing.
-func Build(adverb string, wh Expression) (string, []interface{}) {
+func Build(adverb string, wh Expression, q ...dialect.Quoter) (string, []interface{}) {
 	if wh == nil {
 		return "", nil
 	}
-	sql, args := wh.Build()
+	quoter := dialect.DefaultQuoter
+	if len(q) > 0 {
+		quoter = q[0]
+	}
+	sql, args := wh.Build(quoter)
 	if sql == "" {
 		return "", nil
 	}
@@ -52,8 +58,8 @@ type not struct {
 	expression Expression
 }
 
-func (not not) Build() (string, []interface{}) {
-	sql, args := not.expression.Build()
+func (not not) Build(q dialect.Quoter) (string, []interface{}) {
+	sql, args := not.expression.Build(q)
 	if sql == "" {
 		return "", nil
 	}
@@ -61,7 +67,7 @@ func (not not) Build() (string, []interface{}) {
 }
 
 func (not not) String() string {
-	sql, args := not.Build()
+	sql, args := not.Build(dialect.DefaultQuoter)
 	return insertLiteralValues(sql, args)
 }
 
@@ -73,8 +79,8 @@ type Condition struct {
 	Args              []interface{}
 }
 
-func (cl Condition) Build() (string, []interface{}) {
-	sql := dialect.Quote(cl.Column) + cl.Predicate
+func (cl Condition) Build(q dialect.Quoter) (string, []interface{}) {
+	sql := q.Quote(cl.Column) + cl.Predicate
 
 	var args []interface{}
 	for _, arg := range cl.Args {
@@ -93,7 +99,7 @@ func (cl Condition) Build() (string, []interface{}) {
 }
 
 func (cl Condition) String() string {
-	sql, args := cl.Build()
+	sql, args := cl.Build(dialect.DefaultQuoter)
 	return insertLiteralValues(sql, args)
 }
 
@@ -105,7 +111,7 @@ type Clause struct {
 	conjunction string
 }
 
-func (wh Clause) Build() (string, []interface{}) {
+func (wh Clause) Build(q dialect.Quoter) (string, []interface{}) {
 	if len(wh.wheres) == 0 {
 		return "", nil
 	}
@@ -114,7 +120,7 @@ func (wh Clause) Build() (string, []interface{}) {
 	var args []interface{}
 
 	for _, where := range wh.wheres {
-		sql, a2 := where.Build()
+		sql, a2 := where.Build(q)
 		if len(sql) > 0 {
 			sqls = append(sqls, "("+sql+")")
 			args = append(args, a2...)
@@ -126,7 +132,7 @@ func (wh Clause) Build() (string, []interface{}) {
 }
 
 func (wh Clause) String() string {
-	sql, args := wh.Build()
+	sql, args := wh.Build(dialect.DefaultQuoter)
 	return insertLiteralValues(sql, args)
 }
 

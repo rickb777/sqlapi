@@ -6,9 +6,9 @@ import (
 	"github.com/rickb777/sqlapi/types"
 )
 
-type mysql struct{}
+type mysql quoter
 
-var Mysql Dialect = mysql{}
+var Mysql Dialect = mysql(ansiQuoter)
 
 func (d mysql) Index() int {
 	return MysqlIndex
@@ -20,6 +20,14 @@ func (d mysql) String() string {
 
 func (d mysql) Alias() string {
 	return "MySQL"
+}
+
+func (d mysql) Quoter() Quoter {
+	return quoter(d)
+}
+
+func (d mysql) WithQuoter(q Quoter) Dialect {
+	return mysql(q.(quoter))
 }
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
@@ -101,7 +109,7 @@ func (dialect mysql) UpdateDML(table *schema.TableDescription) string {
 }
 
 func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
-	truncate := fmt.Sprintf("TRUNCATE %s", tableName)
+	truncate := fmt.Sprintf("TRUNCATE %s", dialect.Quoter().Quote(tableName))
 	if !force {
 		return []string{truncate}
 	}

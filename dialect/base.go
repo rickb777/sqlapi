@@ -34,9 +34,9 @@ func baseTableDDL(table *schema.TableDescription, dialect Dialect, initial, fina
 
 func baseFieldDDL(w StringWriter, field *schema.Field, comma string, dialect Dialect) string {
 	w.WriteString(comma)
-	w.WriteString("\t\"")
-	w.WriteString(string(field.SqlName))
-	w.WriteString("\"\t")
+	w.WriteString("\t")
+	dialect.Quoter().Quote(field.SqlName)
+	w.WriteString("\t")
 	w.WriteString(dialect.FieldAsColumn(field))
 	return ",\n" // for next iteration
 }
@@ -48,43 +48,6 @@ func baseUpdateDML(table *schema.TableDescription) string {
 	baseWhereClauseW(w, schema.FieldList{table.Primary}, 0)
 	w.WriteString(`"`)
 	return w.String()
-}
-
-// Quote renders an identifier within double quotes. If the identifier consists of both a
-// prefix and a name, each part is quoted separately.
-func Quote(identifier string) string {
-	w := bytes.NewBuffer(make([]byte, 0, len(identifier)+4))
-	QuoteW(w, identifier)
-	return w.String()
-}
-
-// QuoteW renders an identifier within double quotes. If the identifier consists of both a
-// prefix and a name, each part is quoted separately.
-func QuoteW(w StringWriter, identifier string) {
-	elements := strings.Split(identifier, ".")
-	doubleQuoteW(w, ".", elements...)
-}
-
-func DoubleQuotedList(csv string) string {
-	identifiers := strings.Split(csv, ",")
-	w := bytes.NewBuffer(make([]byte, 0, len(identifiers)*16))
-	doubleQuoteW(w, ",", identifiers...)
-	return w.String()
-}
-
-func doubleQuoteW(w StringWriter, sep string, elements ...string) {
-	if len(elements) > 0 {
-		w.WriteString(`"`)
-		for i, e := range elements {
-			if i > 0 {
-				w.WriteString(`"`)
-				w.WriteString(sep)
-				w.WriteString(`"`)
-			}
-			w.WriteString(e)
-		}
-		w.WriteString(`"`)
-	}
 }
 
 //-------------------------------------------------------------------------------------------------
