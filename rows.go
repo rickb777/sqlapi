@@ -14,6 +14,8 @@ type SqlRow interface {
 type SqlRows interface {
 	SqlRow
 	Next() bool
+	Columns() ([]string, error)
+	ColumnTypes() ([]*sql.ColumnType, error)
 	Close() error
 	Err() error
 }
@@ -30,7 +32,7 @@ var _ SqlRows = &sql.Rows{}
 type Rows struct {
 	cols  []string
 	types []*sql.ColumnType
-	Rows  *sql.Rows
+	Rows  SqlRows
 }
 
 // RowData holds a single row result from the database.
@@ -42,7 +44,7 @@ type RowData struct {
 
 // WrapRows wraps a *sql.Rows result so that its data can be scanned into a series of
 // maps, one for each row.
-func WrapRows(rows *sql.Rows) (*Rows, error) {
+func WrapRows(rows SqlRows) (*Rows, error) {
 	cols, err := rows.Columns()
 	if err != nil {
 		return nil, err
