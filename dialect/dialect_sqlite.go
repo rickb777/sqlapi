@@ -102,14 +102,6 @@ func fieldTags(fieldIsPtr bool, tags types.Tag, column, dflt string) string {
 	return column
 }
 
-func (dialect sqlite) TableDDL(table *schema.TableDescription) string {
-	return baseTableDDL(table, dialect, " \"\\n\"+\n", `"`)
-}
-
-func (dialect sqlite) FieldDDL(w StringWriter, field *schema.Field, comma string) string {
-	return baseFieldDDL(w, field, comma, dialect)
-}
-
 func (dialect sqlite) InsertHasReturningPhrase() bool {
 	return false
 }

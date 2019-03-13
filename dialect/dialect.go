@@ -14,8 +14,6 @@ type Dialect interface {
 	Quoter() Quoter
 	WithQuoter(q Quoter) Dialect
 
-	TableDDL(tbl *schema.TableDescription) string
-	FieldDDL(w StringWriter, field *schema.Field, comma string) string
 	FieldAsColumn(field *schema.Field) string
 	TruncateDDL(tableName string, force bool) []string
 	CreateTableSettings() string

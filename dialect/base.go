@@ -4,42 +4,7 @@ import (
 	"bytes"
 	"github.com/rickb777/sqlapi/schema"
 	"strings"
-	"text/tabwriter"
 )
-
-// Table returns a SQL statement to create the table.
-func baseTableDDL(table *schema.TableDescription, dialect Dialect, initial, final string) string {
-
-	// use a large default buffer size of so that
-	// the tabbing doesn't get prematurely flushed
-	// resulting in un-even lines.
-	var byt = make([]byte, 0, 100*len(table.Fields))
-	var buf = bytes.NewBuffer(byt)
-
-	// use a tab writer to evenly space the column
-	// names and column types.
-	var tab = tabwriter.NewWriter(buf, 0, 8, 1, ' ', 0)
-	w := Adapt(tab)
-	comma := initial
-	for _, field := range table.Fields {
-		comma = dialect.FieldDDL(w, field, comma)
-	}
-	w.WriteString(final)
-
-	// flush the tab writer to write to the buffer
-	tab.Flush()
-
-	return buf.String()
-}
-
-func baseFieldDDL(w StringWriter, field *schema.Field, comma string, dialect Dialect) string {
-	w.WriteString(comma)
-	w.WriteString("\t")
-	dialect.Quoter().Quote(field.SqlName)
-	w.WriteString("\t")
-	w.WriteString(dialect.FieldAsColumn(field))
-	return ",\n" // for next iteration
-}
 
 func baseUpdateDML(table *schema.TableDescription) string {
 	w := &bytes.Buffer{}

@@ -94,14 +94,6 @@ func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	return fieldTags(field.Type.IsPtr, tags, column, dflt)
 }
 
-func (dialect postgres) TableDDL(table *schema.TableDescription) string {
-	return baseTableDDL(table, dialect, " `\n", "`")
-}
-
-func (dialect postgres) FieldDDL(w StringWriter, field *schema.Field, comma string) string {
-	return baseFieldDDL(w, field, comma, dialect)
-}
-
 func (dialect postgres) InsertHasReturningPhrase() bool {
 	return true
 }
