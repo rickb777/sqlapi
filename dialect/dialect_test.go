@@ -30,6 +30,23 @@ func TestQuote(t *testing.T) {
 	}
 }
 
+func TestSplitAndQuote(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	cases := []struct {
+		q        Quoter
+		expected string
+	}{
+		{AnsiQuoter, `["aa", "bb", "cc"]`},
+		{MySqlQuoter, "[`aa`, `bb`, `cc`]"},
+		{NoQuoter, `[aa, bb, cc]`},
+	}
+	for _, c := range cases {
+		s1 := c.q.SplitAndQuote("aa,bb,cc", "[", ", ", "]")
+		g.Expect(s1).Should(Equal(c.expected))
+	}
+}
+
 func TestPlaceholders(t *testing.T) {
 	g := NewGomegaWithT(t)
 
