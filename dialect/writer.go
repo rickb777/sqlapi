@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -9,6 +10,7 @@ import (
 type StringWriter interface {
 	io.Writer
 	WriteString(s string) (n int, err error)
+	String() string
 }
 
 type swAdapter struct {
@@ -23,6 +25,10 @@ func (w swAdapter) Write(b []byte) (n int, err error) {
 // WriteString writes a string to its writer.
 func (w swAdapter) WriteString(s string) (n int, err error) {
 	return w.w.Write([]byte(s))
+}
+
+func (w swAdapter) String() string {
+	return w.w.(fmt.Stringer).String()
 }
 
 // Adapt wraps an io.Writer as a StringWriter.
