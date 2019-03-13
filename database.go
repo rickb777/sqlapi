@@ -106,9 +106,9 @@ func (database *database) DB() Execer {
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
 //
-// Panics if the Execer is not a TxStarter.
+// Panics if the Execer is not a SqlDB.
 func (database *database) BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
-	return database.db.(TxStarter).BeginTx(ctx, opts)
+	return database.db.(SqlDB).BeginTx(ctx, opts)
 }
 
 // Begin starts a transaction using default options. The default isolation level is
@@ -139,7 +139,7 @@ func (database *database) Wrapper() interface{} {
 // PingContext verifies a connection to the database is still alive,
 // establishing a connection if necessary.
 func (database *database) PingContext(ctx context.Context) error {
-	return database.db.(*sql.DB).PingContext(ctx)
+	return database.db.(SqlDB).PingContext(ctx)
 }
 
 // Ping verifies a connection to the database is still alive,
@@ -215,7 +215,7 @@ func (database *database) QueryRowContext(ctx context.Context, query string, arg
 
 // Stats returns database statistics.
 func (database *database) Stats() sql.DBStats {
-	return database.db.(*sql.DB).Stats()
+	return database.db.(SqlDB).Stats()
 }
 
 //-------------------------------------------------------------------------------------------------

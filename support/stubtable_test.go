@@ -2,7 +2,6 @@ package support
 
 import (
 	"context"
-	"database/sql"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"log"
@@ -36,7 +35,7 @@ func (tbl StubTable) Name() sqlapi.TableName {
 	return tbl.name
 }
 
-func (tbl StubTable) DB() *sql.DB {
+func (tbl StubTable) DB() sqlapi.SqlDB {
 	return nil
 }
 
@@ -44,7 +43,7 @@ func (tbl StubTable) Execer() sqlapi.Execer {
 	return nil
 }
 
-func (tbl StubTable) Tx() *sql.Tx {
+func (tbl StubTable) Tx() sqlapi.SqlTx {
 	return nil
 }
 

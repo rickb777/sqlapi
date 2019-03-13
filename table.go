@@ -22,11 +22,11 @@ type Table interface {
 
 	// DB gets the wrapped database handle, provided this is not within a transaction.
 	// Panics if it is in the wrong state - use IsTx() if necessary.
-	DB() *sql.DB
+	DB() SqlDB
 
 	// Tx gets the wrapped transaction handle, provided this is within a transaction.
 	// Panics if it is in the wrong state - use IsTx() if necessary.
-	Tx() *sql.Tx
+	Tx() SqlTx
 
 	// IsTx tests whether this is within a transaction.
 	IsTx() bool

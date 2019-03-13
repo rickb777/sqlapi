@@ -131,7 +131,7 @@ func (tbl RecordTable) PkColumn() string {
 
 // DB gets the wrapped database handle, provided this is not within a transaction.
 // Panics if it is in the wrong state - use IsTx() if necessary.
-func (tbl RecordTable) DB() *sql.DB {
+func (tbl RecordTable) DB() sqlapi.SqlDB {
 	return tbl.db.(*sql.DB)
 }
 
@@ -142,7 +142,7 @@ func (tbl RecordTable) Execer() sqlapi.Execer {
 
 // Tx gets the wrapped transaction handle, provided this is within a transaction.
 // Panics if it is in the wrong state - use IsTx() if necessary.
-func (tbl RecordTable) Tx() *sql.Tx {
+func (tbl RecordTable) Tx() sqlapi.SqlTx {
 	return tbl.db.(*sql.Tx)
 }
 
@@ -162,10 +162,10 @@ func (tbl RecordTable) IsTx() bool {
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
 //
-// Panics if the Execer is not TxStarter.
+// Panics if the Execer is not SqlDB.
 func (tbl RecordTable) BeginTx(opts *sql.TxOptions) (RecordTable, error) {
 	var err error
-	tbl.db, err = tbl.db.(sqlapi.TxStarter).BeginTx(tbl.ctx, opts)
+	tbl.db, err = tbl.db.(sqlapi.SqlDB).BeginTx(tbl.ctx, opts)
 	return tbl, tbl.logIfError(err)
 }
 

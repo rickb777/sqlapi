@@ -35,10 +35,12 @@ type Execer interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
-// TxStarter is able to begin transactions.
-// See database/sql.
-type TxStarter interface {
+// SqlDB is able to make queries and begin transactions.
+type SqlDB interface {
+	Execer
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+	PingContext(ctx context.Context) error
+	Stats() sql.DBStats
 }
 
 // SqlTx is a precis of *sql.Tx
@@ -70,6 +72,6 @@ type SqlStmt interface {
 
 // Type conformance assertions
 var _ Execer = &sql.DB{}
-var _ TxStarter = &sql.DB{}
+var _ SqlDB = &sql.DB{}
 var _ SqlTx = &sql.Tx{}
 var _ SqlStmt = &sql.Stmt{}
