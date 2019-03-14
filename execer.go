@@ -46,6 +46,7 @@ type SqlDB interface {
 // SqlTx is a precis of *sql.Tx
 type SqlTx interface {
 	Execer
+	Commit() error
 	Rollback() error
 }
 
