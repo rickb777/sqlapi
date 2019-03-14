@@ -34,11 +34,13 @@ func (d mysql) WithQuoter(q Quoter) Dialect {
 
 func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
+	indexed := len(tags.Index) > 0 || len(tags.Unique) > 0
+
 	switch field.Encode {
 	case schema.ENCJSON:
 		return "json"
 	case schema.ENCTEXT:
-		return varchar(tags.Size)
+		return varchar(tags.Size, indexed)
 	}
 
 	column := "mediumblob"
@@ -68,7 +70,7 @@ func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	case types.Bool:
 		column = "boolean"
 	case types.String:
-		column = varchar(tags.Size)
+		column = varchar(tags.Size, indexed)
 		dflt = fmt.Sprintf("'%s'", tags.Default)
 	}
 
@@ -81,8 +83,12 @@ func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	return column
 }
 
-func varchar(size int) string {
-	if size == 0 {
+func varchar(size int, indexed bool) string {
+	if size == 0 { // unspecified
+		if indexed {
+			// largest variable size that has only one length byte
+			return "varchar(255)"
+		}
 		return "text"
 	}
 	if size >= 2<<24 {

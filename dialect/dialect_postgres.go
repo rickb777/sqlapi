@@ -37,11 +37,12 @@ func (d postgres) WithQuoter(q Quoter) Dialect {
 
 func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
+
 	switch field.Encode {
 	case schema.ENCJSON:
 		return "json"
 	case schema.ENCTEXT:
-		return varchar(tags.Size)
+		return "text"
 	}
 
 	column := "bytea"
