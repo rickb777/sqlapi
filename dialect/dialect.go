@@ -61,8 +61,8 @@ func PickDialect(name string) Dialect {
 // are handled according to SQL grammar.
 type Quoter interface {
 	Quote(identifier string) string
+	QuoteN(identifiers []string) []string
 	QuoteW(w StringWriter, identifier string)
-	SplitAndQuote(csv, before, separator, after string) string
 }
 
 const (
@@ -95,15 +95,6 @@ func NewQuoter(mark string) Quoter {
 // are handled according to SQL grammar.
 type quoter string
 
-// SplitAndQuote splits a comma-separated list and renders it with each word quoted.
-// The result is prefixed by 'before' and suffixed by 'after'.
-func (q quoter) SplitAndQuote(csv, before, separator, after string) string {
-	identifiers := strings.Split(csv, ",")
-	w := bytes.NewBuffer(make([]byte, 0, len(identifiers)*16))
-	quoteW(w, before+string(q), string(q)+separator+string(q), string(q)+after, identifiers...)
-	return w.String()
-}
-
 // Quote renders an identifier within quote marks. If the identifier consists of both a
 // prefix and a name, each part is quoted separately. For better performance, use QuoteW
 // instead of Quote wherever possible.
@@ -115,6 +106,19 @@ func (q quoter) Quote(identifier string) string {
 	w := bytes.NewBuffer(make([]byte, 0, len(identifier)+4))
 	q.QuoteW(w, identifier)
 	return w.String()
+}
+
+// QuoteN quotes a list of identifiers using Quote.
+func (q quoter) QuoteN(identifiers []string) []string {
+	if len(q) == 0 {
+		return identifiers
+	}
+
+	var r []string
+	for _, id := range identifiers {
+		r = append(r, q.Quote(id))
+	}
+	return r
 }
 
 // QuoteW renders an identifier within quote marks. If the identifier consists of both a

@@ -36,14 +36,14 @@ func TestSplitAndQuote(t *testing.T) {
 
 	cases := []struct {
 		q        Quoter
-		expected string
+		expected []string
 	}{
-		{AnsiQuoter, `["aa", "bb", "cc"]`},
-		{MySqlQuoter, "[`aa`, `bb`, `cc`]"},
-		{NoQuoter, `[aa, bb, cc]`},
+		{AnsiQuoter, []string{`"aa"`, `"bb"`, `"cc"`}},
+		{MySqlQuoter, []string{"`aa`", "`bb`", "`cc`"}},
+		{NoQuoter, []string{`aa`, `bb`, `cc`}},
 	}
 	for _, c := range cases {
-		s1 := c.q.SplitAndQuote("aa,bb,cc", "[", ", ", "]")
+		s1 := c.q.QuoteN([]string{"aa", "bb", "cc"})
 		g.Expect(s1).Should(Equal(c.expected))
 	}
 }
