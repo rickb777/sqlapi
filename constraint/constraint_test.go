@@ -12,19 +12,22 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/sqlapi/vanilla"
+	"log"
 	"os"
+	"strings"
 	"testing"
 )
 
 var db *sql.DB
-var dl dialect.Dialect = dialect.Sqlite
+var di dialect.Dialect
 
 func connect() {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
 	if !ok {
 		dbDriver = "sqlite3"
 	}
-	dl = dialect.PickDialect(dbDriver)
+	di = dialect.PickDialect(dbDriver)
 	dsn, ok := os.LookupEnv("GO_DSN")
 	if !ok {
 		dsn = ":memory:"
@@ -36,6 +39,20 @@ func connect() {
 	db = conn
 }
 
+func newDatabase() sqlapi.Database {
+	connect()
+	if db == nil {
+		return nil
+	}
+
+	d := sqlapi.NewDatabase(db, di, nil, nil)
+	if testing.Verbose() {
+		lgr := log.New(os.Stdout, "", log.LstdFlags)
+		d = sqlapi.NewDatabase(db, di, lgr, nil)
+	}
+	return d
+}
+
 func cleanup() {
 	if db != nil {
 		db.Close()
@@ -43,106 +60,82 @@ func cleanup() {
 	}
 }
 
-//func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
-//	g := NewGomegaWithT(t)
-//	connect()
-//	defer cleanup()
-//
-//	fkc0 := constraint.FkConstraint{
-//		ForeignKeyColumn: "addresspk",
-//		Parent:           constraint.Reference{TableName: "addresses", Column: "identity"},
-//		Update:           "restrict",
-//		Delete:           "cascade"}
-//
-//	d := sqlapi.NewDatabase(db, dl, nil, nil)
-//	if testing.Verbose() {
-//		lgr := log.New(os.Stderr, "", log.LstdFlags)
-//		d = sqlapi.NewDatabase(db, dl, lgr, nil)
-//	}
-//
-//	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
-//	fkc := persons.Constraints().FkConstraints()[0]
-//	s := fkc.ConstraintSql(dl, persons.Name(), 0)
-//	g.Expect(s).To(ContainSubstring("CONSTRAINT pfx_persons_c0 foreign key ("), s)
-//	g.Expect(s).To(ContainSubstring("addresspk"), s)
-//	g.Expect(s).To(ContainSubstring("identity"), s)
-//	g.Expect(s).To(ContainSubstring(") references pfx_addresses ("), s)
-//	g.Expect(s).To(ContainSubstring(") on update restrict on delete cascade"), s)
-//}
+func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
+	g := NewGomegaWithT(t)
+	d := newDatabase()
+	defer cleanup()
 
-//func TestForeignKeyConstraint_withoutParentColumn(t *testing.T) {
-//	g := NewGomegaWithT(t)
-//	connect()
-//	defer cleanup()
-//
-//	fkc0 := constraint.FkConstraint{
-//		ForeignKeyColumn: "addresspk",
-//		Parent:           constraint.Reference{TableName: "addresses", Column: ""},
-//		Update:           "restrict",
-//		Delete:           "cascade"}
-//
-//	d := sqlapi.NewDatabase(db, dl, nil, nil)
-//	if testing.Verbose() {
-//		lgr := log.New(os.Stderr, "", log.LstdFlags)
-//		d = sqlapi.NewDatabase(db, dl, lgr, nil)
-//	}
-//
-//	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
-//	fkc := persons.Constraints().FkConstraints()[0]
-//	s := fkc.ConstraintSql(dl, persons.Name(), 0)
-//	g.Expect(s).To(ContainSubstring("CONSTRAINT pfx_persons_c0 foreign key ("), s)
-//	g.Expect(s).To(ContainSubstring("addresspk"), s)
-//	g.Expect(s).To(ContainSubstring(") references pfx_addresses on update restrict on delete cascade"), s)
-//}
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addresspk",
+		Parent:           constraint.Reference{TableName: "addresses", Column: "identity"},
+		Update:           "restrict",
+		Delete:           "cascade"}
 
-//func TestIdsUsedAsForeignKeys(t *testing.T) {
-//	g := NewGomegaWithT(t)
-//	connect()
-//	defer cleanup()
-//
-//	fkc0 := constraint.FkConstraint{
-//		ForeignKeyColumn: "addressid",
-//		Parent:           constraint.Reference{TableName: "addresses", Column: "id"},
-//		Update:           "cascade",
-//		Delete:           "cascade"}
-//
-//	d := sqlapi.NewDatabase(db, dl, nil, nil)
-//	if testing.Verbose() {
-//		lgr := log.New(os.Stderr, "", log.LstdFlags)
-//		d = sqlapi.NewDatabase(db, dl, lgr, nil)
-//	}
-//
-//	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
-//
-//	setupSql := strings.Replace(createTables, "¬", "`", -1)
-//	_, err := d.Exec(setupSql)
-//	g.Expect(err).To(BeNil())
-//
-//	aid1 := insertOne(g, d, address1)
-//	aid2 := insertOne(g, d, address2)
-//	aid3 := insertOne(g, d, address3)
-//	aid4 := insertOne(g, d, address4)
-//
-//	insertOne(g, d, fmt.Sprintf(person1a, aid1))
-//	insertOne(g, d, fmt.Sprintf(person1b, aid1))
-//	insertOne(g, d, fmt.Sprintf(person2a, aid2))
-//
-//	fkc := persons.Constraints().FkConstraints()[0]
-//
-//	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
-//
-//	g.Expect(err).To(BeNil())
-//	g.Expect(m1).To(HaveLen(2))
-//	g.Expect(m1.Contains(aid1)).To(BeTrue())
-//	g.Expect(m1.Contains(aid2)).To(BeTrue())
-//
-//	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
-//
-//	g.Expect(err).To(BeNil())
-//	g.Expect(m2).To(HaveLen(2))
-//	g.Expect(m2.Contains(aid3)).To(BeTrue())
-//	g.Expect(m2.Contains(aid4)).To(BeTrue())
-//}
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	fkc := persons.Constraints().FkConstraints()[0]
+	s := fkc.ConstraintSql(dialect.AnsiQuoter, persons.Name(), 0)
+	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
+}
+
+func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
+	g := NewGomegaWithT(t)
+	d := newDatabase()
+	defer cleanup()
+
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addresspk",
+		Parent:           constraint.Reference{TableName: "addresses", Column: ""},
+		Update:           "restrict",
+		Delete:           "cascade"}
+
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	fkc := persons.Constraints().FkConstraints()[0]
+	s := fkc.ConstraintSql(dialect.NoQuoter, persons.Name(), 0)
+	g.Expect(s).To(Equal(`CONSTRAINT pfx_persons_c0 foreign key (addresspk) references pfx_addresses on update restrict on delete cascade`), s)
+}
+
+func TestIdsUsedAsForeignKeys(t *testing.T) {
+	g := NewGomegaWithT(t)
+	d := newDatabase()
+	defer cleanup()
+
+	fkc0 := constraint.FkConstraint{
+		ForeignKeyColumn: "addressid",
+		Parent:           constraint.Reference{TableName: "addresses", Column: "id"},
+		Update:           "cascade",
+		Delete:           "cascade"}
+
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+
+	setupSql := strings.Replace(createTables, "¬", "`", -1)
+	_, err := d.Exec(setupSql)
+	g.Expect(err).To(BeNil())
+
+	aid1 := insertOne(g, d, address1)
+	aid2 := insertOne(g, d, address2)
+	aid3 := insertOne(g, d, address3)
+	aid4 := insertOne(g, d, address4)
+
+	insertOne(g, d, fmt.Sprintf(person1a, aid1))
+	insertOne(g, d, fmt.Sprintf(person1b, aid1))
+	insertOne(g, d, fmt.Sprintf(person2a, aid2))
+
+	fkc := persons.Constraints().FkConstraints()[0]
+
+	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
+
+	g.Expect(err).To(BeNil())
+	g.Expect(m1).To(HaveLen(2))
+	g.Expect(m1.Contains(aid1)).To(BeTrue())
+	g.Expect(m1.Contains(aid2)).To(BeTrue())
+
+	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
+
+	g.Expect(err).To(BeNil())
+	g.Expect(m2).To(HaveLen(2))
+	g.Expect(m2.Contains(aid3)).To(BeTrue())
+	g.Expect(m2.Contains(aid4)).To(BeTrue())
+}
 
 func TestFkConstraintOfField(t *testing.T) {
 	g := NewGomegaWithT(t)

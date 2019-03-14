@@ -83,7 +83,8 @@ func (c FkConstraint) OnDelete(consequence Consequence) FkConstraint {
 
 // ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
 func (c FkConstraint) ConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int) string {
-	return fmt.Sprintf("CONSTRAINT %s_c%d %s", name, index, c.sql(q, name.Prefix))
+	id := fmt.Sprintf("%s_c%d", name, index)
+	return fmt.Sprintf("CONSTRAINT %s %s", q.Quote(id), c.sql(q, name.Prefix))
 }
 
 // Column constructs the foreign key clause needed to configure the database.
@@ -92,8 +93,8 @@ func (c FkConstraint) sql(q dialect.Quoter, prefix string) string {
 	if c.Parent.Column != "" {
 		column = " (" + q.Quote(c.Parent.Column) + ")"
 	}
-	return fmt.Sprintf("foreign key (%s) references %s%s%s%s%s",
-		q.Quote(c.ForeignKeyColumn), q.Quote(prefix), q.Quote(c.Parent.TableName), q.Quote(column),
+	return fmt.Sprintf("foreign key (%s) references %s%s%s%s",
+		q.Quote(c.ForeignKeyColumn), q.Quote(prefix+c.Parent.TableName), column,
 		c.Update.Apply(" ", "update"),
 		c.Delete.Apply(" ", "delete"))
 }
