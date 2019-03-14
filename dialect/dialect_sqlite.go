@@ -33,14 +33,7 @@ func (d sqlite) WithQuoter(q Quoter) Dialect {
 // For integers, the value is a signed integer, stored in 1, 2, 3, 4, 6, or 8 bytes depending on the magnitude of the value
 // For reals, the value is a floating point value, stored as an 8-byte IEEE floating point number.
 
-func (dialect sqlite) FieldAsColumn(w StringWriter, field *schema.Field) {
-	w.WriteString("\t")
-	dialect.Quoter().QuoteW(w, field.SqlName)
-	w.WriteString("\t")
-	w.WriteString(sqliteFieldAsColumn(field))
-}
-
-func sqliteFieldAsColumn(field *schema.Field) string {
+func (dialect sqlite) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	if tags.Auto {
 		// In sqlite, "autoincrement" is less efficient than built-in "rowid"

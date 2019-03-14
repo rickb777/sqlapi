@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"strings"
 )
 
 type mysql quoter
@@ -33,14 +32,7 @@ func (d mysql) WithQuoter(q Quoter) Dialect {
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
 
-func (dialect mysql) FieldAsColumn(w StringWriter, field *schema.Field) {
-	w.WriteString("\t")
-	dialect.Quoter().QuoteW(w, field.SqlName)
-	w.WriteString("\t")
-	w.WriteString(mysqlFieldAsColumn(field))
-}
-
-func mysqlFieldAsColumn(field *schema.Field) string {
+func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
 	case schema.ENCJSON:
@@ -133,18 +125,6 @@ func (dialect mysql) HasNumberedPlaceholders() bool {
 
 func (dialect mysql) Placeholders(n int) string {
 	return simpleQueryPlaceholders(n)
-}
-
-const placeholders = "?,?,?,?,?,?,?,?,?,?"
-
-func simpleQueryPlaceholders(n int) string {
-	if n == 0 {
-		return ""
-	} else if n <= 10 {
-		m := (n * 2) - 1
-		return placeholders[:m]
-	}
-	return strings.Repeat("?,", n-1) + "?"
 }
 
 // ReplacePlaceholders converts a string containing '?' placeholders to

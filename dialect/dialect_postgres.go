@@ -35,14 +35,7 @@ func (d postgres) WithQuoter(q Quoter) Dialect {
 // https://www.postgresql.org/docs/9.6/static/datatype.html
 // https://www.convert-in.com/mysql-to-postgres-types-mapping.htm
 
-func (dialect postgres) FieldAsColumn(w StringWriter, field *schema.Field) {
-	w.WriteString("\t")
-	dialect.Quoter().QuoteW(w, field.SqlName)
-	w.WriteString("\t")
-	w.WriteString(postgresFieldAsColumn(field))
-}
-
-func postgresFieldAsColumn(field *schema.Field) string {
+func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
 	case schema.ENCJSON:

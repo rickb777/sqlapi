@@ -19,7 +19,7 @@ type Dialect interface {
 	// WithQuoter returns a modified Dialect with a given quoter.
 	WithQuoter(q Quoter) Dialect
 
-	FieldAsColumn(w StringWriter, field *schema.Field)
+	FieldAsColumn(field *schema.Field) string
 	TruncateDDL(tableName string, force bool) []string
 	CreateTableSettings() string
 	InsertHasReturningPhrase() bool
