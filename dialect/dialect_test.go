@@ -3,6 +3,7 @@ package dialect
 import (
 	"bytes"
 	. "github.com/onsi/gomega"
+	"github.com/rickb777/sqlapi/schema"
 	"testing"
 )
 
@@ -97,5 +98,41 @@ func TestPickDialect(t *testing.T) {
 	for _, c := range cases {
 		s := PickDialect(c.name)
 		g.Expect(s).Should(Equal(c.di))
+	}
+}
+
+func TestFieldAsColumn(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	cases := []struct {
+		di       Dialect
+		field    *schema.Field
+		expected string
+	}{
+		{Mysql, id, "\t\"id\"\tbigint not null primary key auto_increment"},
+		{Mysql, name, "\t\"username\"\tvarchar(2048) not null"},
+		{Mysql, active, "\t\"active\"\tboolean not null"},
+		{Mysql, age, "\t\"age\"\tint unsigned default null"},
+		{Mysql, bmi, "\t\"bmi\"\tfloat default null"},
+		{Mysql, labels, "\t\"labels\"\tjson"},
+
+		{Postgres, id, "\t\"id\"\tbigserial not null primary key"},
+		{Postgres, name, "\t\"username\"\ttext not null"},
+		{Postgres, active, "\t\"active\"\tboolean not null"},
+		{Postgres, age, "\t\"age\"\tbigint default null"},
+		{Postgres, bmi, "\t\"bmi\"\treal default null"},
+		{Postgres, labels, "\t\"labels\"\tjson"},
+
+		{Sqlite, id, "\t\"id\"\tinteger not null primary key autoincrement"},
+		{Sqlite, name, "\t\"username\"\ttext not null"},
+		{Sqlite, active, "\t\"active\"\tboolean not null"},
+		{Sqlite, age, "\t\"age\"\tint unsigned default null"},
+		{Sqlite, bmi, "\t\"bmi\"\tfloat default null"},
+		{Sqlite, labels, "\t\"labels\"\ttext"},
+	}
+	for _, c := range cases {
+		b := &bytes.Buffer{}
+		c.di.FieldAsColumn(b, c.field)
+		g.Expect(b.String()).Should(Equal(c.expected), c.di.String())
 	}
 }

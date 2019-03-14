@@ -8,13 +8,18 @@ import (
 
 // Dialect is an abstraction of a type of database.
 type Dialect interface {
+	// Index returns a consistent ID for this dialect, regardless of other settings.
 	Index() int
+	// String returns the name of this dialect.
 	String() string
+	// Alias is an alternative name for this dialect.
 	Alias() string
+	// Quoter is the tool used for quoting identifiers.
 	Quoter() Quoter
+	// WithQuoter returns a modified Dialect with a given quoter.
 	WithQuoter(q Quoter) Dialect
 
-	FieldAsColumn(field *schema.Field) string
+	FieldAsColumn(w StringWriter, field *schema.Field)
 	TruncateDDL(tableName string, force bool) []string
 	CreateTableSettings() string
 	InsertHasReturningPhrase() bool

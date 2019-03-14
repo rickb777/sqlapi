@@ -1,6 +1,7 @@
-package schema
+package dialect
 
 import (
+	. "github.com/rickb777/sqlapi/schema"
 	. "github.com/rickb777/sqlapi/types"
 )
 

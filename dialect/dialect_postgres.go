@@ -35,7 +35,14 @@ func (d postgres) WithQuoter(q Quoter) Dialect {
 // https://www.postgresql.org/docs/9.6/static/datatype.html
 // https://www.convert-in.com/mysql-to-postgres-types-mapping.htm
 
-func (dialect postgres) FieldAsColumn(field *schema.Field) string {
+func (dialect postgres) FieldAsColumn(w StringWriter, field *schema.Field) {
+	w.WriteString("\t")
+	dialect.Quoter().QuoteW(w, field.SqlName)
+	w.WriteString("\t")
+	w.WriteString(postgresFieldAsColumn(field))
+}
+
+func postgresFieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
 	case schema.ENCJSON:
@@ -59,7 +66,7 @@ func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	case types.Uint, types.Uint64:
 		// Some DBs (including postgresql) do not support unsigned integers. Rejecting
 		// uint64 >= 1<<63 prevents them becoming indistinguishable from int64s < 0. If you need
-		// to insert such int64 anyway, you have to explicitly convert in on input to int64 and
+		// to insert such int64 anyway, you have to explicitly convert it on input to int64 and
 		// convert it back to uint64 on output - and take care to never insert a signed integer
 		// into the same column.
 		column = "bigint" // incomplete number range but more storage efficiency
@@ -76,7 +83,7 @@ func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	case types.Bool:
 		column = "boolean"
 	case types.String:
-		column = varchar(tags.Size)
+		column = "text"
 		dflt = fmt.Sprintf("'%s'", tags.Default)
 	}
 
@@ -96,26 +103,6 @@ func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 
 func (dialect postgres) InsertHasReturningPhrase() bool {
 	return true
-}
-
-func (dialect postgres) UpdateDML(table *schema.TableDescription) string {
-	w := &bytes.Buffer{}
-	w.WriteString("`")
-
-	comma := ""
-	for _, field := range table.Fields {
-		if !field.GetTags().Auto {
-			w.WriteString(comma)
-			dialect.Quoter().QuoteW(w, field.SqlName)
-			w.WriteString("=?")
-			comma = ","
-		}
-	}
-
-	w.WriteByte(' ')
-	baseWhereClauseW(w, schema.FieldList{table.Primary}, 0)
-	w.WriteByte('`')
-	return w.String()
 }
 
 func (dialect postgres) TruncateDDL(tableName string, force bool) []string {

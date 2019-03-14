@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"strings"
 )
 
 type mysql quoter
@@ -32,7 +33,14 @@ func (d mysql) WithQuoter(q Quoter) Dialect {
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
 
-func (dialect mysql) FieldAsColumn(field *schema.Field) string {
+func (dialect mysql) FieldAsColumn(w StringWriter, field *schema.Field) {
+	w.WriteString("\t")
+	dialect.Quoter().QuoteW(w, field.SqlName)
+	w.WriteString("\t")
+	w.WriteString(mysqlFieldAsColumn(field))
+}
+
+func mysqlFieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	switch field.Encode {
 	case schema.ENCJSON:
@@ -66,7 +74,7 @@ func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 	case types.Float64:
 		column = "double"
 	case types.Bool:
-		column = "tinyint(1)"
+		column = "boolean"
 	case types.String:
 		column = varchar(tags.Size)
 		dflt = fmt.Sprintf("'%s'", tags.Default)
@@ -82,10 +90,14 @@ func (dialect mysql) FieldAsColumn(field *schema.Field) string {
 }
 
 func varchar(size int) string {
-	// Assigns an arbitrary size if none is provided.
-	// 255 is chosen because the max. index key length is 767 and UTF8 might use up to three bytes per character.
 	if size == 0 {
-		size = 255
+		return "text"
+	}
+	if size >= 2<<24 {
+		return "longtext"
+	}
+	if size >= 2<<16 {
+		return "mediumtext"
 	}
 	return fmt.Sprintf("varchar(%d)", size)
 }
@@ -94,10 +106,6 @@ func varchar(size int) string {
 
 func (dialect mysql) InsertHasReturningPhrase() bool {
 	return false
-}
-
-func (dialect mysql) UpdateDML(table *schema.TableDescription) string {
-	return baseUpdateDML(table)
 }
 
 func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
@@ -124,7 +132,19 @@ func (dialect mysql) HasNumberedPlaceholders() bool {
 }
 
 func (dialect mysql) Placeholders(n int) string {
-	return baseQueryPlaceholders(n)
+	return simpleQueryPlaceholders(n)
+}
+
+const placeholders = "?,?,?,?,?,?,?,?,?,?"
+
+func simpleQueryPlaceholders(n int) string {
+	if n == 0 {
+		return ""
+	} else if n <= 10 {
+		m := (n * 2) - 1
+		return placeholders[:m]
+	}
+	return strings.Repeat("?,", n-1) + "?"
 }
 
 // ReplacePlaceholders converts a string containing '?' placeholders to
