@@ -46,7 +46,12 @@ type CheckConstraint struct {
 
 // ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
 func (c CheckConstraint) ConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int) string {
-	return fmt.Sprintf("CONSTRAINT %s_c%d CHECK (%s)", name, index, c.Expression)
+	return baseConstraintSql(q, name, index, "CHECK (", c.Expression, ")")
+}
+
+func baseConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int, exp1, exp2, exp3 string) string {
+	id := fmt.Sprintf("%s_c%d", name, index)
+	return fmt.Sprintf("CONSTRAINT %s %s%s%s", q.Quote(id), exp1, exp2, exp3)
 }
 
 func (c CheckConstraint) GoString() string {

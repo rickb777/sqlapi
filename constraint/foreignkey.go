@@ -83,8 +83,7 @@ func (c FkConstraint) OnDelete(consequence Consequence) FkConstraint {
 
 // ConstraintSql constructs the CONSTRAINT clause to be included in the CREATE TABLE.
 func (c FkConstraint) ConstraintSql(q dialect.Quoter, name sqlapi.TableName, index int) string {
-	id := fmt.Sprintf("%s_c%d", name, index)
-	return fmt.Sprintf("CONSTRAINT %s %s", q.Quote(id), c.sql(q, name.Prefix))
+	return baseConstraintSql(q, name, index, c.sql(q, name.Prefix), "", "")
 }
 
 // Column constructs the foreign key clause needed to configure the database.

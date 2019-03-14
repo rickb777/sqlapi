@@ -60,6 +60,21 @@ func cleanup() {
 	}
 }
 
+func TestCheckConstraint(t *testing.T) {
+	g := NewGomegaWithT(t)
+	d := newDatabase()
+	defer cleanup()
+
+	cc0 := constraint.CheckConstraint{
+		Expression: "role < 3",
+	}
+
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(cc0)
+	fkc := persons.Constraints()[0]
+	s := fkc.ConstraintSql(dialect.AnsiQuoter, persons.Name(), 0)
+	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" CHECK (role < 3)`), s)
+}
+
 func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase()
@@ -72,7 +87,7 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 		Delete:           "cascade"}
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
-	fkc := persons.Constraints().FkConstraints()[0]
+	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(dialect.AnsiQuoter, persons.Name(), 0)
 	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
 }
