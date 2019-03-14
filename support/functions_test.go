@@ -51,8 +51,12 @@ func TestSliceSql(t *testing.T) {
 			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
 		},
 		{
-			dialect:  dialect.Mysql.WithQuoter(dialect.MySqlQuoter),
+			dialect:  dialect.Mysql,
 			expected: "SELECT `foo` FROM `p`.`table` WHERE (`room`=?) AND (`fun`=?) ORDER BY `xyz`",
+		},
+		{
+			dialect:  dialect.Mysql.WithQuoter(dialect.AnsiQuoter),
+			expected: `SELECT "foo" FROM "p"."table" WHERE ("room"=?) AND ("fun"=?) ORDER BY "xyz"`,
 		},
 		{
 			dialect:  dialect.Postgres,

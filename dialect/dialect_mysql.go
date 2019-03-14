@@ -8,7 +8,7 @@ import (
 
 type mysql quoter
 
-var Mysql Dialect = mysql(ansiQuoter)
+var Mysql Dialect = mysql(mySqlQuoter)
 
 func (d mysql) Index() int {
 	return MysqlIndex
