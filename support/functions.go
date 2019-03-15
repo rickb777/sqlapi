@@ -17,12 +17,13 @@ func ReplaceTableName(tbl sqlapi.Table, query string) string {
 }
 
 // QueryOneNullThing queries for one cell of one record. Normally, the holder will be sql.NullString or similar.
+// If required, the query can use "{TABLE}" in place of the table name.
 func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
 	database := tbl.Database()
 
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return err
 	}
@@ -64,7 +65,7 @@ func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.Que
 // The args are for any placeholder parameters in the query.
 //
 // The caller must call rows.Close() on the result.
-func Query(tbl sqlapi.Table, query string, args ...interface{}) (*sql.Rows, error) {
+func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
 	database.LogQuery(q2, args...)

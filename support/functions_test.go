@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/sqlapi/where"
 	"testing"
 )
@@ -65,12 +66,14 @@ func TestSliceSql(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		d := &StubDatabase{}
 		tbl := StubTable{
 			name: sqlapi.TableName{
 				Prefix: "p.",
 				Name:   "table",
 			},
-			dialect: c.dialect,
+			dialect:  c.dialect,
+			database: d,
 		}
 		wh := where.Eq("room", 101).And(where.Eq("fun", true))
 
@@ -79,4 +82,44 @@ func TestSliceSql(t *testing.T) {
 		g.Expect(q).To(Equal(c.expected))
 		g.Expect(a).To(matchers.DeepEqual([]interface{}{101, true}))
 	}
+}
+
+func TestQuery_happy(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := &StubDatabase{}
+	tbl := StubTable{
+		name: sqlapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
+
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(d.loggedQueries).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1", "[123]"}))
+}
+
+func TestExec_happy(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	r := stubResult{ra: 2}
+	e := stubExecer{stubResult: r}
+	d := &StubDatabase{execer: e}
+	tbl := StubTable{
+		name: sqlapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
+
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(d.loggedQueries).To(Equal([]string{"DELETE FROM p.table WHERE x=$1", "[123]"}))
 }

@@ -8,15 +8,16 @@ import (
 )
 
 type StubTable struct {
-	name    sqlapi.TableName
-	dialect dialect.Dialect
+	name     sqlapi.TableName
+	dialect  dialect.Dialect
+	database *StubDatabase
 }
 
 // Type conformance checks
 var _ sqlapi.Table = &StubTable{}
 
 func (tbl StubTable) Database() sqlapi.Database {
-	return nil
+	return tbl.database
 }
 
 func (tbl StubTable) Logger() *log.Logger {
@@ -40,7 +41,7 @@ func (tbl StubTable) DB() sqlapi.SqlDB {
 }
 
 func (tbl StubTable) Execer() sqlapi.Execer {
-	return nil
+	return tbl.database.execer
 }
 
 func (tbl StubTable) Tx() sqlapi.SqlTx {
@@ -54,5 +55,3 @@ func (tbl StubTable) IsTx() bool {
 func (tbl StubTable) Query(query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	return nil, nil
 }
-
-//-------------------------------------------------------------------------------------------------
