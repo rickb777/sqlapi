@@ -6,6 +6,7 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/util"
 	"log"
+	"regexp"
 	"strings"
 	"sync/atomic"
 )
@@ -38,8 +39,7 @@ type Database interface {
 	QueryRow(query string, args ...interface{}) SqlRow
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
 
-	TableExists(name TableName) (yes bool, err error)
-	ListTables() (util.StringList, error)
+	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
 
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
@@ -288,27 +288,10 @@ func (database *database) LogError(err error) error {
 
 //-------------------------------------------------------------------------------------------------
 
-// DoesTableExist gets all the table names in the database/schema.
-func (database *database) TableExists(name TableName) (yes bool, err error) {
-	wanted := name.String()
-	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var s string
-		rows.Scan(&s)
-		if s == wanted {
-			return true, rows.Err()
-		}
-	}
-	return false, rows.Err()
-}
-
 // ListTables gets all the table names in the database/schema.
-func (database *database) ListTables() (util.StringList, error) {
+// The regular expression supplies a filter: only names that match are returned.
+// If the regular expression is nil, all tables names are returned.
+func (database *database) ListTables(re *regexp.Regexp) (util.StringList, error) {
 	ss := make(util.StringList, 0)
 	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
@@ -319,7 +302,9 @@ func (database *database) ListTables() (util.StringList, error) {
 	for rows.Next() {
 		var s string
 		rows.Scan(&s)
-		ss = append(ss, s)
+		if re == nil || re.MatchString(s) {
+			ss = append(ss, s)
+		}
 	}
 	return ss, rows.Err()
 }
