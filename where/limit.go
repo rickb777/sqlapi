@@ -2,12 +2,14 @@ package where
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/rickb777/sqlapi/dialect"
 	"strconv"
 )
 
 // QueryConstraint is a value that is appended to a SELECT statement.
 type QueryConstraint interface {
+	fmt.Stringer
 	Build(q dialect.Quoter) string
 }
 
@@ -27,11 +29,17 @@ func BuildQueryConstraint(qc QueryConstraint, quoter ...dialect.Quoter) string {
 type literal string
 
 // Literal returns the literal string supplied, converting it to a QueryConstraint.
+// The string may contain identifiers, however no quoting rules will be applied.
+// Therefore care must be taken if portability is needed.
 func Literal(sqlPart string) QueryConstraint {
 	return literal(sqlPart)
 }
 
 func (qc literal) Build(_ dialect.Quoter) string {
+	return string(qc)
+}
+
+func (qc literal) String() string {
 	return string(qc)
 }
 
@@ -120,4 +128,8 @@ func (qc *queryConstraint) Build(q dialect.Quoter) string {
 		b.WriteString(strconv.Itoa(qc.offset))
 	}
 	return b.String()
+}
+
+func (qc *queryConstraint) String() string {
+	return qc.Build(dialect.DefaultQuoter)
 }

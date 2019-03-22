@@ -1,3 +1,10 @@
+// package where provides composable expressions for WHERE and HAVING clauses in SQL.
+// These can range from the very simplest no-op to complex nested trees of 'and' and 'or'
+// conditions.
+//
+// Also in this package are query constraints to provide 'ORDER BY', 'LIMIT' and 'OFFSET'
+// clauses. These are similar to 'WHERE' clauses except literal values are used instead
+// of parameter placeholders.
 package where
 
 import (
@@ -13,11 +20,12 @@ const (
 	HavingVerb  = "HAVING "
 )
 
-// Expression is an element in a WHERE clause. Expressions may be nested in various ways.
+// Expression is an element in a WHERE clause. Expressions consist of simple conditions or
+// more complex clauses of multiple conditions.
 type Expression interface {
 	fmt.Stringer
-	And(Expression) Clause
-	Or(Expression) Clause
+	And(Expression) Expression
+	Or(Expression) Expression
 	Build(q dialect.Quoter) (string, []interface{})
 }
 
@@ -61,7 +69,7 @@ type not struct {
 func (not not) Build(q dialect.Quoter) (string, []interface{}) {
 	sql, args := not.expression.Build(q)
 	if sql == "" {
-		return "", nil
+		return "", args
 	}
 	return "NOT (" + sql + ")", args
 }
@@ -73,7 +81,18 @@ func (not not) String() string {
 
 //-------------------------------------------------------------------------------------------------
 
-// Condition is a simple condition such as an equality test.
+// Condition is a simple condition such as an equality test. For convenience, use the
+// factory functions 'Eq', 'GtEq' etc.
+//
+// This can also be constructed directly, which will be useful for non-portable
+// cases, such as Postgresql 'SIMILAR TO'
+//
+//     expr := where.Condition{column, " SIMILAR TO", []interface{}{pattern}}
+//
+// Also for literal values (taking care to protect against injection attacks)
+//
+//     expr := where.Condition{column, " = 'hello'", nil}
+//
 type Condition struct {
 	Column, Predicate string
 	Args              []interface{}
