@@ -228,7 +228,7 @@ func (database *database) LogQuery(query string, args ...interface{}) {
 			for i, v := range args {
 				ss[i] = derefArg(v)
 			}
-			database.logger.Printf(query+" %v\n", ss)
+			database.logger.Printf("%s %v\n", query, ss)
 		} else {
 			database.logger.Println(query)
 		}
