@@ -3,7 +3,6 @@ package schema
 import (
 	"fmt"
 	. "github.com/rickb777/sqlapi/types"
-	"github.com/rickb777/sqlapi/util"
 	"sort"
 	"strings"
 )
@@ -174,15 +173,20 @@ func (node *Node) JoinParts(delta int, sep string) string {
 
 type FieldList []*Field
 
-func (list FieldList) DistinctTypes() []string {
-	types := util.NewStringSet()
+func (list FieldList) DistinctTypes() []Type {
+	m := make(map[string]Type)
 
 	for _, field := range list {
-		types.Add(field.Type.Tag())
+		m[field.Type.Tag()] = field.Type
+	}
+
+	types := NewTypeSet()
+	for _, t := range m {
+		types.Add(t)
 	}
 
 	slice := types.ToSlice()
-	sort.Slice(slice, func(i, j int) bool { return slice[i] < slice[j] })
+	sort.Slice(slice, func(i, j int) bool { return slice[i].Tag() < slice[j].Tag() })
 	return slice
 }
 

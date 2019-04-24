@@ -2,7 +2,6 @@ package schema
 
 import (
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/util"
 	"testing"
 )
 
@@ -11,11 +10,11 @@ func TestDistinctTypes(t *testing.T) {
 
 	cases := []struct {
 		list     FieldList
-		expected util.StringSet
+		expected TypeSet
 	}{
-		{FieldList{id}, util.NewStringSet(i64.Tag())},
-		{FieldList{id, id, id}, util.NewStringSet(i64.Tag())},
-		{FieldList{id, category}, util.NewStringSet(i64.Tag(), cat.Tag())},
+		{FieldList{id}, NewTypeSet(i64)},
+		{FieldList{id, id, id}, NewTypeSet(i64)},
+		{FieldList{id, category}, NewTypeSet(i64, cat)},
 		{FieldList{id,
 			category,
 			name,
@@ -27,10 +26,10 @@ func TestDistinctTypes(t *testing.T) {
 			labels,
 			fave,
 			avatar,
-			updated}, util.NewStringSet(i64.Tag(), boo.Tag(), cat.Tag(), str.Tag(), spt.Tag(), ipt.Tag(), upt.Tag(), fpt.Tag(), bgi.Tag(), sli.Tag(), bys.Tag(), tim.Tag())},
+			updated}, NewTypeSet(i64, boo, cat, str, spt, ipt, upt, fpt, bgi, sli, bys, tim)},
 	}
 	for _, c := range cases {
 		s := c.list.DistinctTypes()
-		g.Expect(util.NewStringSet(s...)).To(Equal(c.expected))
+		g.Expect(NewTypeSet(s...)).To(Equal(c.expected))
 	}
 }
