@@ -1,6 +1,7 @@
 package where_test
 
 import (
+	"fmt"
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/where"
@@ -149,6 +150,27 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 			[]interface{}{10, 12, 14},
 		},
 
+		{ // 'In' without any vararg parameters
+			where.In("age"),
+			``,
+			``,
+			nil,
+		},
+
+		{ // 'In' with mixed value and nil vararg parameters
+			where.In("age", 1, nil, 2, nil),
+			`WHERE ("age" IN (?,?)) OR ("age" IS NULL)`,
+			`("age" IN (1,2)) OR ("age" IS NULL)`,
+			[]interface{}{1, 2},
+		},
+
+		{ // 'In' with only a nil vararg parameter
+			where.In("age", nil),
+			`WHERE ("age" IS NULL)`,
+			`("age" IS NULL)`,
+			nil,
+		},
+
 		{
 			where.Not(nameEqFred),
 			`WHERE NOT ("name"=?)`,
@@ -248,15 +270,17 @@ func TestBuildWhereClause_happyCases(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
+	for i, c := range cases {
+		info := fmt.Sprintf("%d: %s", i, c.expSQL)
+
 		sql, args := where.Where(c.wh)
 
-		g.Expect(sql).To(Equal(c.expSQL))
-		g.Expect(args).To(matchers.DeepEqual(c.args))
+		g.Expect(sql).To(Equal(c.expSQL), info)
+		g.Expect(args).To(matchers.DeepEqual(c.args), info)
 
 		s := c.wh.String()
 
-		g.Expect(s).To(Equal(c.expString))
+		g.Expect(s).To(Equal(c.expString), info)
 	}
 }
 

@@ -60,31 +60,53 @@ func Like(column string, pattern string) Expression {
 
 // In returns an in condition on a column.
 func In(column string, values ...interface{}) Expression {
+	if len(values) == 0 {
+		return NoOp()
+	}
+
+	v2 := make([]interface{}, 0, len(values))
+	hasNull := false
 	buf := &bytes.Buffer{}
 	buf.WriteString(" IN (")
 	i := 0
 	for _, arg := range values {
-		value := reflect.ValueOf(arg)
-		switch value.Kind() {
-		case reflect.Array, reflect.Slice:
-			for j := 0; j < value.Len(); j++ {
+		switch arg.(type) {
+		case nil:
+			hasNull = true
+		default:
+			v2 = append(v2, arg)
+			value := reflect.ValueOf(arg)
+			switch value.Kind() {
+			case reflect.Array, reflect.Slice:
+				for j := 0; j < value.Len(); j++ {
+					if i > 0 {
+						buf.WriteByte(',')
+					}
+					buf.WriteByte('?')
+					i++
+				}
+
+			default:
 				if i > 0 {
 					buf.WriteByte(',')
 				}
 				buf.WriteByte('?')
 				i++
 			}
-
-		default:
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteByte('?')
-			i++
 		}
 	}
 	buf.WriteByte(')')
-	return Condition{column, buf.String(), values}
+
+	result := NoOp()
+	if i > 0 {
+		result = Condition{column, buf.String(), v2}
+	}
+
+	if hasNull {
+		result = Or(result, Null(column))
+	}
+
+	return result
 }
 
 //-------------------------------------------------------------------------------------------------

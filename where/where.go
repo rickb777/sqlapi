@@ -135,7 +135,7 @@ func (wh Clause) Build(q dialect.Quoter) (string, []interface{}) {
 		return "", nil
 	}
 
-	var sqls []string
+	sqls := make([]string, 0, len(wh.wheres))
 	var args []interface{}
 
 	for _, where := range wh.wheres {
