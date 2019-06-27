@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/where"
+	"github.com/rickb777/where"
 	"log"
 )
 

@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/quote"
 	"strconv"
 )
 
-type postgres quoter
+type postgres struct {
+	q quote.Quoter
+}
 
-var Postgres Dialect = postgres(ansiQuoter)
+var Postgres Dialect = postgres{q: quote.AnsiQuoter}
 
 func (d postgres) Index() int {
 	return PostgresIndex
@@ -24,12 +27,13 @@ func (d postgres) Alias() string {
 	return "PostgreSQL"
 }
 
-func (d postgres) Quoter() Quoter {
-	return quoter(d)
+func (d postgres) Quoter() quote.Quoter {
+	return d.q
 }
 
-func (d postgres) WithQuoter(q Quoter) Dialect {
-	return postgres(q.(quoter))
+func (d postgres) WithQuoter(q quote.Quoter) Dialect {
+	d.q = q
+	return d
 }
 
 // https://www.postgresql.org/docs/9.6/static/datatype.html

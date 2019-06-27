@@ -4,6 +4,7 @@ import (
 	"bytes"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/schema"
+	"github.com/rickb777/where/quote"
 	"testing"
 )
 
@@ -14,12 +15,12 @@ func TestQuote(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		q        Quoter
+		q        quote.Quoter
 		expected string
 	}{
-		{AnsiQuoter, `"x"."Aaaa"`},
-		{MySqlQuoter, "`x`.`Aaaa`"},
-		{NoQuoter, `x.Aaaa`},
+		{quote.AnsiQuoter, `"x"."Aaaa"`},
+		{quote.MySqlQuoter, "`x`.`Aaaa`"},
+		{quote.NoQuoter, `x.Aaaa`},
 	}
 	for _, c := range cases {
 		s1 := c.q.Quote("x.Aaaa")
@@ -35,12 +36,12 @@ func TestSplitAndQuote(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		q        Quoter
+		q        quote.Quoter
 		expected []string
 	}{
-		{AnsiQuoter, []string{`"aa"`, `"bb"`, `"cc"`}},
-		{MySqlQuoter, []string{"`aa`", "`bb`", "`cc`"}},
-		{NoQuoter, []string{`aa`, `bb`, `cc`}},
+		{quote.AnsiQuoter, []string{`"aa"`, `"bb"`, `"cc"`}},
+		{quote.MySqlQuoter, []string{"`aa`", "`bb`", "`cc`"}},
+		{quote.NoQuoter, []string{`aa`, `bb`, `cc`}},
 	}
 	for _, c := range cases {
 		s1 := c.q.QuoteN([]string{"aa", "bb", "cc"})

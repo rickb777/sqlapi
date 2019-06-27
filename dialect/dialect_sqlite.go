@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/quote"
 )
 
-type sqlite quoter
+type sqlite struct {
+	q quote.Quoter
+}
 
-var Sqlite Dialect = sqlite(ansiQuoter)
+var Sqlite Dialect = sqlite{q: quote.AnsiQuoter}
 
 func (d sqlite) Index() int {
 	return SqliteIndex
@@ -22,12 +25,13 @@ func (d sqlite) Alias() string {
 	return "SQLite3"
 }
 
-func (d sqlite) Quoter() Quoter {
-	return quoter(d)
+func (d sqlite) Quoter() quote.Quoter {
+	return d.q
 }
 
-func (d sqlite) WithQuoter(q Quoter) Dialect {
-	return sqlite(q.(quoter))
+func (d sqlite) WithQuoter(q quote.Quoter) Dialect {
+	d.q = q
+	return d
 }
 
 // For integers, the value is a signed integer, stored in 1, 2, 3, 4, 6, or 8 bytes depending on the magnitude of the value

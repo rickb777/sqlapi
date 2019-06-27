@@ -3,7 +3,7 @@ package sqlapi
 import (
 	"database/sql"
 	"fmt"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/where/quote"
 	"strings"
 )
 
@@ -98,7 +98,7 @@ func (list NamedArgList) Values() []interface{} {
 }
 
 // Assignments gets the assignment expressions.
-func (list NamedArgList) Assignments(q dialect.Quoter, from int) []string {
+func (list NamedArgList) Assignments(q quote.Quoter, from int) []string {
 	ss := make([]string, len(list))
 	for i, v := range list {
 		ss[i] = fmt.Sprintf("%s=?", q.Quote(v.Name))

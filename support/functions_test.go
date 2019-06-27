@@ -7,7 +7,8 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/where"
+	"github.com/rickb777/where"
+	"github.com/rickb777/where/quote"
 	"testing"
 )
 
@@ -15,15 +16,15 @@ func TestUpdateFieldsSQL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		quoter   dialect.Quoter
+		quoter   quote.Quoter
 		expected string
 	}{
 		{
-			quoter:   dialect.MySqlQuoter,
+			quoter:   quote.MySqlQuoter,
 			expected: "UPDATE `foo` SET `col1`=?, `col2`=? WHERE (`room`=?) AND (`fun`=?)",
 		},
 		{
-			quoter:   dialect.AnsiQuoter,
+			quoter:   quote.AnsiQuoter,
 			expected: `UPDATE "foo" SET "col1"=?, "col2"=? WHERE ("room"=?) AND ("fun"=?)`,
 		},
 	}
@@ -48,7 +49,7 @@ func TestSliceSql(t *testing.T) {
 		expected string
 	}{
 		{
-			dialect:  dialect.Mysql.WithQuoter(dialect.NoQuoter),
+			dialect:  dialect.Mysql.WithQuoter(quote.NoQuoter),
 			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
 		},
 		{
@@ -56,7 +57,7 @@ func TestSliceSql(t *testing.T) {
 			expected: "SELECT `foo` FROM `p`.`table` WHERE (`room`=?) AND (`fun`=?) ORDER BY `xyz`",
 		},
 		{
-			dialect:  dialect.Mysql.WithQuoter(dialect.AnsiQuoter),
+			dialect:  dialect.Mysql.WithQuoter(quote.AnsiQuoter),
 			expected: `SELECT "foo" FROM "p"."table" WHERE ("room"=?) AND ("fun"=?) ORDER BY "xyz"`,
 		},
 		{

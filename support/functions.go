@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/where"
+	"github.com/rickb777/where"
+	"github.com/rickb777/where/quote"
 	"strings"
 )
 
@@ -51,7 +51,7 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
 	q := tbl.Dialect().Quoter()
 	whs, args := where.Where(wh, q)
-	orderBy := where.BuildQueryConstraint(qc, q)
+	orderBy := qc.Build(q)
 	return fmt.Sprintf("SELECT %s FROM %s %s %s",
 		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
@@ -94,7 +94,7 @@ func UpdateFields(tbl sqlapi.Table, req require.Requirement, wh where.Expression
 	return Exec(tbl, req, query, args...)
 }
 
-func updateFieldsSQL(tblName string, q dialect.Quoter, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
+func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
 	list := sqlapi.NamedArgList(fields)
 	assignments := strings.Join(list.Assignments(q, 1), ", ")
 	whs, wargs := where.Where(wh, q)

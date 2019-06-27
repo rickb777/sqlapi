@@ -13,6 +13,7 @@ import (
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/sqlapi/vanilla"
+	"github.com/rickb777/where/quote"
 	"log"
 	"os"
 	"strings"
@@ -71,7 +72,7 @@ func TestCheckConstraint(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(cc0)
 	fkc := persons.Constraints()[0]
-	s := fkc.ConstraintSql(dialect.AnsiQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
 	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" CHECK (role < 3)`), s)
 }
 
@@ -88,7 +89,7 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 	fkc := persons.Constraints()[0]
-	s := fkc.ConstraintSql(dialect.AnsiQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
 	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
 }
 
@@ -105,7 +106,7 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 	fkc := persons.Constraints().FkConstraints()[0]
-	s := fkc.ConstraintSql(dialect.NoQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.NoQuoter, persons.Name(), 0)
 	g.Expect(s).To(Equal(`CONSTRAINT pfx_persons_c0 foreign key (addresspk) references pfx_addresses on update restrict on delete cascade`), s)
 }
 

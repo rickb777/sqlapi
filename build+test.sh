@@ -44,7 +44,7 @@ go test ./...
 
 ### Build Phase 2 ###
 
-for d in constraint require schema types where; do
+for d in constraint require schema types; do
   announce ./$d
   go test $1 -covermode=count -coverprofile=reports/$d.out ./$d
   go tool cover -html=reports/$d.out -o reports/$d.html

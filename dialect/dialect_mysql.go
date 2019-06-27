@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/quote"
 )
 
-type mysql quoter
+type mysql struct {
+	q quote.Quoter
+}
 
-var Mysql Dialect = mysql(mySqlQuoter)
+var Mysql Dialect = mysql{q: quote.MySqlQuoter}
 
 func (d mysql) Index() int {
 	return MysqlIndex
@@ -22,12 +25,13 @@ func (d mysql) Alias() string {
 	return "MySQL"
 }
 
-func (d mysql) Quoter() Quoter {
-	return quoter(d)
+func (d mysql) Quoter() quote.Quoter {
+	return d.q
 }
 
-func (d mysql) WithQuoter(q Quoter) Dialect {
-	return mysql(q.(quoter))
+func (d mysql) WithQuoter(q quote.Quoter) Dialect {
+	d.q = q
+	return d
 }
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
