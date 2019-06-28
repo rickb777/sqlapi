@@ -68,7 +68,7 @@ func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.Que
 func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
-	database.LogQuery(q2, args...)
+	//database.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryEx(tbl.Ctx(), q2, nil, args...)
 	return rows, database.LogIfError(errors.Wrap(err, q2))
 }
@@ -79,7 +79,7 @@ func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows,
 func Exec(tbl pgxapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
-	database.LogQuery(q2, args...)
+	//database.LogQuery(q2, args...)
 	tag, err := tbl.Execer().ExecEx(tbl.Ctx(), q2, nil, args...)
 	if err != nil {
 		return 0, database.LogError(errors.Wrap(err, q2))

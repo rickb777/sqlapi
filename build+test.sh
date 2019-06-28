@@ -38,6 +38,10 @@ fi
 
 ./version.sh
 
+export PGDATABASE='test'
+export PGUSER='testuser'
+export PGPASSWORD='TestPasswd.9.9.9'
+
 gofmt -l -w *.go */*.go
 go vet ./...
 go install ./...

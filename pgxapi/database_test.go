@@ -2,9 +2,11 @@ package pgxapi
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 	"log"
 	"testing"
 )
@@ -13,34 +15,29 @@ func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	buf := &bytes.Buffer{}
-	logger := log.New(buf, "X.", 0)
+	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
+	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
-	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
-	db.LogQuery("one")
-	db.TraceLogging(false)
-	db.LogQuery("two")
-	db.TraceLogging(true)
-	db.LogQuery("three")
+	db := NewDatabase(sh, dialect.Sqlite, nil)
+	db.LogError(errors.New("one"))
+	db.LogError(errors.New("two"))
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.one\nX.three\n"))
+	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:two]\n"))
 }
 
 func TestLoggingError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	buf := &bytes.Buffer{}
-	logger := log.New(buf, "X.", 0)
+	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
+	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
-	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
-	db.LogError(fmt.Errorf("one"))
-	db.TraceLogging(false)
-	db.LogError(fmt.Errorf("two"))
-	db.TraceLogging(true)
-	db.LogError(fmt.Errorf("three"))
+	db := NewDatabase(sh, dialect.Sqlite, nil)
 	db.LogIfError(nil)
 	db.LogIfError(fmt.Errorf("four"))
+	db.LogIfError(nil)
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.Error: one\nX.Error: three\nX.Error: four\n"))
+	g.Expect(s).To(Equal("X.Error [error:four]\n"))
 }

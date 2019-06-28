@@ -6,39 +6,38 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/util"
-	"log"
 	"regexp"
-	"strings"
-	"sync/atomic"
 )
+
+type DBStats = sql.DBStats
 
 // Database typically wraps a *pgx.ConnPool with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
 // See NewDatabase.
 type Database interface {
 	DB() Execer
-	BeginTx(ctx context.Context, opts *pgx.TxOptions) (*pgx.Tx, error)
-	Begin() (*pgx.Tx, error)
+	//BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
+	//Begin() (SqlTx, error)
 	Dialect() dialect.Dialect
-	Logger() *log.Logger
+	Logger() pgx.Logger
 	Wrapper() interface{}
 	PingContext(ctx context.Context) error
 	Ping() error
-	Stats() sql.DBStats
+	Stats() DBStats
 
 	TraceLogging(on bool)
-	LogQuery(query string, args ...interface{})
+	//LogQuery(query string, args ...interface{})
 	LogIfError(err error) error
 	LogError(err error) error
 
-	Exec(query string, args ...interface{}) error
-	ExecContext(ctx context.Context, query string, args ...interface{}) error
-	Prepare(query string) (*pgx.PreparedStatement, error)
-	PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error)
-	Query(query string, args ...interface{}) (*pgx.Rows, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*pgx.Rows, error)
-	QueryRow(query string, args ...interface{}) *pgx.Row
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *pgx.Row
+	//Exec(query string, args ...interface{}) error
+	//ExecContext(ctx context.Context, query string, args ...interface{}) error
+	//Prepare(query string) (*pgx.PreparedStatement, error)
+	//PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error)
+	//Query(query string, args ...interface{}) (SqlRows, error)
+	//QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
+	//QueryRow(query string, args ...interface{}) SqlRow
+	//QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
 
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
@@ -46,34 +45,21 @@ type Database interface {
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
 type database struct {
-	db         Execer
-	dialect    dialect.Dialect
-	logger     *log.Logger
-	lgrEnabled int32
-	wrapper    interface{}
+	db      Execer
+	dialect dialect.Dialect
+	wrapper interface{}
 }
 
 // NewDatabase creates a new database handler, which wraps the core *sql.DB along with
 // the appropriate dialect.
 //
-// You can supply the logger you need, or else nil. If not nil, all queries will be logged
-// and all database errors will be logged. Once constructed, the logger itself cannot be
-// changed, but its output writer can (via the SetOutput method on Logger). Logging can
-// be enabled and disabled as needed by using the TraceLogging method.
-//
 // The wrapper holds some associated data your application needs for this database, if any.
 // Otherwise this should be nil. As with the logger, it cannot be changed after construction.
-func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) Database {
-	var enabled int32 = 0
-	if logger != nil {
-		enabled = 1
-	}
+func NewDatabase(db Execer, dialect dialect.Dialect, wrapper interface{}) Database {
 	return &database{
-		db:         db,
-		dialect:    dialect,
-		logger:     logger,
-		lgrEnabled: enabled,
-		wrapper:    wrapper,
+		db:      db,
+		dialect: dialect,
+		wrapper: wrapper,
 	}
 }
 
@@ -93,13 +79,13 @@ func (database *database) DB() Execer {
 // an error will be returned.
 //
 // Panics if the Execer is not a SqlDB.
-func (database *database) BeginTx(ctx context.Context, opts *pgx.TxOptions) (*pgx.Tx, error) {
+func (database *database) BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
 	return database.db.(SqlDB).BeginTx(ctx, opts)
 }
 
 // Begin starts a transaction using default options. The default isolation level is
 // dependent on the driver.
-func (database *database) Begin() (*pgx.Tx, error) {
+func (database *database) Begin() (SqlTx, error) {
 	return database.BeginTx(context.Background(), nil)
 }
 
@@ -109,10 +95,9 @@ func (database *database) Dialect() dialect.Dialect {
 	return database.dialect
 }
 
-// Logger gets the trace logger. Note that you can use this to rotate the output writer
-// via its SetOutput method. Also, it can even disable it completely (via ioutil.Discard).
-func (database *database) Logger() *log.Logger {
-	return database.logger
+// Logger gets the trace logger.
+func (database *database) Logger() pgx.Logger {
+	return database.db
 }
 
 // Wrapper gets whatever structure is present, as needed.
@@ -170,13 +155,13 @@ func (database *database) PrepareContext(ctx context.Context, query string) (*pg
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *database) Query(query string, args ...interface{}) (*pgx.Rows, error) {
+func (database *database) Query(query string, args ...interface{}) (SqlRows, error) {
 	return database.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (*pgx.Rows, error) {
+func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	return database.db.QueryEx(ctx, query, nil, args...)
 }
 
@@ -186,7 +171,7 @@ func (database *database) QueryContext(ctx context.Context, query string, args .
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *database) QueryRow(query string, args ...interface{}) *pgx.Row {
+func (database *database) QueryRow(query string, args ...interface{}) SqlRow {
 	return database.QueryRowContext(context.Background(), query, args...)
 }
 
@@ -196,7 +181,7 @@ func (database *database) QueryRow(query string, args ...interface{}) *pgx.Row {
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
-func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) *pgx.Row {
+func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
 	return database.db.QueryRowEx(ctx, query, nil, args...)
 }
 
@@ -210,81 +195,71 @@ func (database *database) Stats() sql.DBStats {
 // TraceLogging turns query trace logging on or off. This has no effect unless the database was
 // created with a non-nil logger.
 func (database *database) TraceLogging(on bool) {
-	if on && database.logger != nil {
-		atomic.StoreInt32(&database.lgrEnabled, 1)
-	} else {
-		atomic.StoreInt32(&database.lgrEnabled, 0)
-	}
+	database.db.TraceLogging(on)
 }
 
-func (database *database) loggingEnabled() bool {
-	return atomic.LoadInt32(&database.lgrEnabled) != 0
-}
+//// LogQuery writes query info to the logger, if it is not nil.
+//func (database *database) LogQuery(query string, args ...interface{}) {
+//	if database.loggingEnabled() {
+//		query = strings.TrimSpace(query)
+//		if len(args) > 0 {
+//			ss := make([]interface{}, len(args))
+//			for i, v := range args {
+//				ss[i] = derefArg(v)
+//			}
+//			database.logger.Printf("%s %v\n", query, ss)
+//		} else {
+//			database.logger.Println(query)
+//		}
+//	}
+//}
 
-// LogQuery writes query info to the logger, if it is not nil.
-func (database *database) LogQuery(query string, args ...interface{}) {
-	if database.loggingEnabled() {
-		query = strings.TrimSpace(query)
-		if len(args) > 0 {
-			ss := make([]interface{}, len(args))
-			for i, v := range args {
-				ss[i] = derefArg(v)
-			}
-			database.logger.Printf("%s %v\n", query, ss)
-		} else {
-			database.logger.Println(query)
-		}
-	}
-}
-
-func derefArg(arg interface{}) interface{} {
-	switch v := arg.(type) {
-	case *int:
-		return *v
-	case *int8:
-		return *v
-	case *int16:
-		return *v
-	case *int32:
-		return *v
-	case *int64:
-		return *v
-	case *uint:
-		return *v
-	case *uint8:
-		return *v
-	case *uint16:
-		return *v
-	case *uint32:
-		return *v
-	case *uint64:
-		return *v
-	case *float32:
-		return *v
-	case *float64:
-		return *v
-	case *bool:
-		return *v
-	case *string:
-		return *v
-	}
-	return arg
-}
+//func derefArg(arg interface{}) interface{} {
+//	switch v := arg.(type) {
+//	case *int:
+//		return *v
+//	case *int8:
+//		return *v
+//	case *int16:
+//		return *v
+//	case *int32:
+//		return *v
+//	case *int64:
+//		return *v
+//	case *uint:
+//		return *v
+//	case *uint8:
+//		return *v
+//	case *uint16:
+//		return *v
+//	case *uint32:
+//		return *v
+//	case *uint64:
+//		return *v
+//	case *float32:
+//		return *v
+//	case *float64:
+//		return *v
+//	case *bool:
+//		return *v
+//	case *string:
+//		return *v
+//	}
+//	return arg
+//}
 
 // LogIfError writes error info to the logger, if both the logger and the error are non-nil.
 // It returns the error.
 func (database *database) LogIfError(err error) error {
-	if database.loggingEnabled() && err != nil {
-		database.logger.Printf("Error: %s\n", err)
+	if err != nil {
+		database.db.LogT(pgx.LogLevelError, "Error", nil, "error", err)
 	}
 	return err
 }
 
 // LogError writes error info to the logger, if the logger is not nil. It returns the error.
 func (database *database) LogError(err error) error {
-	if database.loggingEnabled() {
-		database.logger.Printf("Error: %s\n", err)
-	}
+	database.db.LogT(pgx.LogLevelError, "Error", nil, "error", err)
 	return err
 }
 

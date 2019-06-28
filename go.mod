@@ -2,6 +2,7 @@ module github.com/rickb777/sqlapi
 
 require (
 	github.com/benmoss/matchers v0.0.0-20181101202349-c279145bd967
+	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/jackc/pgx v3.4.0+incompatible

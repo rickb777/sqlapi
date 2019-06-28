@@ -1,5 +1,7 @@
 github.com/benmoss/matchers v0.0.0-20181101202349-c279145bd967 h1:9P5rf/HsdmVwbZoBuOS9IV3t4/WplofJYDKCpyWqdCE=
 github.com/benmoss/matchers v0.0.0-20181101202349-c279145bd967/go.mod h1:73SjFQm5AGXysJnLeC/IH0UFwnlsPwVaBgEPx/uhh8I=
+github.com/cenkalti/backoff v2.1.1+incompatible h1:tKJnvO2kl0zmb/jA5UKAt4VoEVw1qxKWjE/Bpp46npY=
+github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=

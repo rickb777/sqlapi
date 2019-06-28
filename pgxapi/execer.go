@@ -4,44 +4,48 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jackc/pgx"
+	"time"
 )
 
-// Execer is a precis of *pgx.ConnPool and *pgx.Tx.
-// See database/sql.
-type xExecer interface {
-	// ExecContext executes a query without returning any rows.
-	// The args are for any placeholder parameters in the query.
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-
-	// PrepareContext creates a prepared statement for later queries or executions.
-	// Multiple queries or executions may be run concurrently from the
-	// returned statement.
-	// The caller must call the statement's Close method
-	// when the statement is no longer needed.
-	//
-	// The provided context is used for the preparation of the statement, not for the
-	// execution of the statement.
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-
-	// QueryContext executes a query that returns rows, typically a SELECT.
-	// The args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-
-	// QueryRowContext executes a query that is expected to return at most one row.
-	// QueryRowContext always returns a non-nil value. Errors are deferred until
-	// Row's Scan method is called.
-	// If the query selects no rows, the *Row's Scan will return ErrNoRows.
-	// Otherwise, the *Row's Scan scans the first selected row and discards
-	// the rest.
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+type Getter interface {
+	QueryEx(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
+	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
+	QueryRowEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow
+	QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow
 }
+
+type Batcher interface {
+	// BeginBatch exposes the pgx batch operations.
+	BeginBatch() *pgx.Batch
+}
+
+type Lgr interface {
+	pgx.Logger
+	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
+	TraceLogging(on bool)
+}
+
+type Execer interface {
+	Getter
+	Batcher
+	Lgr
+
+	InsertEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (int64, error)
+	ExecEx(ctx context.Context, sql string, options *pgx.QueryExOptions, arguments ...interface{}) (pgx.CommandTag, error)
+	PrepareEx(ctx context.Context, name, sql string, opts *pgx.PrepareExOptions) (*pgx.PreparedStatement, error)
+	IsTx() bool
+}
+
+//-------------------------------------------------------------------------------------------------
 
 // SqlDB is able to make queries and begin transactions.
 type SqlDB interface {
 	Execer
-	BeginTx(ctx context.Context, opts *pgx.TxOptions) (*pgx.Tx, error)
+	BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
+	Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(Execer) error) error
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
+	Close()
 }
 
 // SqlTx is a precis of *pgx.Tx
@@ -71,9 +75,3 @@ type SqlStmt interface {
 
 	Close() error
 }
-
-// Type conformance assertions
-//var _ Execer = &sql.DB{}
-//var _ SqlDB = &sql.DB{}
-//var _ SqlTx = &pgx.Tx{}
-//var _ SqlStmt = &sql.Stmt{}

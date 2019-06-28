@@ -2,6 +2,7 @@
 package logadapter
 
 import (
+	"fmt"
 	"github.com/jackc/pgx"
 	"log"
 )
@@ -17,6 +18,7 @@ func NewLogger(l *log.Logger) *Logger {
 
 func (l *Logger) Log(level pgx.LogLevel, msg string, data map[string]interface{}) {
 	if level >= l.level {
-		l.l.Printf("%s %v", msg, data)
+		m := fmt.Sprintf("%v", data)
+		l.l.Printf("%s %s", msg, m[3:])
 	}
 }
