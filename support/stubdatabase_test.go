@@ -7,7 +7,6 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/util"
-	"log"
 	"regexp"
 )
 
@@ -32,7 +31,7 @@ func (*StubDatabase) Dialect() dialect.Dialect {
 	panic("implement me")
 }
 
-func (*StubDatabase) Logger() *log.Logger {
+func (*StubDatabase) Logger() sqlapi.Logger {
 	panic("implement me")
 }
 

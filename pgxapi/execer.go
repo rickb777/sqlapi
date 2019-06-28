@@ -36,6 +36,10 @@ type Execer interface {
 	IsTx() bool
 }
 
+func IsTx(ex Execer) bool {
+	return ex.IsTx()
+}
+
 //-------------------------------------------------------------------------------------------------
 
 // SqlDB is able to make queries and begin transactions.

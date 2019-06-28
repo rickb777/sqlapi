@@ -6,7 +6,6 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
-	"log"
 )
 
 // Table provides the generic features of each generated table handler.
@@ -42,7 +41,7 @@ type Table interface {
 	Dialect() dialect.Dialect
 
 	// Logger gets the trace logger.
-	Logger() *log.Logger
+	Logger() Logger
 
 	//---------------------------------------------------------------------------------------------
 	// The following type-specific methods are also provided (but are not part of this interface).

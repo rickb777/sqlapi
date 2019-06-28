@@ -11,7 +11,6 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/sqlapi/support"
-	"log"
 )
 
 // RecordTable holds a given table name with the database reference, providing access methods below.
@@ -94,7 +93,7 @@ func (tbl RecordTable) Database() sqlapi.Database {
 }
 
 // Logger gets the trace logger.
-func (tbl RecordTable) Logger() *log.Logger {
+func (tbl RecordTable) Logger() sqlapi.Logger {
 	return tbl.database.Logger()
 }
 
@@ -148,8 +147,7 @@ func (tbl RecordTable) Tx() sqlapi.SqlTx {
 
 // IsTx tests whether this is within a transaction.
 func (tbl RecordTable) IsTx() bool {
-	_, ok := tbl.db.(*sql.Tx)
-	return ok
+	return sqlapi.IsTx(tbl.db)
 }
 
 // BeginTx starts a transaction using the table's context.

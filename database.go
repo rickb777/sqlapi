@@ -19,7 +19,7 @@ type Database interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 	Begin() (SqlTx, error)
 	Dialect() dialect.Dialect
-	Logger() *log.Logger
+	Logger() Logger
 	Wrapper() interface{}
 	PingContext(ctx context.Context) error
 	Ping() error
@@ -110,7 +110,7 @@ func (database *database) Dialect() dialect.Dialect {
 
 // Logger gets the trace logger. Note that you can use this to rotate the output writer
 // via its SetOutput method. Also, it can even disable it completely (via ioutil.Discard).
-func (database *database) Logger() *log.Logger {
+func (database *database) Logger() Logger {
 	return database.logger
 }
 

@@ -3,9 +3,9 @@ package support
 import (
 	"context"
 	"github.com/jackc/pgx"
+	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
-	"log"
 )
 
 type StubTable struct {
@@ -21,7 +21,7 @@ func (tbl StubTable) Database() pgxapi.Database {
 	return nil //tbl.database
 }
 
-func (tbl StubTable) Logger() *log.Logger {
+func (tbl StubTable) Logger() sqlapi.Logger {
 	return nil
 }
 

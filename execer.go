@@ -5,6 +5,10 @@ import (
 	"database/sql"
 )
 
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
+
 // Execer is a precis of *sql.DB and *sql.Tx.
 // See database/sql.
 type Execer interface {
@@ -76,3 +80,8 @@ var _ Execer = &sql.DB{}
 var _ SqlDB = &sql.DB{}
 var _ SqlTx = &sql.Tx{}
 var _ SqlStmt = &sql.Stmt{}
+
+func IsTx(ex Execer) bool {
+	_, ok := ex.(SqlTx)
+	return ok
+}

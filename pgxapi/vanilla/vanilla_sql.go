@@ -148,7 +148,7 @@ func (tbl RecordTable) Tx() pgxapi.SqlTx {
 
 // IsTx tests whether this is within a transaction.
 func (tbl RecordTable) IsTx() bool {
-	return tbl.db.IsTx()
+	return pgxapi.IsTx(tbl.db)
 }
 
 // BeginTx starts a transaction using the table's context.

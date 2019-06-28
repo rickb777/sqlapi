@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
-	"log"
 )
 
 type StubTable struct {
@@ -20,7 +19,7 @@ func (tbl StubTable) Database() sqlapi.Database {
 	return tbl.database
 }
 
-func (tbl StubTable) Logger() *log.Logger {
+func (tbl StubTable) Logger() sqlapi.Logger {
 	return nil
 }
 
