@@ -10,9 +10,9 @@ import (
 type Logger = pgx.Logger
 
 type Getter interface {
-	QueryEx(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
+	QueryContext(ctx context.Context, sql string, args ...interface{}) (SqlRows, error)
 	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
-	QueryRowEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
 	QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow
 }
 
@@ -32,14 +32,10 @@ type Execer interface {
 	Batcher
 	Lgr
 
-	InsertEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (int64, error)
-	ExecEx(ctx context.Context, sql string, options *pgx.QueryExOptions, arguments ...interface{}) (pgx.CommandTag, error)
-	PrepareEx(ctx context.Context, name, sql string, opts *pgx.PrepareExOptions) (*pgx.PreparedStatement, error)
+	InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error)
+	ExecContext(ctx context.Context, sql string, arguments ...interface{}) (int64, error)
+	PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error)
 	IsTx() bool
-}
-
-func IsTx(ex Execer) bool {
-	return ex.IsTx()
 }
 
 //-------------------------------------------------------------------------------------------------

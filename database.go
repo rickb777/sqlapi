@@ -16,8 +16,6 @@ import (
 // See NewDatabase.
 type Database interface {
 	DB() Execer
-	BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
-	Begin() (SqlTx, error)
 	Dialect() dialect.Dialect
 	Logger() Logger
 	Wrapper() interface{}
@@ -30,14 +28,14 @@ type Database interface {
 	LogIfError(err error) error
 	LogError(err error) error
 
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	Prepare(query string) (SqlStmt, error)
-	PrepareContext(ctx context.Context, query string) (SqlStmt, error)
-	Query(query string, args ...interface{}) (SqlRows, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
-	QueryRow(query string, args ...interface{}) SqlRow
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
+	//Exec(query string, args ...interface{}) (int64, error)
+	//ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error)
+	//Prepare(query string) (SqlStmt, error)
+	//PrepareContext(ctx context.Context, name, query string) (SqlStmt, error)
+	//Query(query string, args ...interface{}) (SqlRows, error)
+	//QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
+	//QueryRow(query string, args ...interface{}) SqlRow
+	//QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
 
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
@@ -131,71 +129,6 @@ func (database *database) PingContext(ctx context.Context) error {
 // establishing a connection if necessary.
 func (database *database) Ping() error {
 	return database.PingContext(context.Background())
-}
-
-// Exec executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
-func (database *database) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return database.ExecContext(context.Background(), query, args...)
-}
-
-// ExecContext executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
-func (database *database) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return database.db.ExecContext(ctx, query, args...)
-}
-
-// Prepare creates a prepared statement for later queries or executions.
-// Multiple queries or executions may be run concurrently from the
-// returned statement.
-// The caller must call the statement's Close method
-// when the statement is no longer needed.
-func (database *database) Prepare(query string) (SqlStmt, error) {
-	return database.PrepareContext(context.Background(), query)
-}
-
-// PrepareContext creates a prepared statement for later queries or executions.
-// Multiple queries or executions may be run concurrently from the
-// returned statement.
-// The caller must call the statement's Close method
-// when the statement is no longer needed.
-//
-// The provided context is used for the preparation of the statement, not for the
-// execution of the statement.
-func (database *database) PrepareContext(ctx context.Context, query string) (SqlStmt, error) {
-	return database.db.PrepareContext(ctx, query)
-}
-
-// Query executes a query that returns rows, typically a SELECT.
-// The args are for any placeholder parameters in the query.
-func (database *database) Query(query string, args ...interface{}) (SqlRows, error) {
-	return database.QueryContext(context.Background(), query, args...)
-}
-
-// QueryContext executes a query that returns rows, typically a SELECT.
-// The args are for any placeholder parameters in the query.
-func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	return database.db.QueryContext(ctx, query, args...)
-}
-
-// QueryRow executes a query that is expected to return at most one row.
-// QueryRow always returns a non-nil value. Errors are deferred until
-// Row's Scan method is called.
-// If the query selects no rows, the *Row's Scan will return ErrNoRows.
-// Otherwise, the *Row's Scan scans the first selected row and discards
-// the rest.
-func (database *database) QueryRow(query string, args ...interface{}) SqlRow {
-	return database.QueryRowContext(context.Background(), query, args...)
-}
-
-// QueryRowContext executes a query that is expected to return at most one row.
-// QueryRowContext always returns a non-nil value. Errors are deferred until
-// Row's Scan method is called.
-// If the query selects no rows, the *Row's Scan will return ErrNoRows.
-// Otherwise, the *Row's Scan scans the first selected row and discards
-// the rest.
-func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	return database.db.QueryRowContext(ctx, query, args...)
 }
 
 // Stats returns database statistics.

@@ -16,8 +16,6 @@ type DBStats = sql.DBStats
 // See NewDatabase.
 type Database interface {
 	DB() Execer
-	//BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
-	//Begin() (SqlTx, error)
 	Dialect() dialect.Dialect
 	Logger() pgx.Logger
 	Wrapper() interface{}
@@ -29,15 +27,6 @@ type Database interface {
 	//LogQuery(query string, args ...interface{})
 	LogIfError(err error) error
 	LogError(err error) error
-
-	//Exec(query string, args ...interface{}) error
-	//ExecContext(ctx context.Context, query string, args ...interface{}) error
-	//Prepare(query string) (*pgx.PreparedStatement, error)
-	//PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error)
-	//Query(query string, args ...interface{}) (SqlRows, error)
-	//QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
-	//QueryRow(query string, args ...interface{}) SqlRow
-	//QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
 
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
@@ -128,7 +117,7 @@ func (database *database) Exec(query string, args ...interface{}) error {
 // ExecContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
 func (database *database) ExecContext(ctx context.Context, query string, args ...interface{}) error {
-	_, err := database.db.ExecEx(ctx, query, nil, args...)
+	_, err := database.db.ExecContext(ctx, query, args...)
 	return err
 }
 
@@ -150,7 +139,7 @@ func (database *database) Prepare(query string) (*pgx.PreparedStatement, error) 
 // The provided context is used for the preparation of the statement, not for the
 // execution of the statement.
 func (database *database) PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error) {
-	return database.db.PrepareEx(ctx, "", query, nil)
+	return database.db.PrepareContext(ctx, "", query)
 }
 
 // Query executes a query that returns rows, typically a SELECT.
@@ -162,7 +151,7 @@ func (database *database) Query(query string, args ...interface{}) (SqlRows, err
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
 func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	return database.db.QueryEx(ctx, query, nil, args...)
+	return database.db.QueryContext(ctx, query, args...)
 }
 
 // QueryRow executes a query that is expected to return at most one row.
@@ -182,7 +171,7 @@ func (database *database) QueryRow(query string, args ...interface{}) SqlRow {
 // Otherwise, the *Row's Scan scans the first selected row and discards
 // the rest.
 func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	return database.db.QueryRowEx(ctx, query, nil, args...)
+	return database.db.QueryRowContext(ctx, query, args...)
 }
 
 // Stats returns database statistics.
@@ -270,7 +259,7 @@ func (database *database) LogError(err error) error {
 // If the regular expression is nil, all tables names are returned.
 func (database *database) ListTables(re *regexp.Regexp) (util.StringList, error) {
 	ss := make(util.StringList, 0)
-	rows, err := database.db.QueryEx(context.Background(), database.dialect.ShowTables(), nil)
+	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
 		return nil, err
 	}

@@ -47,7 +47,7 @@ func cleanup() {
 	}
 }
 
-func TestCheckConstraint(t *testing.T) {
+func TestPgxCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
 	defer cleanup()
@@ -62,7 +62,7 @@ func TestCheckConstraint(t *testing.T) {
 	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" CHECK (role < 3)`), s)
 }
 
-func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
+func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
 	defer cleanup()
@@ -79,7 +79,7 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
 }
 
-func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
+func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
 	defer cleanup()
@@ -96,7 +96,7 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g.Expect(s).To(Equal(`CONSTRAINT pfx_persons_c0 foreign key (addresspk) references pfx_addresses on update restrict on delete cascade`), s)
 }
 
-func TestIdsUsedAsForeignKeys(t *testing.T) {
+func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
 	defer cleanup()
@@ -109,7 +109,16 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 
-	_, err := d.DB().ExecEx(context.Background(), createTables, nil)
+	_, err := d.DB().ExecContext(context.Background(), createTables1)
+	g.Expect(err).To(BeNil())
+
+	_, err = d.DB().ExecContext(context.Background(), createTables2)
+	g.Expect(err).To(BeNil())
+
+	_, err = d.DB().ExecContext(context.Background(), emptyTables1)
+	g.Expect(err).To(BeNil())
+
+	_, err = d.DB().ExecContext(context.Background(), emptyTables2)
 	g.Expect(err).To(BeNil())
 
 	aid1 := insertOne(g, d, address1)
@@ -138,7 +147,7 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	g.Expect(m2.Contains(aid4)).To(BeTrue())
 }
 
-func TestFkConstraintOfField(t *testing.T) {
+func TestPgxFkConstraintOfField(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	i64 := schema.Type{Name: "int64", Base: types.Int64}
@@ -166,29 +175,29 @@ func TestFkConstraintOfField(t *testing.T) {
 
 func insertOne(g *GomegaWithT, d pgxapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
-	id, err := d.DB().InsertEx(context.Background(), query, nil)
+	id, err := d.DB().InsertContext(context.Background(), query)
 	g.Expect(err).To(BeNil())
 	return id
 }
 
 //-------------------------------------------------------------------------------------------------
 
-const createTables = `
+const createTables1 = `
 CREATE TABLE IF NOT EXISTS pfx_addresses (
  id        serial primary key,
  lines     text,
  postcode  text
-);
+)`
 
+const createTables2 = `
 CREATE TABLE IF NOT EXISTS pfx_persons (
  uid       serial primary key,
  name      text,
  addressid integer default null
-);
+)`
 
-DELETE FROM pfx_persons;
-DELETE FROM pfx_addresses;
-`
+const emptyTables1 = `DELETE FROM pfx_persons`
+const emptyTables2 = `DELETE FROM pfx_addresses`
 
 const address1 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
 const address2 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`

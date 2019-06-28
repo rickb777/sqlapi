@@ -21,14 +21,6 @@ func (*StubDatabase) DB() pgxapi.Execer {
 	panic("implement me")
 }
 
-func (*StubDatabase) BeginTx(ctx context.Context, opts *sql.TxOptions) (*pgx.Tx, error) {
-	panic("implement me")
-}
-
-func (*StubDatabase) Begin() (*pgx.Tx, error) {
-	panic("implement me")
-}
-
 func (*StubDatabase) Dialect() dialect.Dialect {
 	panic("implement me")
 }
@@ -70,38 +62,6 @@ func (d *StubDatabase) LogIfError(err error) error {
 }
 
 func (*StubDatabase) LogError(err error) error {
-	panic("implement me")
-}
-
-func (*StubDatabase) Exec(query string, args ...interface{}) (sql.Result, error) {
-	panic("implement me")
-}
-
-func (d *StubDatabase) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return d.execer.ExecContext(ctx, query, args...)
-}
-
-//func (d *StubDatabase) Prepare(query string) (*pgx.PreparedStatement, error) {
-//	return d.PrepareContext(context.Background(), query)
-//}
-
-//func (d *StubDatabase) PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error) {
-//	return d.execer.PrepareContext(ctx, query)
-//}
-
-func (d *StubDatabase) Query(query string, args ...interface{}) (*pgx.Rows, error) {
-	return d.QueryContext(context.Background(), query, args...)
-}
-
-func (d *StubDatabase) QueryContext(ctx context.Context, query string, args ...interface{}) (*pgx.Rows, error) {
-	return d.execer.QueryContext(ctx, query, args...)
-}
-
-func (*StubDatabase) QueryRow(query string, args ...interface{}) *pgx.Row {
-	panic("implement me")
-}
-
-func (*StubDatabase) QueryRowContext(ctx context.Context, query string, args ...interface{}) *pgx.Row {
 	panic("implement me")
 }
 

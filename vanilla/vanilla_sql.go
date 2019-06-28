@@ -131,7 +131,7 @@ func (tbl RecordTable) PkColumn() string {
 // DB gets the wrapped database handle, provided this is not within a transaction.
 // Panics if it is in the wrong state - use IsTx() if necessary.
 func (tbl RecordTable) DB() sqlapi.SqlDB {
-	return tbl.db.(*sql.DB)
+	return tbl.db.(sqlapi.SqlDB)
 }
 
 // Execer gets the wrapped database or transaction handle.
@@ -142,12 +142,12 @@ func (tbl RecordTable) Execer() sqlapi.Execer {
 // Tx gets the wrapped transaction handle, provided this is within a transaction.
 // Panics if it is in the wrong state - use IsTx() if necessary.
 func (tbl RecordTable) Tx() sqlapi.SqlTx {
-	return tbl.db.(*sql.Tx)
+	return tbl.db.(sqlapi.SqlTx)
 }
 
 // IsTx tests whether this is within a transaction.
 func (tbl RecordTable) IsTx() bool {
-	return sqlapi.IsTx(tbl.db)
+	return tbl.db.IsTx()
 }
 
 // BeginTx starts a transaction using the table's context.
@@ -170,7 +170,7 @@ func (tbl RecordTable) BeginTx(opts *sql.TxOptions) (RecordTable, error) {
 // Using returns a modified Table using the transaction supplied. This is needed
 // when making multiple queries across several tables within a single transaction.
 // The result is a modified copy of the table; the original is unchanged.
-func (tbl RecordTable) Using(tx *sql.Tx) RecordTable {
+func (tbl RecordTable) Using(tx sqlapi.SqlTx) RecordTable {
 	tbl.db = tx
 	return tbl
 }

@@ -1,6 +1,7 @@
 package constraint_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -46,10 +47,11 @@ func newDatabase() sqlapi.Database {
 		return nil
 	}
 
-	d := sqlapi.NewDatabase(db, di, nil, nil)
+	ex := sqlapi.WrapDB(db)
+	d := sqlapi.NewDatabase(ex, di, nil, nil)
 	if testing.Verbose() {
 		lgr := log.New(os.Stdout, "", log.LstdFlags)
-		d = sqlapi.NewDatabase(db, di, lgr, nil)
+		d = sqlapi.NewDatabase(ex, di, lgr, nil)
 	}
 	return d
 }
@@ -124,7 +126,7 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 
 	setupSql := strings.Replace(createTables, "¬", "`", -1)
-	_, err := d.Exec(setupSql)
+	_, err := d.DB().ExecContext(context.Background(), setupSql)
 	g.Expect(err).To(BeNil())
 
 	aid1 := insertOne(g, d, address1)
@@ -181,10 +183,7 @@ func TestFkConstraintOfField(t *testing.T) {
 
 func insertOne(g *GomegaWithT, d sqlapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
-	r, err := d.Exec(query)
-	g.Expect(err).To(BeNil())
-
-	id, err := r.LastInsertId()
+	id, err := d.DB().InsertContext(context.Background(), query)
 	g.Expect(err).To(BeNil())
 	return id
 }

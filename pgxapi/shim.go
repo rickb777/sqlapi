@@ -31,14 +31,14 @@ type shim struct {
 var _ SqlDB = new(shim)
 var _ SqlTx = new(shim)
 
-// QueryExReplacePlaceholders executes any query returning data rows,
+// QueryContext executes any query returning data rows,
 // having first replaced all '?' placeholders with numbered ones.
-func (sh *shim) QueryEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error) {
+func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	return sh.QueryExRaw(ctx, qr, options, args...)
+	return sh.QueryExRaw(ctx, qr, nil, args...)
 }
 
-// QueryEx executes any query returning data rows.
+// QueryExRaw executes any query returning data rows.
 func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error) {
 	rows, err := sh.ex.QueryEx(ctx, query, options, args...)
 	if err != nil {
@@ -47,20 +47,20 @@ func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.Query
 	return rows, nil
 }
 
-// QueryRowEx executes any query returning one data row,
+// QueryRowContext executes any query returning one data row,
 // having first replaced all '?' placeholders with numbered ones.
-func (sh *shim) QueryRowEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow {
+func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	return sh.QueryRowExRaw(ctx, qr, options, args...)
+	return sh.QueryRowExRaw(ctx, qr, nil, args...)
 }
 
-// QueryRowEx executes any query returning one data row.
+// QueryRowExRaw executes any query returning one data row.
 func (sh *shim) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow {
 	return sh.ex.QueryRowEx(ctx, query, options, args...)
 }
 
-// InsertEx executes an insert query returning an ID.
-func (sh *shim) InsertEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (int64, error) {
+// InsertContext executes an insert query returning an ID.
+func (sh *shim) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	row := sh.ex.QueryRowEx(ctx, query, nil, args...)
 	var id int64
 	err := row.Scan(&id)
@@ -70,15 +70,18 @@ func (sh *shim) InsertEx(ctx context.Context, query string, options *pgx.QueryEx
 	return id, errors.Wrapf(err, "%s %v", query, args)
 }
 
-// ExecEx executes any query returning nothing.
-func (sh *shim) ExecEx(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (pgx.CommandTag, error) {
-	tag, err := sh.ex.ExecEx(ctx, query, options, args...)
-	return tag, errors.Wrapf(err, "%s %v", query, args)
+// ExecContext executes any query returning nothing.
+func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	tag, err := sh.ex.ExecEx(ctx, query, nil, args...)
+	if err != nil {
+		return 0, errors.Wrapf(err, "%s %v", query, args)
+	}
+	return tag.RowsAffected(), nil
 }
 
-// PrepareEx prepares a statement for repeated use.
-func (sh *shim) PrepareEx(ctx context.Context, name, sql string, opts *pgx.PrepareExOptions) (*pgx.PreparedStatement, error) {
-	ps, err := sh.ex.PrepareEx(ctx, name, sql, opts)
+// PrepareContext prepares a statement for repeated use.
+func (sh *shim) PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error) {
+	ps, err := sh.ex.PrepareEx(ctx, name, sql, nil)
 	return ps, errors.Wrapf(err, "%s %s", name, sql)
 }
 

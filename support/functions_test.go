@@ -107,8 +107,7 @@ func TestQuery_happy(t *testing.T) {
 func TestExec_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	r := stubResult{ra: 2}
-	e := stubExecer{stubResult: r}
+	e := stubExecer{stubResult: 2}
 	d := &StubDatabase{execer: e}
 	tbl := StubTable{
 		name: sqlapi.TableName{

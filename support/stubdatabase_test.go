@@ -19,14 +19,6 @@ func (*StubDatabase) DB() sqlapi.Execer {
 	panic("implement me")
 }
 
-func (*StubDatabase) BeginTx(ctx context.Context, opts *sql.TxOptions) (sqlapi.SqlTx, error) {
-	panic("implement me")
-}
-
-func (*StubDatabase) Begin() (sqlapi.SqlTx, error) {
-	panic("implement me")
-}
-
 func (*StubDatabase) Dialect() dialect.Dialect {
 	panic("implement me")
 }
@@ -71,66 +63,47 @@ func (*StubDatabase) LogError(err error) error {
 	panic("implement me")
 }
 
-func (*StubDatabase) Exec(query string, args ...interface{}) (sql.Result, error) {
-	panic("implement me")
-}
-
-func (d *StubDatabase) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return d.execer.ExecContext(ctx, query, args...)
-}
-
-func (d *StubDatabase) Prepare(query string) (sqlapi.SqlStmt, error) {
-	return d.PrepareContext(context.Background(), query)
-}
-
-func (d *StubDatabase) PrepareContext(ctx context.Context, query string) (sqlapi.SqlStmt, error) {
-	return d.execer.PrepareContext(ctx, query)
-}
-
-func (d *StubDatabase) Query(query string, args ...interface{}) (sqlapi.SqlRows, error) {
-	return d.QueryContext(context.Background(), query, args...)
-}
-
-func (d *StubDatabase) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
-	return d.execer.QueryContext(ctx, query, args...)
-}
-
-func (*StubDatabase) QueryRow(query string, args ...interface{}) sqlapi.SqlRow {
-	panic("implement me")
-}
-
-func (*StubDatabase) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
-	panic("implement me")
-}
-
 func (*StubDatabase) ListTables(re *regexp.Regexp) (util.StringList, error) {
+	panic("implement me")
+}
+
+func (*StubDatabase) IsTx() bool {
 	panic("implement me")
 }
 
 //-------------------------------------------------------------------------------------------------
 
 type stubExecer struct {
-	stubResult stubResult
+	stubResult int64
 }
 
-func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	fmt.Printf("ExecContext: "+query+" %v", args...)
 	return e.stubResult, nil
 }
 
-func (stubExecer) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+func (e stubExecer) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	fmt.Printf("InsertContext: "+query+" %v", args...)
+	return e.stubResult, nil
+}
+
+func (stubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
 	fmt.Printf("PrepareContext: " + query)
 	return nil, nil
 }
 
-func (stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	fmt.Printf("QueryContext: "+query+" %v", args...)
 	return nil, nil
 }
 
-func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
 	fmt.Printf("QueryRowContext: "+query+" %v", args...)
 	return nil
+}
+
+func (stubExecer) IsTx() bool {
+	panic("implement me")
 }
 
 //-------------------------------------------------------------------------------------------------

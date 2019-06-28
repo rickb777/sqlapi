@@ -80,12 +80,11 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	database := tbl.Database()
 	database.LogQuery(q2, args...)
-	res, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
+	n, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
 	if err != nil {
 		return 0, database.LogError(errors.Wrap(err, q2))
 	}
-	n, err := res.RowsAffected()
-	return n, database.LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
+	return n, require.ChainErrorIfExecNotSatisfiedBy(err, req, n)
 }
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
