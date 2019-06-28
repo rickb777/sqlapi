@@ -51,7 +51,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
 	q := tbl.Dialect().Quoter()
 	whs, args := where.Where(wh, q)
-	orderBy := qc.Build(q)
+	orderBy := where.Build(qc, q)
 	return fmt.Sprintf("SELECT %s FROM %s %s %s",
 		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
