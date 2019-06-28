@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+type Logger = pgx.Logger
+
 type Getter interface {
 	QueryEx(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
 	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
