@@ -60,7 +60,7 @@ type database struct {
 //
 // The wrapper holds some associated data your application needs for this database, if any.
 // Otherwise this should be nil. As with the logger, it cannot be changed after construction.
-func NewDatabase(db Execer, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) Database {
+func NewDatabase(db SqlDB, dialect dialect.Dialect, logger *log.Logger, wrapper interface{}) Database {
 	var enabled int32 = 0
 	if logger != nil {
 		enabled = 1

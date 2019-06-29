@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func WrapDB(ex basicExecer) Execer {
+func WrapDB(ex *sql.DB) SqlDB {
 	return &shim{ex: ex}
 }
 
