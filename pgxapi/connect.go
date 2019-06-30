@@ -67,7 +67,7 @@ func doConnect(config pgx.ConnConfig, lgr pgx.Logger, logLevel pgx.LogLevel) (Sq
 		return nil, errors.Wrap(err, "Unable to communicate with to the database.\n")
 	}
 
-	return &shim{ex: pool, lgr: &toggleLogger{lgr: lgr, enabled: 1}, isTx: false}, nil
+	return WrapDB(pool, lgr), nil
 }
 
 //-------------------------------------------------------------------------------------------------
