@@ -7,12 +7,13 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/util"
+	"io"
 	"regexp"
 )
 
 type StubDatabase struct {
-	execer        stubExecer
-	loggedQueries []string
+	execer stubExecer
+	stdLog *stubLogger
 }
 
 func (*StubDatabase) DB() sqlapi.Execer {
@@ -23,8 +24,8 @@ func (*StubDatabase) Dialect() dialect.Dialect {
 	panic("implement me")
 }
 
-func (*StubDatabase) Logger() sqlapi.Logger {
-	panic("implement me")
+func (d *StubDatabase) Logger() sqlapi.Logger {
+	return sqlapi.NewLogger(d.stdLog)
 }
 
 func (*StubDatabase) Wrapper() interface{} {
@@ -43,31 +44,7 @@ func (*StubDatabase) Stats() sql.DBStats {
 	panic("implement me")
 }
 
-func (*StubDatabase) TraceLogging(on bool) {
-	panic("implement me")
-}
-
-func (d *StubDatabase) LogQuery(query string, args ...interface{}) {
-	d.loggedQueries = append(d.loggedQueries, query)
-	d.loggedQueries = append(d.loggedQueries, fmt.Sprintf("%+v", args))
-}
-
-func (d *StubDatabase) LogIfError(err error) error {
-	if err != nil {
-		d.loggedQueries = append(d.loggedQueries, err.Error())
-	}
-	return err
-}
-
-func (*StubDatabase) LogError(err error) error {
-	panic("implement me")
-}
-
 func (*StubDatabase) ListTables(re *regexp.Regexp) (util.StringList, error) {
-	panic("implement me")
-}
-
-func (*StubDatabase) IsTx() bool {
 	panic("implement me")
 }
 
@@ -108,15 +85,12 @@ func (stubExecer) IsTx() bool {
 
 //-------------------------------------------------------------------------------------------------
 
-type stubResult struct {
-	li, ra int64
-	err    error
+type stubLogger struct {
+	logged []string
 }
 
-func (r stubResult) LastInsertId() (int64, error) {
-	return r.li, r.err
+func (r *stubLogger) Printf(format string, v ...interface{}) {
+	r.logged = append(r.logged, fmt.Sprintf(format, v...))
 }
 
-func (r stubResult) RowsAffected() (int64, error) {
-	return r.ra, r.err
-}
+func (r *stubLogger) SetOutput(w io.Writer) {}

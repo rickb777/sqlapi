@@ -33,7 +33,7 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return database.LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return database.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -43,7 +43,7 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 		}
 	}
 
-	return database.LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return database.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -67,10 +67,10 @@ func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.Que
 // The caller must call rows.Close() on the result.
 func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	database := tbl.Database()
-	database.LogQuery(q2, args...)
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, database.LogIfError(errors.Wrap(err, q2))
+	return rows, lgr.LogIfError(errors.Wrap(err, q2))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -78,11 +78,11 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows,
 // The query is logged using whatever logger is configured. If an error arises, this too is logged.
 func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	database := tbl.Database()
-	database.LogQuery(q2, args...)
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(q2, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
 	if err != nil {
-		return 0, database.LogError(errors.Wrap(err, q2))
+		return 0, lgr.LogError(errors.Wrap(err, q2))
 	}
 	return n, require.ChainErrorIfExecNotSatisfiedBy(err, req, n)
 }

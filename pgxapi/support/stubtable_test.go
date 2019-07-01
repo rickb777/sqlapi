@@ -2,8 +2,6 @@ package support
 
 import (
 	"context"
-	"github.com/jackc/pgx"
-	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 )
@@ -15,13 +13,13 @@ type StubTable struct {
 }
 
 // Type conformance checks
-//var _ pgxapi.Table = &StubTable{}
+var _ pgxapi.Table = &StubTable{}
 
 func (tbl StubTable) Database() pgxapi.Database {
 	return nil //tbl.database
 }
 
-func (tbl StubTable) Logger() sqlapi.Logger {
+func (tbl StubTable) Logger() pgxapi.Logger {
 	return nil
 }
 
@@ -53,6 +51,6 @@ func (tbl StubTable) IsTx() bool {
 	return false
 }
 
-func (tbl StubTable) Query(query string, args ...interface{}) (*pgx.Rows, error) {
+func (tbl StubTable) Query(query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	return nil, nil
 }

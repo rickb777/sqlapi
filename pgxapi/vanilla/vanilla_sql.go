@@ -94,7 +94,7 @@ func (tbl RecordTable) Database() pgxapi.Database {
 }
 
 // Logger gets the trace logger.
-func (tbl RecordTable) Logger() pgx.Logger {
+func (tbl RecordTable) Logger() pgxapi.Logger {
 	return tbl.database.Logger()
 }
 
@@ -176,16 +176,12 @@ func (tbl RecordTable) Using(tx pgxapi.SqlTx) RecordTable {
 	return tbl
 }
 
-//func (tbl RecordTable) logQuery(query string, args ...interface{}) {
-//	tbl.database.LogQuery(query, args...)
-//}
-
 func (tbl RecordTable) logError(err error) error {
-	return tbl.database.LogError(err)
+	return tbl.database.Logger().LogError(err)
 }
 
 func (tbl RecordTable) logIfError(err error) error {
-	return tbl.database.LogIfError(err)
+	return tbl.database.Logger().LogIfError(err)
 }
 
 //--------------------------------------------------------------------------------

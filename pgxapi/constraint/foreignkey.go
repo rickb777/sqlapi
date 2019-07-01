@@ -189,7 +189,7 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl pgxapi.Table) (util.Int64Set, e
 func fetchIds(tbl pgxapi.Table, query string) (util.Int64Set, error) {
 	rows, err := tbl.Query(query)
 	if err != nil {
-		return nil, tbl.Database().LogIfError(errors.Wrap(err, query))
+		return nil, tbl.Database().Logger().LogIfError(errors.Wrap(err, query))
 	}
 	defer rows.Close()
 
@@ -199,5 +199,5 @@ func fetchIds(tbl pgxapi.Table, query string) (util.Int64Set, error) {
 		rows.Scan(&id)
 		set.Add(id)
 	}
-	return set, tbl.Database().LogIfError(rows.Err())
+	return set, tbl.Database().Logger().LogIfError(rows.Err())
 }

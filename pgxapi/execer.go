@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-type Logger = pgx.Logger
-
 type Getter interface {
 	QueryContext(ctx context.Context, sql string, args ...interface{}) (SqlRows, error)
 	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
@@ -21,21 +19,23 @@ type Batcher interface {
 	BeginBatch() *pgx.Batch
 }
 
-type Lgr interface {
+type Logger interface {
 	pgx.Logger
 	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
+	LogIfError(err error) error
+	LogError(err error) error
 	TraceLogging(on bool)
 }
 
 type Execer interface {
 	Getter
 	Batcher
-	Lgr
 
 	InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error)
 	ExecContext(ctx context.Context, sql string, arguments ...interface{}) (int64, error)
 	PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error)
 	IsTx() bool
+	Logger() Logger
 }
 
 //-------------------------------------------------------------------------------------------------

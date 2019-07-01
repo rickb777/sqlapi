@@ -33,7 +33,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return database.LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return database.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -43,7 +43,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		}
 	}
 
-	return database.LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return database.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows,
 	database := tbl.Database()
 	//database.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, database.LogIfError(errors.Wrap(err, q2))
+	return rows, database.Logger().LogIfError(errors.Wrap(err, q2))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -82,9 +82,9 @@ func Exec(tbl pgxapi.Table, req require.Requirement, query string, args ...inter
 	//database.LogQuery(q2, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
 	if err != nil {
-		return 0, database.LogError(errors.Wrap(err, q2))
+		return 0, database.Logger().LogError(errors.Wrap(err, q2))
 	}
-	return n, database.LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
+	return n, database.Logger().LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
 }
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.

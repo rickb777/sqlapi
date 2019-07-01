@@ -35,7 +35,7 @@ func newDatabase(t *testing.T) pgxapi.Database {
 
 	d := pgxapi.NewDatabase(db, dialect.Postgres, nil)
 	if !testing.Verbose() {
-		d.TraceLogging(false)
+		d.Logger().TraceLogging(false)
 	}
 	return d
 }

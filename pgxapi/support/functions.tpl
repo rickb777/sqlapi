@@ -7,7 +7,7 @@ func Slice{{.Type.U}}List(tbl pgxapi.Table, req require.Requirement, sqlname str
 		return nil, err
 	}
 	defer rows.Close()
-	return doScan{{.Type.U}}List(req, rows, tbl.Database().LogIfError)
+	return doScan{{.Type.U}}List(req, rows, tbl.Database().Logger().LogIfError)
 }
 
 // doScan{{.Type.U}}List processes result rows to extract a list of {{.Type}}s.
@@ -35,7 +35,7 @@ func Slice{{.Type.U}}PtrList(tbl pgxapi.Table, req require.Requirement, sqlname 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScan{{.Type.U}}PtrList(req, rows, tbl.Database().LogIfError)
+	return doScan{{.Type.U}}PtrList(req, rows, tbl.Database().Logger().LogIfError)
 }
 
 // doScan{{.Type.U}}PtrList processes result rows to extract a list of {{.Type}}s.

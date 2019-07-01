@@ -19,8 +19,8 @@ func TestLoggingOnOff(t *testing.T) {
 	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
 	db := NewDatabase(sh, dialect.Sqlite, nil)
-	db.LogError(errors.New("one"))
-	db.LogError(errors.New("two"))
+	db.Logger().LogError(errors.New("one"))
+	db.Logger().LogError(errors.New("two"))
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:two]\n"))
@@ -34,9 +34,9 @@ func TestLoggingError(t *testing.T) {
 	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
 	db := NewDatabase(sh, dialect.Sqlite, nil)
-	db.LogIfError(nil)
-	db.LogIfError(fmt.Errorf("four"))
-	db.LogIfError(nil)
+	db.Logger().LogIfError(nil)
+	db.Logger().LogIfError(fmt.Errorf("four"))
+	db.Logger().LogIfError(nil)
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error [error:four]\n"))
