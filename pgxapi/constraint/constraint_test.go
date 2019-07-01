@@ -23,6 +23,9 @@ import (
 var db pgxapi.SqlDB
 
 func connect(t *testing.T) {
+	if os.Getenv("PGHOST") == "" {
+		t.Skip()
+	}
 	lgr := testingadapter.NewLogger(t)
 	db = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
 }
