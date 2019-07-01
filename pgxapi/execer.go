@@ -22,6 +22,7 @@ type Batcher interface {
 type Logger interface {
 	pgx.Logger
 	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
+	LogQuery(query string, args ...interface{})
 	LogIfError(err error) error
 	LogError(err error) error
 	TraceLogging(on bool)

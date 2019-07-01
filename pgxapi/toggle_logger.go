@@ -42,6 +42,10 @@ func (lgr *toggleLogger) LogT(level pgx.LogLevel, msg string, startTime *time.Ti
 	}
 }
 
+func (lgr *toggleLogger) LogQuery(query string, args ...interface{}) {
+	// no-op: pgx handles this
+}
+
 // LogIfError writes error info to the logger, if both the logger and the error are non-nil.
 // It returns the error.
 func (lgr *toggleLogger) LogIfError(err error) error {
