@@ -23,11 +23,13 @@ import (
 var db pgxapi.SqlDB
 
 func connect(t *testing.T) {
-	if os.Getenv("PGHOST") == "" {
+	lgr := testingadapter.NewLogger(t)
+	var err error
+	db, err = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
+	if err != nil {
+		t.Log(err)
 		t.Skip()
 	}
-	lgr := testingadapter.NewLogger(t)
-	db = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
 }
 
 func newDatabase(t *testing.T) pgxapi.Database {
