@@ -8,7 +8,6 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/util"
-	"log"
 	"regexp"
 )
 
@@ -17,82 +16,92 @@ type StubDatabase struct {
 	loggedQueries []string
 }
 
+// Type conformance checks
+var _ pgxapi.Database = &StubDatabase{}
+
 func (*StubDatabase) DB() pgxapi.Execer {
-	panic("implement me")
+	panic("implement DB")
 }
 
 func (*StubDatabase) Dialect() dialect.Dialect {
-	panic("implement me")
+	panic("implement Dialect")
 }
 
-func (*StubDatabase) Logger() *log.Logger {
-	panic("implement me")
+func (*StubDatabase) Logger() pgxapi.Logger {
+	panic("implement Logger")
 }
 
 func (*StubDatabase) Wrapper() interface{} {
-	panic("implement me")
+	panic("implement Wrapper")
 }
 
 func (*StubDatabase) PingContext(ctx context.Context) error {
-	panic("implement me")
+	panic("implement PingContext")
 }
 
 func (*StubDatabase) Ping() error {
-	panic("implement me")
+	panic("implement Ping")
 }
 
 func (*StubDatabase) Stats() sql.DBStats {
-	panic("implement me")
-}
-
-func (*StubDatabase) TraceLogging(on bool) {
-	panic("implement me")
-}
-
-func (d *StubDatabase) LogQuery(query string, args ...interface{}) {
-	d.loggedQueries = append(d.loggedQueries, query)
-	d.loggedQueries = append(d.loggedQueries, fmt.Sprintf("%+v", args))
-}
-
-func (d *StubDatabase) LogIfError(err error) error {
-	if err != nil {
-		d.loggedQueries = append(d.loggedQueries, err.Error())
-	}
-	return err
-}
-
-func (*StubDatabase) LogError(err error) error {
-	panic("implement me")
+	panic("implement Stats")
 }
 
 func (*StubDatabase) ListTables(re *regexp.Regexp) (util.StringList, error) {
-	panic("implement me")
+	panic("implement ListTables")
 }
 
 //-------------------------------------------------------------------------------------------------
 
 type stubExecer struct {
-	stubResult stubResult
+	stubResult int64
 }
 
-func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	fmt.Printf("ExecContext: "+query+" %v", args...)
-	return e.stubResult, nil
-}
+// Type conformance checks
+var _ pgxapi.Execer = &stubExecer{}
 
-func (stubExecer) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
-	fmt.Printf("PrepareContext: " + query)
-	return nil, nil
-}
-
-func (stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (*pgx.Rows, error) {
+func (e stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	fmt.Printf("QueryContext: "+query+" %v", args...)
 	return nil, nil
 }
 
-func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) *pgx.Row {
+func (e stubExecer) QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (pgxapi.SqlRows, error) {
+	panic("implement me")
+}
+
+func (e stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) pgxapi.SqlRow {
 	fmt.Printf("QueryRowContext: "+query+" %v", args...)
 	return nil
+}
+
+func (e stubExecer) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) pgxapi.SqlRow {
+	panic("implement me")
+}
+
+func (e stubExecer) BeginBatch() *pgx.Batch {
+	panic("implement me")
+}
+
+func (e stubExecer) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	panic("implement me")
+}
+
+func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	fmt.Printf("ExecContext: "+query+" %v", args...)
+	return e.stubResult, nil
+}
+
+func (e stubExecer) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
+	fmt.Printf("PrepareContext: " + query)
+	return nil, nil
+}
+
+func (e stubExecer) IsTx() bool {
+	panic("implement me")
+}
+
+func (e stubExecer) Logger() pgxapi.Logger {
+	panic("implement me")
 }
 
 //-------------------------------------------------------------------------------------------------

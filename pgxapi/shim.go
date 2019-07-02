@@ -3,8 +3,6 @@ package pgxapi
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
@@ -101,16 +99,8 @@ func (sh *shim) IsTx() bool {
 	return sh.isTx
 }
 
-func (sh *shim) Log(level pgx.LogLevel, msg string, data map[string]interface{}) {
-	if sh.lgr != nil {
-		sh.lgr.Log(level, msg, data)
-	}
-}
-
-func (sh *shim) TraceLogging(on bool) {
-	if sh.lgr != nil {
-		sh.lgr.TraceLogging(on)
-	}
+func (sh *shim) Logger() Logger {
+	return sh.lgr
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -193,14 +183,6 @@ func (sh *shim) PingContext(ctx context.Context) error {
 
 func (sh *shim) Stats() DBStats {
 	return DBStats{} //sh.ex.(*pgx.ConnPool).Stats()
-}
-
-// Log emits a log event, supporting an elapsed-time calculation and providing an easier
-// way to supply data parameters as name,value pairs.
-func (sh *shim) LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{}) {
-	if sh.lgr != nil {
-		sh.lgr.LogT(level, msg, startTime, data...)
-	}
 }
 
 //-------------------------------------------------------------------------------------------------

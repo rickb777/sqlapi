@@ -17,17 +17,11 @@ type DBStats = sql.DBStats
 type Database interface {
 	DB() Execer
 	Dialect() dialect.Dialect
-	Logger() pgx.Logger
+	Logger() Logger
 	Wrapper() interface{}
 	PingContext(ctx context.Context) error
 	Ping() error
 	Stats() DBStats
-
-	TraceLogging(on bool)
-	//LogQuery(query string, args ...interface{})
-	LogIfError(err error) error
-	LogError(err error) error
-
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
 
@@ -85,8 +79,8 @@ func (database *database) Dialect() dialect.Dialect {
 }
 
 // Logger gets the trace logger.
-func (database *database) Logger() pgx.Logger {
-	return database.db
+func (database *database) Logger() Logger {
+	return database.db.Logger()
 }
 
 // Wrapper gets whatever structure is present, as needed.
@@ -108,148 +102,9 @@ func (database *database) Ping() error {
 	return database.PingContext(context.Background())
 }
 
-// Exec executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
-func (database *database) Exec(query string, args ...interface{}) error {
-	return database.ExecContext(context.Background(), query, args...)
-}
-
-// ExecContext executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
-func (database *database) ExecContext(ctx context.Context, query string, args ...interface{}) error {
-	_, err := database.db.ExecContext(ctx, query, args...)
-	return err
-}
-
-// Prepare creates a prepared statement for later queries or executions.
-// Multiple queries or executions may be run concurrently from the
-// returned statement.
-// The caller must call the statement's Close method
-// when the statement is no longer needed.
-func (database *database) Prepare(query string) (*pgx.PreparedStatement, error) {
-	return database.PrepareContext(context.Background(), query)
-}
-
-// PrepareContext creates a prepared statement for later queries or executions.
-// Multiple queries or executions may be run concurrently from the
-// returned statement.
-// The caller must call the statement's Close method
-// when the statement is no longer needed.
-//
-// The provided context is used for the preparation of the statement, not for the
-// execution of the statement.
-func (database *database) PrepareContext(ctx context.Context, query string) (*pgx.PreparedStatement, error) {
-	return database.db.PrepareContext(ctx, "", query)
-}
-
-// Query executes a query that returns rows, typically a SELECT.
-// The args are for any placeholder parameters in the query.
-func (database *database) Query(query string, args ...interface{}) (SqlRows, error) {
-	return database.QueryContext(context.Background(), query, args...)
-}
-
-// QueryContext executes a query that returns rows, typically a SELECT.
-// The args are for any placeholder parameters in the query.
-func (database *database) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	return database.db.QueryContext(ctx, query, args...)
-}
-
-// QueryRow executes a query that is expected to return at most one row.
-// QueryRow always returns a non-nil value. Errors are deferred until
-// Row's Scan method is called.
-// If the query selects no rows, the *Row's Scan will return ErrNoRows.
-// Otherwise, the *Row's Scan scans the first selected row and discards
-// the rest.
-func (database *database) QueryRow(query string, args ...interface{}) SqlRow {
-	return database.QueryRowContext(context.Background(), query, args...)
-}
-
-// QueryRowContext executes a query that is expected to return at most one row.
-// QueryRowContext always returns a non-nil value. Errors are deferred until
-// Row's Scan method is called.
-// If the query selects no rows, the *Row's Scan will return ErrNoRows.
-// Otherwise, the *Row's Scan scans the first selected row and discards
-// the rest.
-func (database *database) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	return database.db.QueryRowContext(ctx, query, args...)
-}
-
 // Stats returns database statistics.
 func (database *database) Stats() sql.DBStats {
 	return database.db.(SqlDB).Stats()
-}
-
-//-------------------------------------------------------------------------------------------------
-
-// TraceLogging turns query trace logging on or off. This has no effect unless the database was
-// created with a non-nil logger.
-func (database *database) TraceLogging(on bool) {
-	database.db.TraceLogging(on)
-}
-
-//// LogQuery writes query info to the logger, if it is not nil.
-//func (database *database) LogQuery(query string, args ...interface{}) {
-//	if database.loggingEnabled() {
-//		query = strings.TrimSpace(query)
-//		if len(args) > 0 {
-//			ss := make([]interface{}, len(args))
-//			for i, v := range args {
-//				ss[i] = derefArg(v)
-//			}
-//			database.logger.Printf("%s %v\n", query, ss)
-//		} else {
-//			database.logger.Println(query)
-//		}
-//	}
-//}
-
-//func derefArg(arg interface{}) interface{} {
-//	switch v := arg.(type) {
-//	case *int:
-//		return *v
-//	case *int8:
-//		return *v
-//	case *int16:
-//		return *v
-//	case *int32:
-//		return *v
-//	case *int64:
-//		return *v
-//	case *uint:
-//		return *v
-//	case *uint8:
-//		return *v
-//	case *uint16:
-//		return *v
-//	case *uint32:
-//		return *v
-//	case *uint64:
-//		return *v
-//	case *float32:
-//		return *v
-//	case *float64:
-//		return *v
-//	case *bool:
-//		return *v
-//	case *string:
-//		return *v
-//	}
-//	return arg
-//}
-
-// LogIfError writes error info to the logger, if both the logger and the error are non-nil.
-// It returns the error.
-func (database *database) LogIfError(err error) error {
-	if err != nil {
-		database.db.LogT(pgx.LogLevelError, "Error", nil, "error", err)
-	}
-	return err
-}
-
-// LogError writes error info to the logger, if the logger is not nil. It returns the error.
-func (database *database) LogError(err error) error {
-	database.db.LogT(pgx.LogLevelError, "Error", nil, "error", err)
-	return err
 }
 
 //-------------------------------------------------------------------------------------------------

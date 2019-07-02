@@ -190,7 +190,7 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, e
 func fetchIds(tbl sqlapi.Table, query string) (util.Int64Set, error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
-		return nil, tbl.Database().LogIfError(errors.Wrap(err, query))
+		return nil, tbl.Database().Logger().LogIfError(errors.Wrap(err, query))
 	}
 	defer rows.Close()
 
@@ -200,5 +200,5 @@ func fetchIds(tbl sqlapi.Table, query string) (util.Int64Set, error) {
 		rows.Scan(&id)
 		set.Add(id)
 	}
-	return set, tbl.Database().LogIfError(rows.Err())
+	return set, tbl.Database().Logger().LogIfError(rows.Err())
 }

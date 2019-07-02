@@ -2,7 +2,6 @@ package pgxapi
 
 import (
 	"context"
-	"github.com/jackc/pgx"
 	"github.com/rickb777/sqlapi/dialect"
 )
 
@@ -39,7 +38,7 @@ type Table interface {
 	Dialect() dialect.Dialect
 
 	// Logger gets the trace logger.
-	Logger() pgx.Logger
+	Logger() Logger
 
 	//---------------------------------------------------------------------------------------------
 	// The following type-specific methods are also provided (but are not part of this interface).

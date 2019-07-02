@@ -3,10 +3,16 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 type Logger interface {
-	Printf(format string, v ...interface{})
+	Log(format string, v ...interface{})
+	LogT(msg string, startTime *time.Time, data ...interface{})
+	LogQuery(query string, args ...interface{})
+	LogIfError(err error) error
+	LogError(err error) error
+	TraceLogging(on bool)
 }
 
 // Execer is a precis of *sql.DB and *sql.Tx.

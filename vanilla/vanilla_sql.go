@@ -175,16 +175,12 @@ func (tbl RecordTable) Using(tx sqlapi.SqlTx) RecordTable {
 	return tbl
 }
 
-func (tbl RecordTable) logQuery(query string, args ...interface{}) {
-	tbl.database.LogQuery(query, args...)
-}
-
 func (tbl RecordTable) logError(err error) error {
-	return tbl.database.LogError(err)
+	return tbl.database.Logger().LogError(err)
 }
 
 func (tbl RecordTable) logIfError(err error) error {
-	return tbl.database.LogIfError(err)
+	return tbl.database.Logger().LogIfError(err)
 }
 
 //--------------------------------------------------------------------------------

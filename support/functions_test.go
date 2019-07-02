@@ -88,7 +88,7 @@ func TestSliceSql(t *testing.T) {
 func TestQuery_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := &StubDatabase{}
+	d := &StubDatabase{stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
 			Prefix: "p.",
@@ -101,14 +101,14 @@ func TestQuery_happy(t *testing.T) {
 	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(d.loggedQueries).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1", "[123]"}))
+	g.Expect(d.stdLog.logged).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1 [123]\n"}))
 }
 
 func TestExec_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	e := stubExecer{stubResult: 2}
-	d := &StubDatabase{execer: e}
+	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
 			Prefix: "p.",
@@ -121,5 +121,5 @@ func TestExec_happy(t *testing.T) {
 	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(d.loggedQueries).To(Equal([]string{"DELETE FROM p.table WHERE x=$1", "[123]"}))
+	g.Expect(d.stdLog.logged).To(Equal([]string{"DELETE FROM p.table WHERE x=$1 [123]\n"}))
 }

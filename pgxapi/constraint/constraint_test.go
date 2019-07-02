@@ -24,7 +24,12 @@ var db pgxapi.SqlDB
 
 func connect(t *testing.T) {
 	lgr := testingadapter.NewLogger(t)
-	db = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
+	var err error
+	db, err = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
+	if err != nil {
+		t.Log(err)
+		t.Skip()
+	}
 }
 
 func newDatabase(t *testing.T) pgxapi.Database {
@@ -35,7 +40,7 @@ func newDatabase(t *testing.T) pgxapi.Database {
 
 	d := pgxapi.NewDatabase(db, dialect.Postgres, nil)
 	if !testing.Verbose() {
-		d.TraceLogging(false)
+		d.Logger().TraceLogging(false)
 	}
 	return d
 }
