@@ -27,14 +27,30 @@ type Lgr interface {
 	TraceLogging(on bool)
 }
 
+// Execer is a precis of *pgx.ConnPool and *pgx.Tx.
 type Execer interface {
 	Getter
 	Batcher
 	Lgr
 
-	InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error)
+	// The args are for any placeholder parameters in the query.
+	// ExecContext executes a query without returning any rows.
 	ExecContext(ctx context.Context, sql string, arguments ...interface{}) (int64, error)
+
+	// InsertContext executes a query and returns the insertion ID.
+	// The args are for any placeholder parameters in the query.
+	InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error)
+
+	// PrepareContext creates a prepared statement for later queries or executions.
+	// Multiple queries or executions may be run concurrently from the
+	// returned statement.
+	// The caller must call the statement's Close method
+	// when the statement is no longer needed.
+	//
+	// The provided context is used for the preparation of the statement, not for the
+	// execution of the statement.
 	PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error)
+
 	IsTx() bool
 }
 
@@ -44,7 +60,7 @@ type Execer interface {
 type SqlDB interface {
 	Execer
 	BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
-	Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(Execer) error) error
+	Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) error
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
 	Close()

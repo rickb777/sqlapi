@@ -2,10 +2,7 @@ package sqlapi
 
 import (
 	"context"
-	"database/sql"
 	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/where"
 )
 
 // Table provides the generic features of each generated table handler.
@@ -69,7 +66,6 @@ type Table interface {
 
 	// WithConstraint returns a modified Table with added data consistency constraints.
 	//WithConstraint(cc ...sqlgen2.Constraint) SomeTypeTable {
-	//---------------------------------------------------------------------------------------------
 
 	// Query is the low-level request method for this table. The query is logged using whatever logger is
 	// configured. If an error arises, this too is logged.
@@ -79,7 +75,7 @@ type Table interface {
 	// The args are for any placeholder parameters in the query.
 	//
 	// The caller must call rows.Close() on the result.
-	Query(query string, args ...interface{}) (SqlRows, error)
+	//Query(query string, args ...interface{}) ([]Values, error)
 }
 
 // TableCreator is a table with create/delete/truncate methods.
@@ -108,63 +104,4 @@ type TableWithIndexes interface {
 
 	// CreateTableWithIndexes creates the database table and its indexes.
 	CreateTableWithIndexes(ifNotExist bool) (err error)
-}
-
-// TableWithCrud is a table with a selection of generic access methods. Note that most
-// access methods on concrete table types are strongly-typed so don't appear here.
-type TableWithCrud interface {
-	Table
-
-	// QueryOneNullString is a low-level access method for one string. This can be used for function queries and
-	// such like. If the query selected many rows, only the first is returned; the rest are discarded.
-	// If not found, the result will be invalid.
-	QueryOneNullString(req require.Requirement, query string, args ...interface{}) (result sql.NullString, err error)
-
-	// QueryOneNullInt64 is a low-level access method for one int64. This can be used for 'COUNT(1)' queries and
-	// such like. If the query selected many rows, only the first is returned; the rest are discarded.
-	// If not found, the result will be invalid.
-	QueryOneNullInt64(req require.Requirement, query string, args ...interface{}) (result sql.NullInt64, err error)
-
-	// QueryOneNullFloat64 is a low-level access method for one float64. This can be used for 'AVG(...)' queries and
-	// such like. If the query selected many rows, only the first is returned; the rest are discarded.
-	// If not found, the result will be invalid.
-	QueryOneNullFloat64(req require.Requirement, query string, args ...interface{}) (result sql.NullFloat64, err error)
-
-	// Exec executes a query.
-	//
-	// It places a requirement, which may be nil, on the number of affected rows: this
-	// controls whether an error is generated when this expectation is not met.
-	//
-	// It returns the number of rows affected (if the DB supports that).
-	Exec(req require.Requirement, query string, args ...interface{}) (int64, error)
-
-	// CountWhere counts records that match a 'where' predicate.
-	CountWhere(where string, args ...interface{}) (count int64, err error)
-
-	// Count counts records that match a 'where' predicate.
-	Count(where where.Expression) (count int64, err error)
-
-	// UpdateFields writes new values to the specified columns for rows that match the 'where' predicate.
-	// It returns the number of rows affected (if the DB supports that).
-	UpdateFields(req require.Requirement, where where.Expression, fields ...sql.NamedArg) (int64, error)
-
-	// Delete deletes rows that match the 'where' predicate.
-	// It returns the number of rows affected (if the DB supports that).
-	Delete(req require.Requirement, wh where.Expression) (int64, error)
-
-	//---------------------------------------------------------------------------------------------
-	// The following type-specific methods are also provided (but are not part of this interface).
-	//GetSomeType(id int64) (*SomeType, error)
-	//MustGetSomeType(id int64) (*SomeType, error)
-	//
-	//GetSomeTypes(req require.Requirement, id ...int64) (list []*SomeType, err error)
-	//
-	//SelectOneWhere(req require.Requirement, where, orderBy string, args ...interface{}) (*SomeType, error)
-	//SelectOne(req require.Requirement, where where.Expression, orderBy string) (*SomeType, error)
-	//SelectWhere(req require.Requirement, where, orderBy string, args ...interface{}) ([]*SomeType, error)
-	//Select(req require.Requirement, where where.Expression, orderBy string) ([]*SomeType, error)
-	//
-	//Insert(req require.Requirement, vv ...*SomeType) error
-	//
-	//Update(req require.Requirement, vv ...*SomeType) (int64, error)
 }

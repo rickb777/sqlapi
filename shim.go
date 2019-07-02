@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/pkg/errors"
+	"log"
 )
 
 func WrapDB(ex *sql.DB) SqlDB {
@@ -64,6 +65,36 @@ func (sh *shim) BeginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 	return &shim{ex: tx, isTx: true}, nil
 }
 
+func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(SqlTx) error) (err error) {
+	var tx SqlTx
+	tx, err = sh.BeginTx(ctx, txOptions)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			// capture a stack trace using github.com/pkg/errors
+			if e, ok := p.(error); ok {
+				p = errors.WithStack(e)
+			} else {
+				p = errors.Errorf("%+v", p)
+			}
+			log.Printf("panic recovered: %+v", p)
+			tx.Rollback()
+			err = errors.New("transaction was rolled back")
+
+		} else if err != nil {
+			tx.Rollback()
+
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	return fn(tx)
+}
+
 func (sh *shim) PingContext(ctx context.Context) error {
 	return sh.ex.(*sql.DB).PingContext(ctx)
 }
@@ -82,4 +113,8 @@ func (sh *shim) Rollback() error {
 
 func (sh *shim) IsTx() bool {
 	return sh.isTx
+}
+
+func (sh *shim) Close() error {
+	return sh.ex.(*sql.DB).Close()
 }

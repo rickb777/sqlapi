@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
+	"github.com/rickb777/sqlapi/support"
 	"github.com/rickb777/sqlapi/util"
 	"github.com/rickb777/where/quote"
 )
@@ -187,7 +188,7 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, e
 }
 
 func fetchIds(tbl sqlapi.Table, query string) (util.Int64Set, error) {
-	rows, err := tbl.Query(query)
+	rows, err := support.Query(tbl, query)
 	if err != nil {
 		return nil, tbl.Database().LogIfError(errors.Wrap(err, query))
 	}

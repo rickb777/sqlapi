@@ -122,9 +122,9 @@ func (sh *shim) BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
 }
 
 // Transact takes a function and executes it within a DB transaction.
-func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(Execer) error) (err error) {
-	var pgxTx SqlTx
-	pgxTx, err = sh.BeginTx(ctx, txOptions)
+func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) (err error) {
+	var tx SqlTx
+	tx, err = sh.BeginTx(ctx, txOptions)
 	if err != nil {
 		return err
 	}
@@ -141,18 +141,18 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 			if sh.lgr != nil {
 				sh.lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
 			}
-			pgxTx.Rollback()
+			tx.Rollback()
 			err = errors.New("transaction was rolled back")
 
 		} else if err != nil {
-			pgxTx.Rollback()
+			tx.Rollback()
 
 		} else {
-			err = pgxTx.Commit()
+			err = tx.Commit()
 		}
 	}()
 
-	return fn(pgxTx)
+	return fn(tx)
 }
 
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.

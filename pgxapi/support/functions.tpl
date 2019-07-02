@@ -2,7 +2,7 @@
 // Slice{{.Type.U}}List requests a columnar slice of {{.Type}}s from a specified column.
 func Slice{{.Type.U}}List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func doScan{{.Type.U}}List(req require.Requirement, rows pgxapi.SqlRows, qLog fu
 // Slice{{.Type.U}}PtrList requests a columnar slice of {{.Type}}s from a specified nullable column.
 func Slice{{.Type.U}}PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}

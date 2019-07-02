@@ -10,7 +10,7 @@ import (
 // SliceStringList requests a columnar slice of strings from a specified column.
 func SliceStringList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func doScanStringList(req require.Requirement, rows pgxapi.SqlRows, qLog func(er
 // SliceStringPtrList requests a columnar slice of strings from a specified nullable column.
 func SliceStringPtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func doScanStringPtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func
 // SliceIntList requests a columnar slice of ints from a specified column.
 func SliceIntList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func doScanIntList(req require.Requirement, rows pgxapi.SqlRows, qLog func(error
 // SliceIntPtrList requests a columnar slice of ints from a specified nullable column.
 func SliceIntPtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func doScanIntPtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(er
 // SliceInt64List requests a columnar slice of int64s from a specified column.
 func SliceInt64List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func doScanInt64List(req require.Requirement, rows pgxapi.SqlRows, qLog func(err
 // SliceInt64PtrList requests a columnar slice of int64s from a specified nullable column.
 func SliceInt64PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func doScanInt64PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(
 // SliceInt32List requests a columnar slice of int32s from a specified column.
 func SliceInt32List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func doScanInt32List(req require.Requirement, rows pgxapi.SqlRows, qLog func(err
 // SliceInt32PtrList requests a columnar slice of int32s from a specified nullable column.
 func SliceInt32PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func doScanInt32PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(
 // SliceInt16List requests a columnar slice of int16s from a specified column.
 func SliceInt16List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func doScanInt16List(req require.Requirement, rows pgxapi.SqlRows, qLog func(err
 // SliceInt16PtrList requests a columnar slice of int16s from a specified nullable column.
 func SliceInt16PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func doScanInt16PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(
 // SliceInt8List requests a columnar slice of int8s from a specified column.
 func SliceInt8List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func doScanInt8List(req require.Requirement, rows pgxapi.SqlRows, qLog func(erro
 // SliceInt8PtrList requests a columnar slice of int8s from a specified nullable column.
 func SliceInt8PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func doScanInt8PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(e
 // SliceUintList requests a columnar slice of uints from a specified column.
 func SliceUintList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +374,7 @@ func doScanUintList(req require.Requirement, rows pgxapi.SqlRows, qLog func(erro
 // SliceUintPtrList requests a columnar slice of uints from a specified nullable column.
 func SliceUintPtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func doScanUintPtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(e
 // SliceUint64List requests a columnar slice of uint64s from a specified column.
 func SliceUint64List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func doScanUint64List(req require.Requirement, rows pgxapi.SqlRows, qLog func(er
 // SliceUint64PtrList requests a columnar slice of uint64s from a specified nullable column.
 func SliceUint64PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +458,7 @@ func doScanUint64PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func
 // SliceUint32List requests a columnar slice of uint32s from a specified column.
 func SliceUint32List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +486,7 @@ func doScanUint32List(req require.Requirement, rows pgxapi.SqlRows, qLog func(er
 // SliceUint32PtrList requests a columnar slice of uint32s from a specified nullable column.
 func SliceUint32PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func doScanUint32PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func
 // SliceUint16List requests a columnar slice of uint16s from a specified column.
 func SliceUint16List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +542,7 @@ func doScanUint16List(req require.Requirement, rows pgxapi.SqlRows, qLog func(er
 // SliceUint16PtrList requests a columnar slice of uint16s from a specified nullable column.
 func SliceUint16PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +570,7 @@ func doScanUint16PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func
 // SliceUint8List requests a columnar slice of uint8s from a specified column.
 func SliceUint8List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -598,7 +598,7 @@ func doScanUint8List(req require.Requirement, rows pgxapi.SqlRows, qLog func(err
 // SliceUint8PtrList requests a columnar slice of uint8s from a specified nullable column.
 func SliceUint8PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -626,7 +626,7 @@ func doScanUint8PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog func(
 // SliceFloat64List requests a columnar slice of float64s from a specified column.
 func SliceFloat64List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -654,7 +654,7 @@ func doScanFloat64List(req require.Requirement, rows pgxapi.SqlRows, qLog func(e
 // SliceFloat64PtrList requests a columnar slice of float64s from a specified nullable column.
 func SliceFloat64PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +682,7 @@ func doScanFloat64PtrList(req require.Requirement, rows pgxapi.SqlRows, qLog fun
 // SliceFloat32List requests a columnar slice of float32s from a specified column.
 func SliceFloat32List(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -710,7 +710,7 @@ func doScanFloat32List(req require.Requirement, rows pgxapi.SqlRows, qLog func(e
 // SliceFloat32PtrList requests a columnar slice of float32s from a specified nullable column.
 func SliceFloat32PtrList(tbl pgxapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := tbl.Query(query, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
