@@ -24,6 +24,7 @@ type basicExecer interface {
 	BeginBatch() *pgx.Batch
 }
 
+var _ basicExecer = new(pgx.Conn)
 var _ basicExecer = new(pgx.ConnPool)
 var _ basicExecer = new(pgx.Tx)
 
@@ -122,18 +123,7 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			// capture a stack trace using github.com/pkg/errors
-			if e, ok := p.(error); ok {
-				p = errors.WithStack(e)
-			} else {
-				p = errors.Errorf("%+v", p)
-			}
-			// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
-			if sh.lgr != nil {
-				sh.lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
-			} else {
-				log.Printf("panic recovered: %+v", p)
-			}
+			logPanicData(p, sh.lgr)
 			tx.rollback()
 			err = errors.New("transaction was rolled back")
 
@@ -146,6 +136,39 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 	}()
 
 	return fn(tx)
+}
+
+func (sh *shim) SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) error {
+	cp := sh.ex.(*pgx.ConnPool)
+	conn, err := cp.Acquire()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			logPanicData(p, sh.lgr)
+			err = errors.New("transaction was rolled back")
+		}
+		cp.Release(conn)
+	}()
+
+	return fn(conn)
+}
+
+func logPanicData(p interface{}, lgr pgx.Logger) {
+	// capture a stack trace using github.com/pkg/errors
+	if e, ok := p.(error); ok {
+		p = errors.WithStack(e)
+	} else {
+		p = errors.Errorf("%+v", p)
+	}
+	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
+	if lgr != nil {
+		lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
+	} else {
+		log.Printf("panic recovered: %+v", p)
+	}
 }
 
 func (sh *shim) Close() {

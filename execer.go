@@ -74,6 +74,10 @@ type SqlDB interface {
 	// Stats gets statistics from the database server.
 	Stats() DBStats
 
+	// SingleConn takes exclusive use of a connection for use by the supplied function.
+	// The connection will be automatically released after the function has terminated.
+	SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) error
+
 	// Close closes the database connection.
 	Close() error
 }

@@ -92,13 +92,7 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			// capture a stack trace using github.com/pkg/errors
-			if e, ok := p.(error); ok {
-				p = errors.WithStack(e)
-			} else {
-				p = errors.Errorf("%+v", p)
-			}
-			log.Printf("panic recovered: %+v", p)
+			logPanicData(p)
 			tx.rollback()
 			err = errors.New("transaction was rolled back")
 
@@ -111,6 +105,34 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 	}()
 
 	return fn(tx)
+}
+
+func (sh *shim) SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) error {
+	cp := sh.ex.(*sql.DB)
+	conn, err := cp.Conn(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			logPanicData(p)
+			err = errors.New("transaction was rolled back")
+		}
+		conn.Close()
+	}()
+
+	return fn(conn)
+}
+
+func logPanicData(p interface{}) {
+	// capture a stack trace using github.com/pkg/errors
+	if e, ok := p.(error); ok {
+		p = errors.WithStack(e)
+	} else {
+		p = errors.Errorf("%+v", p)
+	}
+	log.Printf("panic recovered: %+v", p)
 }
 
 func (sh *shim) Close() error {

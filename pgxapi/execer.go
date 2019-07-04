@@ -88,7 +88,11 @@ type SqlDB interface {
 	PingContext(ctx context.Context) error
 
 	// Stats gets statistics from the database server.
-	Stats() sql.DBStats
+	Stats() DBStats
+
+	// SingleConn takes exclusive use of a connection for use by the supplied function.
+	// The connection will be automatically released after the function has terminated.
+	SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) error
 
 	// Close closes the database connection.
 	Close()
