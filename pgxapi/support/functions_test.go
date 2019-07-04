@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
+	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/pgxapi"
+	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
 	"github.com/rickb777/where/quote"
 	"testing"
@@ -83,41 +86,47 @@ func TestSliceSql(t *testing.T) {
 }
 
 func TestQuery_happy(t *testing.T) {
-	//g := NewGomegaWithT(t)
-	//
-	//d := &StubDatabase{}
-	//tbl := StubTable{
-	//	name: pgxapi.TableName{
-	//		Prefix: "p.",
-	//		Name:   "table",
-	//	},
-	//	dialect:  dialect.Postgres,
-	//	database: d,
-	//}
-	//
-	//_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
-	//
-	//g.Expect(err).NotTo(HaveOccurred())
-	//g.Expect(d.loggedQueries).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1", "[123]"}))
+	g := NewGomegaWithT(t)
+
+	lgr := &stubLogger{}
+	d := &StubDatabase{
+		execer: stubExecer{stubResult: 2},
+		pgxLog: pgxapi.NewLogger(lgr),
+	}
+	tbl := StubTable{
+		name: pgxapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
+
+	g.Expect(err).NotTo(HaveOccurred())
+	//g.Expect(lgr.logged).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1", "[123]"}))
 }
 
 func TestExec_happy(t *testing.T) {
-	//g := NewGomegaWithT(t)
-	//
-	//r := stubResult{ra: 2}
-	//e := stubExecer{stubResult: r}
-	//d := &StubDatabase{execer: e}
-	//tbl := StubTable{
-	//	name: pgxapi.TableName{
-	//		Prefix: "p.",
-	//		Name:   "table",
-	//	},
-	//	dialect:  dialect.Postgres,
-	//	database: d,
-	//}
-	//
-	//_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
-	//
-	//g.Expect(err).NotTo(HaveOccurred())
-	//g.Expect(d.loggedQueries).To(Equal([]string{"DELETE FROM p.table WHERE x=$1", "[123]"}))
+	g := NewGomegaWithT(t)
+
+	lgr := &stubLogger{}
+	d := &StubDatabase{
+		execer: stubExecer{stubResult: 2},
+		pgxLog: pgxapi.NewLogger(lgr),
+	}
+	tbl := StubTable{
+		name: pgxapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
+
+	g.Expect(err).NotTo(HaveOccurred())
+	//g.Expect(lgr.logged).To(Equal([]string{"DELETE FROM p.table WHERE x=$1", "[123]"}))
 }

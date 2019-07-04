@@ -8,10 +8,28 @@ import (
 )
 
 type Getter interface {
-	QueryContext(ctx context.Context, sql string, args ...interface{}) (SqlRows, error)
-	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
-	QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow
+	// QueryContext executes a query that returns rows, typically a SELECT.
+	// The arguments are for any placeholder parameters in the query.
+	// Placeholders in the SQL are automatically replaced with numbered placeholders.
+	QueryContext(ctx context.Context, sql string, arguments ...interface{}) (SqlRows, error)
+
+	// QueryExRaw directly accesses the pgx.QueryEx connection pool method, exposing
+	// the query options. The placeholders will not be automatically replaced.
+	QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, arguments ...interface{}) (SqlRows, error)
+
+	// QueryRowContext executes a query that is expected to return at most one row.
+	// QueryRowContext always returns a non-nil value. Errors are deferred until
+	// Row's Scan method is called.
+	// If the query selects no rows, the *Row's Scan will return ErrNoRows.
+	// Otherwise, the *Row's Scan scans the first selected row and discards
+	// the rest.
+	//
+	// Placeholders in the SQL are automatically replaced with numbered placeholders.
+	QueryRowContext(ctx context.Context, query string, arguments ...interface{}) SqlRow
+
+	// QueryRowExRaw directly accesses the pgx.QueryRowEx connection pool method, exposing
+	// the query options. The placeholders will not be automatically replaced.
+	QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, arguments ...interface{}) SqlRow
 }
 
 type Batcher interface {
@@ -33,13 +51,13 @@ type Execer interface {
 	Getter
 	Batcher
 
-	// The args are for any placeholder parameters in the query.
 	// ExecContext executes a query without returning any rows.
+	// The arguments are for any placeholder parameters in the query.
 	ExecContext(ctx context.Context, sql string, arguments ...interface{}) (int64, error)
 
 	// InsertContext executes a query and returns the insertion ID.
-	// The args are for any placeholder parameters in the query.
-	InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error)
+	// The arguments are for any placeholder parameters in the query.
+	InsertContext(ctx context.Context, query string, arguments ...interface{}) (int64, error)
 
 	// PrepareContext creates a prepared statement for later queries or executions.
 	// Multiple queries or executions may be run concurrently from the
@@ -60,29 +78,38 @@ type Execer interface {
 // SqlDB is able to make queries and begin transactions.
 type SqlDB interface {
 	Execer
-	BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
+
+	// Transact handles a transaction according to some function. If the function completes
+	// without error, the transaction will be committed automatically. If there is an error
+	// or a panic, the transaction will be rolled back automatically.
 	Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) error
+
+	// PingContext tests connectivity to the database server.
 	PingContext(ctx context.Context) error
+
+	// Stats gets statistics from the database server.
 	Stats() sql.DBStats
+
+	// Close closes the database connection.
 	Close()
 }
 
-// SqlTx is a precis of *pgx.Tx
+// SqlTx is a precis of *pgx.Tx except that the commit and rollback methods are unexported.
 type SqlTx interface {
 	Execer
-	Commit() error
-	Rollback() error
+	commit() error
+	rollback() error
 }
 
 // SqlStmt is a precis of *sql.Stmt
 type SqlStmt interface {
 	// ExecContext executes a query without returning any rows.
-	// The args are for any placeholder parameters in the query.
-	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
+	// The arguments are for any placeholder parameters in the query.
+	ExecContext(ctx context.Context, arguments ...interface{}) (sql.Result, error)
 
 	// QueryContext executes a query that returns rows, typically a SELECT.
-	// The args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, args ...interface{}) (*pgx.Rows, error)
+	// The arguments are for any placeholder parameters in the query.
+	QueryContext(ctx context.Context, arguments ...interface{}) (*pgx.Rows, error)
 
 	// QueryRowContext executes a query that is expected to return at most one row.
 	// QueryRowContext always returns a non-nil value. Errors are deferred until
@@ -90,7 +117,10 @@ type SqlStmt interface {
 	// If the query selects no rows, the *Row's Scan will return ErrNoRows.
 	// Otherwise, the *Row's Scan scans the first selected row and discards
 	// the rest.
-	QueryRowContext(ctx context.Context, args ...interface{}) *pgx.Row
+	QueryRowContext(ctx context.Context, arguments ...interface{}) *pgx.Row
 
 	Close() error
 }
+
+// Type conformance assertions
+//var _ SqlStmt = new(pgx.PreparedStatement)

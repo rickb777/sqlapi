@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/where"
+	"log"
 )
 
 func WrapDB(pool *pgx.ConnPool, lgr pgx.Logger) SqlDB {
@@ -27,6 +27,8 @@ type basicExecer interface {
 var _ basicExecer = new(pgx.ConnPool)
 var _ basicExecer = new(pgx.Tx)
 
+//-------------------------------------------------------------------------------------------------
+
 type shim struct {
 	ex   basicExecer
 	lgr  *toggleLogger
@@ -36,14 +38,13 @@ type shim struct {
 var _ SqlDB = new(shim)
 var _ SqlTx = new(shim)
 
-// QueryContext executes any query returning data rows,
-// having first replaced all '?' placeholders with numbered ones.
+//-------------------------------------------------------------------------------------------------
+
 func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
 	return sh.QueryExRaw(ctx, qr, nil, args...)
 }
 
-// QueryExRaw executes any query returning data rows.
 func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error) {
 	rows, err := sh.ex.QueryEx(ctx, query, options, args...)
 	if err != nil {
@@ -52,19 +53,15 @@ func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.Query
 	return rows, nil
 }
 
-// QueryRowContext executes any query returning one data row,
-// having first replaced all '?' placeholders with numbered ones.
 func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
 	return sh.QueryRowExRaw(ctx, qr, nil, args...)
 }
 
-// QueryRowExRaw executes any query returning one data row.
 func (sh *shim) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow {
 	return sh.ex.QueryRowEx(ctx, query, options, args...)
 }
 
-// InsertContext executes an insert query returning an ID.
 func (sh *shim) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	row := sh.ex.QueryRowEx(ctx, query, nil, args...)
 	var id int64
@@ -75,7 +72,6 @@ func (sh *shim) InsertContext(ctx context.Context, query string, args ...interfa
 	return id, errors.Wrapf(err, "%s %v", query, args)
 }
 
-// ExecContext executes any query returning nothing.
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	tag, err := sh.ex.ExecEx(ctx, query, nil, args...)
 	if err != nil {
@@ -84,13 +80,11 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 	return tag.RowsAffected(), nil
 }
 
-// PrepareContext prepares a statement for repeated use.
-func (sh *shim) PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error) {
-	ps, err := sh.ex.PrepareEx(ctx, name, sql, nil)
-	return ps, errors.Wrapf(err, "%s %s", name, sql)
+func (sh *shim) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
+	ps, err := sh.ex.PrepareEx(ctx, name, query, nil)
+	return ps, errors.Wrapf(err, "%s %s", name, query)
 }
 
-// BeginBatch begins a batch operation.
 func (sh *shim) BeginBatch() *pgx.Batch {
 	return sh.ex.BeginBatch()
 }
@@ -106,15 +100,22 @@ func (sh *shim) Logger() Logger {
 //-------------------------------------------------------------------------------------------------
 // ConnPool-specific methods
 
-func (sh *shim) BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
+func (sh *shim) beginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
 	tx, err := sh.ex.(*pgx.ConnPool).BeginEx(ctx, opts)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	return &shim{ex: tx, lgr: sh.lgr, isTx: true}, err
 }
 
-// Transact takes a function and executes it within a DB transaction.
+// Transact takes a function and executes it within a database transaction.
 func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) (err error) {
+	if tx, isTx := sh.ex.(SqlTx); isTx {
+		return fn(tx) // nested transactions are inlined
+	}
+
 	var tx SqlTx
-	tx, err = sh.BeginTx(ctx, txOptions)
+	tx, err = sh.beginTx(ctx, txOptions)
 	if err != nil {
 		return err
 	}
@@ -130,41 +131,21 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 			// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 			if sh.lgr != nil {
 				sh.lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
+			} else {
+				log.Printf("panic recovered: %+v", p)
 			}
-			tx.Rollback()
+			tx.rollback()
 			err = errors.New("transaction was rolled back")
 
 		} else if err != nil {
-			tx.Rollback()
+			tx.rollback()
 
 		} else {
-			err = tx.Commit()
+			err = tx.commit()
 		}
 	}()
 
 	return fn(tx)
-}
-
-// GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
-func (sh *shim) GetIntIntIndex(ctx context.Context, tableName, column1, column2 string, wh where.Expression) (map[int64]int64, error) {
-	whs, args := where.Where(wh)
-	q := fmt.Sprintf("SELECT %s, %s from %s%s", column1, column2, tableName, whs)
-	rows, err := sh.ex.QueryEx(ctx, q, nil, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%s %+v", q, args)
-	}
-	defer rows.Close()
-
-	index := make(map[int64]int64)
-	for rows.Next() {
-		var k, v int64
-		err = rows.Scan(&k, &v)
-		if err != nil {
-			return nil, errors.Wrapf(err, "%s %+v", q, args)
-		}
-		index[k] = v
-	}
-	return index, nil
 }
 
 func (sh *shim) Close() {
@@ -188,10 +169,10 @@ func (sh *shim) Stats() DBStats {
 //-------------------------------------------------------------------------------------------------
 // TX-specific methods
 
-func (sh *shim) Commit() error {
+func (sh *shim) commit() error {
 	return sh.ex.(*pgx.Tx).Commit()
 }
 
-func (sh *shim) Rollback() error {
+func (sh *shim) rollback() error {
 	return sh.ex.(*pgx.Tx).Rollback()
 }

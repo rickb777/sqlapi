@@ -16,7 +16,7 @@ type StubTable struct {
 var _ pgxapi.Table = &StubTable{}
 
 func (tbl StubTable) Database() pgxapi.Database {
-	return nil //tbl.database
+	return tbl.database
 }
 
 func (tbl StubTable) Logger() pgxapi.Logger {
@@ -40,7 +40,7 @@ func (tbl StubTable) DB() pgxapi.SqlDB {
 }
 
 func (tbl StubTable) Execer() pgxapi.Execer {
-	return nil //tbl.database.execer
+	return tbl.database.execer
 }
 
 func (tbl StubTable) Tx() pgxapi.SqlTx {

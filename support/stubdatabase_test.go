@@ -2,7 +2,6 @@ package support
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
@@ -16,7 +15,7 @@ type StubDatabase struct {
 	stdLog *stubLogger
 }
 
-func (*StubDatabase) DB() sqlapi.Execer {
+func (*StubDatabase) DB() sqlapi.SqlDB {
 	panic("implement me")
 }
 
@@ -32,54 +31,7 @@ func (*StubDatabase) Wrapper() interface{} {
 	panic("implement me")
 }
 
-func (*StubDatabase) PingContext(ctx context.Context) error {
-	panic("implement me")
-}
-
-func (*StubDatabase) Ping() error {
-	panic("implement me")
-}
-
-func (*StubDatabase) Stats() sql.DBStats {
-	panic("implement me")
-}
-
 func (*StubDatabase) ListTables(re *regexp.Regexp) (util.StringList, error) {
-	panic("implement me")
-}
-
-//-------------------------------------------------------------------------------------------------
-
-type stubExecer struct {
-	stubResult int64
-}
-
-func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	fmt.Printf("ExecContext: "+query+" %v", args...)
-	return e.stubResult, nil
-}
-
-func (e stubExecer) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	fmt.Printf("InsertContext: "+query+" %v", args...)
-	return e.stubResult, nil
-}
-
-func (stubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
-	fmt.Printf("PrepareContext: " + query)
-	return nil, nil
-}
-
-func (stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
-	fmt.Printf("QueryContext: "+query+" %v", args...)
-	return nil, nil
-}
-
-func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
-	fmt.Printf("QueryRowContext: "+query+" %v", args...)
-	return nil
-}
-
-func (stubExecer) IsTx() bool {
 	panic("implement me")
 }
 
@@ -94,3 +46,34 @@ func (r *stubLogger) Printf(format string, v ...interface{}) {
 }
 
 func (r *stubLogger) SetOutput(w io.Writer) {}
+
+//-------------------------------------------------------------------------------------------------
+
+type stubExecer struct {
+	stubResult int64
+	rows       sqlapi.SqlRows
+}
+
+func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	return e.stubResult, nil
+}
+
+func (e stubExecer) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	return e.stubResult, nil
+}
+
+func (stubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
+	return nil, nil
+}
+
+func (se stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
+	return se.rows, nil
+}
+
+func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
+	return nil
+}
+
+func (stubExecer) IsTx() bool {
+	panic("implement me")
+}

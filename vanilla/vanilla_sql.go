@@ -150,37 +150,12 @@ func (tbl RecordTable) IsTx() bool {
 	return tbl.db.IsTx()
 }
 
-// BeginTx starts a transaction using the table's context.
-// This context is used until the transaction is committed or rolled back.
-//
-// If this context is cancelled, the sql package will roll back the transaction.
-// In this case, Tx.Commit will then return an error.
-//
-// The provided TxOptions is optional and may be nil if defaults should be used.
-// If a non-default isolation level is used that the driver doesn't support,
-// an error will be returned.
-//
-// Panics if the Execer is not SqlDB.
-func (tbl RecordTable) BeginTx(opts *sql.TxOptions) (RecordTable, error) {
-	var err error
-	tbl.db, err = tbl.db.(sqlapi.SqlDB).BeginTx(tbl.ctx, opts)
-	return tbl, tbl.logIfError(err)
-}
-
 // Using returns a modified Table using the transaction supplied. This is needed
 // when making multiple queries across several tables within a single transaction.
 // The result is a modified copy of the table; the original is unchanged.
 func (tbl RecordTable) Using(tx sqlapi.SqlTx) RecordTable {
 	tbl.db = tx
 	return tbl
-}
-
-func (tbl RecordTable) logError(err error) error {
-	return tbl.database.Logger().LogError(err)
-}
-
-func (tbl RecordTable) logIfError(err error) error {
-	return tbl.database.Logger().LogIfError(err)
 }
 
 //--------------------------------------------------------------------------------

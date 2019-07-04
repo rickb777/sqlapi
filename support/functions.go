@@ -69,8 +69,9 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows,
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, lgr.LogIfError(errors.Wrap(err, q2))
+	ex := tbl.Execer()
+	rows, err := ex.QueryContext(tbl.Ctx(), q2, args...)
+	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -82,7 +83,7 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 	lgr.LogQuery(q2, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
 	if err != nil {
-		return 0, lgr.LogError(errors.Wrap(err, q2))
+		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
 	}
 	return n, require.ChainErrorIfExecNotSatisfiedBy(err, req, n)
 }
@@ -100,4 +101,81 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 	query := fmt.Sprintf("UPDATE %s SET %s %s", q.Quote(tblName), assignments, whs)
 	args := append(list.Values(), wargs...)
 	return query, args
+}
+
+// GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
+func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
+	whs, args := where.Where(wh)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(q2, args...)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	if err != nil {
+		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+	}
+	defer rows.Close()
+
+	index := make(map[int64]int64)
+	for rows.Next() {
+		var k, v int64
+		err = rows.Scan(&k, &v)
+		if err != nil {
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		}
+		index[k] = v
+	}
+	return index, nil
+}
+
+// GetStringIntIndex reads a string column and an integer column from a specified database table and returns an index built from them.
+func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
+	whs, args := where.Where(wh)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(q2, args...)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	if err != nil {
+		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+	}
+	defer rows.Close()
+
+	index := make(map[string]int64)
+	for rows.Next() {
+		var k string
+		var v int64
+		err = rows.Scan(&k, &v)
+		if err != nil {
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		}
+		index[k] = v
+	}
+	return index, nil
+}
+
+// GetIntStringIndex reads an integer column and a string column from a specified database table and returns an index built from them.
+func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
+	whs, args := where.Where(wh)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(q2, args...)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	if err != nil {
+		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+	}
+	defer rows.Close()
+
+	index := make(map[int64]string)
+	for rows.Next() {
+		var k int64
+		var v string
+		err = rows.Scan(&k, &v)
+		if err != nil {
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		}
+		index[k] = v
+	}
+	return index, nil
 }

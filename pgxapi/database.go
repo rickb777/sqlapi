@@ -3,7 +3,6 @@ package pgxapi
 import (
 	"context"
 	"database/sql"
-	"github.com/jackc/pgx"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/util"
 	"regexp"
@@ -15,20 +14,17 @@ type DBStats = sql.DBStats
 // It's safe for concurrent use by multiple goroutines.
 // See NewDatabase.
 type Database interface {
-	DB() Execer
+	DB() SqlDB
 	Dialect() dialect.Dialect
 	Logger() Logger
 	Wrapper() interface{}
-	PingContext(ctx context.Context) error
-	Ping() error
-	Stats() DBStats
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
 
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
 type database struct {
-	db      Execer
+	db      SqlDB
 	dialect dialect.Dialect
 	wrapper interface{}
 }
@@ -47,29 +43,8 @@ func NewDatabase(db SqlDB, dialect dialect.Dialect, wrapper interface{}) Databas
 }
 
 // DB gets the Execer, which is a *sql.DB (except during testing using mocks).
-func (database *database) DB() Execer {
+func (database *database) DB() SqlDB {
 	return database.db
-}
-
-// BeginTx starts a transaction.
-//
-// The context is used until the transaction is committed or rolled back. If this
-// context is cancelled, the sql package will roll back the transaction. In this
-// case, Tx.Commit will then return an error.
-//
-// The provided TxOptions is optional and may be nil if defaults should be used.
-// If a non-default isolation level is used that the driver doesn't support,
-// an error will be returned.
-//
-// Panics if the Execer is not a SqlDB.
-func (database *database) BeginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
-	return database.db.(SqlDB).BeginTx(ctx, opts)
-}
-
-// Begin starts a transaction using default options. The default isolation level is
-// dependent on the driver.
-func (database *database) Begin() (SqlTx, error) {
-	return database.BeginTx(context.Background(), nil)
 }
 
 // Dialect gets the current SQL dialect. This choice is determined when the database is
@@ -86,25 +61,6 @@ func (database *database) Logger() Logger {
 // Wrapper gets whatever structure is present, as needed.
 func (database *database) Wrapper() interface{} {
 	return database.wrapper
-}
-
-//-------------------------------------------------------------------------------------------------
-
-// PingContext verifies a connection to the database is still alive,
-// establishing a connection if necessary.
-func (database *database) PingContext(ctx context.Context) error {
-	return database.db.(SqlDB).PingContext(ctx)
-}
-
-// Ping verifies a connection to the database is still alive,
-// establishing a connection if necessary.
-func (database *database) Ping() error {
-	return database.PingContext(context.Background())
-}
-
-// Stats returns database statistics.
-func (database *database) Stats() sql.DBStats {
-	return database.db.(SqlDB).Stats()
 }
 
 //-------------------------------------------------------------------------------------------------

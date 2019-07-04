@@ -9,39 +9,23 @@ import (
 	"regexp"
 )
 
+type DBStats = sql.DBStats
+
 // Database typically wraps a *sql.DB with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
 // See NewDatabase.
 type Database interface {
-	DB() Execer
+	DB() SqlDB
 	Dialect() dialect.Dialect
 	Logger() Logger
 	Wrapper() interface{}
-	PingContext(ctx context.Context) error
-	Ping() error
-	Stats() sql.DBStats
-
-	//TraceLogging(on bool)
-	//LogQuery(query string, args ...interface{})
-	//LogIfError(err error) error
-	//LogError(err error) error
-
-	//Exec(query string, args ...interface{}) (int64, error)
-	//ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error)
-	//Prepare(query string) (SqlStmt, error)
-	//PrepareContext(ctx context.Context, name, query string) (SqlStmt, error)
-	//Query(query string, args ...interface{}) (SqlRows, error)
-	//QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error)
-	//QueryRow(query string, args ...interface{}) SqlRow
-	//QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow
-
 	ListTables(re *regexp.Regexp) (util.StringList, error)
 }
 
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
 // It's safe for concurrent use by multiple goroutines.
 type database struct {
-	db      Execer
+	db      SqlDB
 	dialect dialect.Dialect
 	logger  *toggleLogger
 	wrapper interface{}
@@ -71,7 +55,7 @@ func NewDatabase(db SqlDB, dialect dialect.Dialect, logger *log.Logger, wrapper 
 }
 
 // DB gets the Execer, which is a *sql.DB (except during testing using mocks).
-func (database *database) DB() Execer {
+func (database *database) DB() SqlDB {
 	return database.db
 }
 
@@ -90,25 +74,6 @@ func (database *database) Logger() Logger {
 // Wrapper gets whatever structure is present, as needed.
 func (database *database) Wrapper() interface{} {
 	return database.wrapper
-}
-
-//-------------------------------------------------------------------------------------------------
-
-// PingContext verifies a connection to the database is still alive,
-// establishing a connection if necessary.
-func (database *database) PingContext(ctx context.Context) error {
-	return database.db.(SqlDB).PingContext(ctx)
-}
-
-// Ping verifies a connection to the database is still alive,
-// establishing a connection if necessary.
-func (database *database) Ping() error {
-	return database.PingContext(context.Background())
-}
-
-// Stats returns database statistics.
-func (database *database) Stats() sql.DBStats {
-	return database.db.(SqlDB).Stats()
 }
 
 //-------------------------------------------------------------------------------------------------
