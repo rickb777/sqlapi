@@ -7,7 +7,7 @@ package constraint
 
 import (
 	"fmt"
-	"github.com/rickb777/sqlapi/pgxapi"
+	"github.com/mercury-holidays/sqlapi/pgxapi"
 	"github.com/rickb777/where/quote"
 )
 

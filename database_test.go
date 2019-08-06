@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/dialect"
 	"log"
 	"testing"
 )

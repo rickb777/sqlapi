@@ -1,8 +1,8 @@
 package dialect
 
 import (
-	. "github.com/rickb777/sqlapi/schema"
-	. "github.com/rickb777/sqlapi/types"
+	. "github.com/mercury-holidays/sqlapi/schema"
+	. "github.com/mercury-holidays/sqlapi/types"
 )
 
 var i64 = Type{Name: "int64", Base: Int64}

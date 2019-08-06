@@ -3,10 +3,10 @@ package constraint
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/schema"
-	"github.com/rickb777/sqlapi/support"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/mercury-holidays/sqlapi"
+	"github.com/mercury-holidays/sqlapi/schema"
+	"github.com/mercury-holidays/sqlapi/support"
+	"github.com/mercury-holidays/sqlapi/util"
 	"github.com/rickb777/where/quote"
 )
 

@@ -4,5 +4,5 @@
 // Lighter than a full-blown ORM and simpler than hand-written code, the output
 // makes it easy to write flexible yet reliable and high-performance database code.
 //
-// See the README for further details: https://github.com/rickb777/sqlapi/blob/master/README.md
+// See the README for further details: https://github.com/mercury-holidays/sqlapi/blob/master/README.md
 package sqlapi

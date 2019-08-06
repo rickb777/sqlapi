@@ -3,9 +3,9 @@ package support
 import (
 	"context"
 	"fmt"
-	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/mercury-holidays/sqlapi"
+	"github.com/mercury-holidays/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/util"
 	"io"
 	"regexp"
 )

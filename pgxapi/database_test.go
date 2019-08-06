@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/pgxapi/logadapter"
+	"github.com/mercury-holidays/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/pgxapi/logadapter"
 	"log"
 	"testing"
 )

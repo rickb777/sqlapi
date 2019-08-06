@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx"
-	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/pgxapi"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/mercury-holidays/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/pgxapi"
+	"github.com/mercury-holidays/sqlapi/util"
 	"regexp"
 )
 

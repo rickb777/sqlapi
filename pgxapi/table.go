@@ -2,7 +2,7 @@ package pgxapi
 
 import (
 	"context"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/dialect"
 )
 
 // Table provides the generic features of each generated table handler.

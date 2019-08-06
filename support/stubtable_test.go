@@ -2,8 +2,8 @@ package support
 
 import (
 	"context"
-	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi"
+	"github.com/mercury-holidays/sqlapi/dialect"
 )
 
 type StubTable struct {

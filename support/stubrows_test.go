@@ -2,7 +2,7 @@ package support
 
 import (
 	"database/sql"
-	"github.com/rickb777/sqlapi"
+	"github.com/mercury-holidays/sqlapi"
 	"reflect"
 )
 

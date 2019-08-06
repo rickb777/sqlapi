@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/dialect"
 	"log"
 )
 

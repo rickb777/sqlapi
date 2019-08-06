@@ -1,7 +1,7 @@
 package schema
 
 import (
-	. "github.com/rickb777/sqlapi/types"
+	. "github.com/mercury-holidays/sqlapi/types"
 )
 
 var i64 = Type{Name: "int64", Base: Int64}

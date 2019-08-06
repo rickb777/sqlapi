@@ -6,11 +6,11 @@ package vanilla
 import (
 	"context"
 	"database/sql"
-	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/constraint"
-	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/sqlapi/support"
+	"github.com/mercury-holidays/sqlapi"
+	"github.com/mercury-holidays/sqlapi/constraint"
+	"github.com/mercury-holidays/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/require"
+	"github.com/mercury-holidays/sqlapi/support"
 )
 
 // RecordTable holds a given table name with the database reference, providing access methods below.

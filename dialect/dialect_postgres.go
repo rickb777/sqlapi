@@ -3,8 +3,8 @@ package dialect
 import (
 	"bytes"
 	"fmt"
-	"github.com/rickb777/sqlapi/schema"
-	"github.com/rickb777/sqlapi/types"
+	"github.com/mercury-holidays/sqlapi/schema"
+	"github.com/mercury-holidays/sqlapi/types"
 	"github.com/rickb777/where/quote"
 	"strconv"
 )

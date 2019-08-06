@@ -2,7 +2,7 @@ package pgxapi
 
 import (
 	"github.com/jackc/pgx"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/mercury-holidays/sqlapi/util"
 )
 
 // SqlRow is a precis of *sql.Row.

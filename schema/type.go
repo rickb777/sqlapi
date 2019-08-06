@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
-	. "github.com/rickb777/sqlapi/types"
+	. "github.com/mercury-holidays/sqlapi/types"
 )
 
 type Type struct {

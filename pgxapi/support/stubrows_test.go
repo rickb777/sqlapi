@@ -2,7 +2,7 @@ package support
 
 import (
 	"github.com/jackc/pgx"
-	"github.com/rickb777/sqlapi/pgxapi"
+	"github.com/mercury-holidays/sqlapi/pgxapi"
 )
 
 type StubRow []interface{}

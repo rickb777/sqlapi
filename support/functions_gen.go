@@ -2,8 +2,8 @@ package support
 
 import (
 	"database/sql"
-	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/require"
+	"github.com/mercury-holidays/sqlapi"
+	"github.com/mercury-holidays/sqlapi/require"
 	"github.com/rickb777/where"
 )
 

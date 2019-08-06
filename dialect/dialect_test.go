@@ -3,7 +3,7 @@ package dialect
 import (
 	"bytes"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/schema"
+	"github.com/mercury-holidays/sqlapi/schema"
 	"github.com/rickb777/where/quote"
 	"testing"
 )

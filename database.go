@@ -3,8 +3,8 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
-	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/mercury-holidays/sqlapi/dialect"
+	"github.com/mercury-holidays/sqlapi/util"
 	"log"
 	"regexp"
 )

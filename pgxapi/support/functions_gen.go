@@ -2,8 +2,8 @@ package support
 
 import (
 	"database/sql"
-	"github.com/rickb777/sqlapi/pgxapi"
-	"github.com/rickb777/sqlapi/require"
+	"github.com/mercury-holidays/sqlapi/pgxapi"
+	"github.com/mercury-holidays/sqlapi/require"
 	"github.com/rickb777/where"
 )
 

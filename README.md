@@ -39,7 +39,7 @@ by double-quotes).
 Install with this command:
 
 ```
-go get github.com/rickb777/sqlapi
+go get github.com/mercury-holidays/sqlapi
 ```
 
 Please continue reading about [sqlgen2](https://github.com/rickb777/sqlgen2/tree/master/README.md).

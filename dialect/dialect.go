@@ -1,7 +1,7 @@
 package dialect
 
 import (
-	"github.com/rickb777/sqlapi/schema"
+	"github.com/mercury-holidays/sqlapi/schema"
 	"github.com/rickb777/where/quote"
 	"strings"
 )

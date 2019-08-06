@@ -7,7 +7,7 @@ package constraint
 
 import (
 	"fmt"
-	"github.com/rickb777/sqlapi"
+	"github.com/mercury-holidays/sqlapi"
 	"github.com/rickb777/where/quote"
 )
 
