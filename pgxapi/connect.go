@@ -55,7 +55,7 @@ func setDefaultEnvValues() {
 	requireEnv("PGUSER", "postgres")
 	requireEnv("PGPASSWORD", "psql")
 	requireEnv("PGSSLMODE", "prefer")
-	requireEnv("DB_MAX_CONNECTIONS", "1ms") // doesn't attempt connection until after this delay
+	requireEnv("DB_MAX_CONNECTIONS", "100")
 	requireEnv("DB_CONNECT_DELAY", "1ms")   // doesn't attempt connection until after this delay
 	requireEnv("DB_CONNECT_TIMEOUT", "10s") // app aborts after this time; 0 is infinite
 }
