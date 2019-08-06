@@ -1,4 +1,4 @@
-module github.com/rickb777/sqlapi
+module github.com/mercury-holidays/sqlapi
 
 require (
 	github.com/benmoss/matchers v0.0.0-20181101202349-c279145bd967
