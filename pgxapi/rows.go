@@ -2,7 +2,7 @@ package pgxapi
 
 import (
 	"github.com/jackc/pgx"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/rickb777/collection"
 )
 
 // SqlRow is a precis of *sql.Row.
@@ -49,7 +49,7 @@ type Rows struct {
 // RowData holds a single row result from the database.
 type RowData struct {
 	Fields []pgx.FieldDescription
-	Data   util.StringAnyMap
+	Data   collection.StringAnyMap
 }
 
 // WrapRows wraps a *sql.Rows result so that its data can be scanned into a series of
@@ -98,7 +98,7 @@ func (rams *Rows) ScanToMap() (RowData, error) {
 		return RowData{}, err
 	}
 
-	m := make(util.StringAnyMap)
+	m := make(collection.StringAnyMap)
 	for i, field := range rams.fields {
 		v := valuePointers[i].(*interface{})
 		m[field.Name] = *v

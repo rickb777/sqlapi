@@ -3,10 +3,10 @@ package constraint
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/support"
-	"github.com/rickb777/sqlapi/util"
 	"github.com/rickb777/where/quote"
 )
 
@@ -137,7 +137,7 @@ type Relationship struct {
 // IdsUnusedAsForeignKeys finds all the primary keys in the parent table that have no foreign key
 // in the dependent (child) table. The table tbl provides the database or transaction handle; either
 // the parent or the child table can be used for thi purpose.
-func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, error) {
+func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, errors.Errorf("IdsUnusedAsForeignKeys requires the column names to be specified")
 	}
@@ -170,7 +170,7 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set,
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
 // in the dependent (child) table.
-func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, error) {
+func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, errors.Errorf("IdsUsedAsForeignKeys requires the column names to be specified")
 	}
@@ -187,14 +187,14 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (util.Int64Set, e
 	return fetchIds(tbl, s)
 }
 
-func fetchIds(tbl sqlapi.Table, query string) (util.Int64Set, error) {
+func fetchIds(tbl sqlapi.Table, query string) (collection.Int64Set, error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
 		return nil, tbl.Database().Logger().LogIfError(errors.Wrap(err, query))
 	}
 	defer rows.Close()
 
-	set := util.NewInt64Set()
+	set := collection.NewInt64Set()
 	for rows.Next() {
 		var id int64
 		rows.Scan(&id)

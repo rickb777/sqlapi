@@ -3,8 +3,8 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi/dialect"
-	"github.com/rickb777/sqlapi/util"
 	"log"
 	"regexp"
 )
@@ -19,7 +19,7 @@ type Database interface {
 	Dialect() dialect.Dialect
 	Logger() Logger
 	Wrapper() interface{}
-	ListTables(re *regexp.Regexp) (util.StringList, error)
+	ListTables(re *regexp.Regexp) (collection.StringList, error)
 }
 
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
@@ -81,8 +81,8 @@ func (database *database) Wrapper() interface{} {
 // ListTables gets all the table names in the database/schema.
 // The regular expression supplies a filter: only names that match are returned.
 // If the regular expression is nil, all tables names are returned.
-func (database *database) ListTables(re *regexp.Regexp) (util.StringList, error) {
-	ss := make(util.StringList, 0)
+func (database *database) ListTables(re *regexp.Regexp) (collection.StringList, error) {
+	ss := make(collection.StringList, 0)
 	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
 	if err != nil {
 		return nil, err

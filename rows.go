@@ -2,7 +2,7 @@ package sqlapi
 
 import (
 	"database/sql"
-	"github.com/rickb777/sqlapi/util"
+	"github.com/rickb777/collection"
 )
 
 // SqlRow is a precis of *sql.Row.
@@ -39,7 +39,7 @@ type Rows struct {
 type RowData struct {
 	Columns     []string
 	ColumnTypes []*sql.ColumnType
-	Data        util.StringAnyMap
+	Data        collection.StringAnyMap
 }
 
 // WrapRows wraps a *sql.Rows result so that its data can be scanned into a series of
@@ -91,7 +91,7 @@ func (rams *Rows) ScanToMap() (RowData, error) {
 		return RowData{}, err
 	}
 
-	m := make(util.StringAnyMap)
+	m := make(collection.StringAnyMap)
 	for i, colName := range rams.cols {
 		v := valuePointers[i].(*interface{})
 		m[colName] = *v
