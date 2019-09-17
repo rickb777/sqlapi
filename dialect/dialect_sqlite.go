@@ -125,6 +125,10 @@ func (dialect sqlite) HasNumberedPlaceholders() bool {
 	return false
 }
 
+func (dialect sqlite) HasLastInsertId() bool {
+	return true
+}
+
 func (dialect sqlite) Placeholders(n int) string {
 	return simpleQueryPlaceholders(n)
 }

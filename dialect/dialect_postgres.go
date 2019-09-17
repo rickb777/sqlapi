@@ -112,13 +112,20 @@ func (dialect postgres) TruncateDDL(tableName string, force bool) []string {
 }
 
 func (dialect postgres) ShowTables() string {
-	return `SELECT tablename FROM pg_catalog.pg_tables`
+	//return `SELECT tablename FROM pg_catalog.pg_tables`
+	return showTableNamePostgres
 }
+
+const showTableNamePostgres = `SELECT table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')`
 
 //-------------------------------------------------------------------------------------------------
 
 func (dialect postgres) HasNumberedPlaceholders() bool {
 	return true
+}
+
+func (dialect postgres) HasLastInsertId() bool {
+	return false
 }
 
 func (dialect postgres) Placeholders(n int) string {

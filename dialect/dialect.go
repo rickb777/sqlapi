@@ -28,6 +28,7 @@ type Dialect interface {
 	ReplacePlaceholders(sql string, args []interface{}) string
 	Placeholders(n int) string
 	HasNumberedPlaceholders() bool
+	HasLastInsertId() bool
 }
 
 //-------------------------------------------------------------------------------------------------

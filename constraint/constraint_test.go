@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/stdlib"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
@@ -15,58 +16,92 @@ import (
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/sqlapi/vanilla"
 	"github.com/rickb777/where/quote"
+	"io"
 	"log"
 	"os"
 	"strings"
 	"testing"
 )
 
-var db *sql.DB
-var di dialect.Dialect
+// Environment:
+// GO_DRIVER  - the driver (sqlite3, mysql, postgres, pgx)
+// GO_QUOTER  - the identifier quoter (ansi, mysql, none)
+// GO_DSN     - the database DSN
+// GO_VERBOSE - true for query logging
 
-func connect() {
+func skipIfNoPostgresDB(t *testing.T, di dialect.Dialect) {
+	if (di.Index() == dialect.PostgresIndex || di.Index() == dialect.PgxIndex) && os.Getenv("PGHOST") == "" {
+		t.Skip()
+	}
+}
+
+func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
 	if !ok {
 		dbDriver = "sqlite3"
 	}
-	di = dialect.PickDialect(dbDriver)
+
+	di := dialect.PickDialect(dbDriver) //.WithQuoter(dialect.NoQuoter)
+	quoter, ok := os.LookupEnv("GO_QUOTER")
+	if ok {
+		switch strings.ToLower(quoter) {
+		case "ansi":
+			di = di.WithQuoter(quote.AnsiQuoter)
+		case "mysql":
+			di = di.WithQuoter(quote.MySqlQuoter)
+		case "none":
+			di = di.WithQuoter(quote.NoQuoter)
+		default:
+			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
+		}
+	}
+
+	skipIfNoPostgresDB(t, di)
+
 	dsn, ok := os.LookupEnv("GO_DSN")
 	if !ok {
-		dsn = ":memory:"
+		dsn = "file::memory:?mode=memory&cache=shared"
 	}
-	conn, err := sql.Open(dbDriver, dsn)
+
+	db, err := sql.Open(dbDriver, dsn)
 	if err != nil {
-		panic(err)
+		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
 	}
-	db = conn
+
+	err = db.Ping()
+	if err != nil {
+		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+	}
+
+	fmt.Printf("Successfully connected to %s.\n", dbDriver)
+	return db, di
 }
 
-func newDatabase() sqlapi.Database {
-	connect()
-	if db == nil {
-		return nil
+func newDatabase(t *testing.T) sqlapi.Database {
+	db, di := connect(t)
+
+	var lgr *log.Logger
+	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
+	if ok && strings.ToLower(goVerbose) == "true" {
+		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	ex := sqlapi.WrapDB(db)
-	d := sqlapi.NewDatabase(ex, di, nil, nil)
-	if testing.Verbose() {
-		lgr := log.New(os.Stdout, "", log.LstdFlags)
-		d = sqlapi.NewDatabase(ex, di, lgr, nil)
-	}
-	return d
+	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
 }
 
-func cleanup() {
+func cleanup(db sqlapi.Execer) {
 	if db != nil {
-		db.Close()
-		db = nil
+		if c, ok := db.(io.Closer); ok {
+			c.Close()
+		}
+		os.Remove("test.db")
 	}
 }
 
 func TestCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
-	d := newDatabase()
-	defer cleanup()
+	d := newDatabase(t)
+	defer cleanup(d.DB())
 
 	cc0 := constraint.CheckConstraint{
 		Expression: "role < 3",
@@ -80,8 +115,8 @@ func TestCheckConstraint(t *testing.T) {
 
 func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
-	d := newDatabase()
-	defer cleanup()
+	d := newDatabase(t)
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -97,8 +132,8 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 
 func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g := NewGomegaWithT(t)
-	d := newDatabase()
-	defer cleanup()
+	d := newDatabase(t)
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -114,8 +149,8 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 
 func TestIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
-	d := newDatabase()
-	defer cleanup()
+	d := newDatabase(t)
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addressid",
@@ -125,9 +160,10 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 
-	setupSql := strings.Replace(createTables, "¬", "`", -1)
-	_, err := d.DB().ExecContext(context.Background(), setupSql)
-	g.Expect(err).To(BeNil())
+	for _, s := range createTablesSql(d.Dialect()) {
+		_, err := d.DB().ExecContext(context.Background(), s)
+		g.Expect(err).To(BeNil())
+	}
 
 	aid1 := insertOne(g, d, address1)
 	aid2 := insertOne(g, d, address2)
@@ -143,16 +179,12 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m1).To(HaveLen(2))
-	g.Expect(m1.Contains(aid1)).To(BeTrue())
-	g.Expect(m1.Contains(aid2)).To(BeTrue())
+	g.Expect(m1.ToSlice()).To(ConsistOf(aid1, aid2))
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m2).To(HaveLen(2))
-	g.Expect(m2.Contains(aid3)).To(BeTrue())
-	g.Expect(m2.Contains(aid4)).To(BeTrue())
+	g.Expect(m2.ToSlice()).To(ConsistOf(aid3, aid4))
 }
 
 func TestFkConstraintOfField(t *testing.T) {
@@ -183,6 +215,9 @@ func TestFkConstraintOfField(t *testing.T) {
 
 func insertOne(g *GomegaWithT, d sqlapi.Database, query string) int64 {
 	fmt.Fprintf(os.Stderr, "%s\n", query)
+	if !d.Dialect().HasLastInsertId() {
+		query = query + " RETURNING id"
+	}
 	id, err := d.DB().InsertContext(context.Background(), query)
 	g.Expect(err).To(BeNil())
 	return id
@@ -190,29 +225,74 @@ func insertOne(g *GomegaWithT, d sqlapi.Database, query string) int64 {
 
 //-------------------------------------------------------------------------------------------------
 
-const createTables = `
-CREATE TABLE IF NOT EXISTS pfx_addresses (
- ¬id¬        integer primary key autoincrement,
- ¬lines¬     text,
- ¬postcode¬  text
-);
+func createTablesSql(di dialect.Dialect) []string {
+	switch di.Index() {
+	case dialect.SqliteIndex:
+		return createTablesSqlite
+	case dialect.MysqlIndex:
+		return createTablesMysql
+	case dialect.PostgresIndex:
+		return createTablesPostgresql
+	}
+	panic(di.String() + " unsupported")
+}
 
-CREATE TABLE IF NOT EXISTS pfx_persons (
- ¬uid¬       integer primary key autoincrement,
- ¬name¬      text,
- ¬addressid¬ integer default null
-);
+var createTablesSqlite = []string{
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
 
-DELETE FROM pfx_persons;
-DELETE FROM pfx_addresses;
-`
+	`CREATE TABLE pfx_addresses (
+	id        integer primary key autoincrement,
+	xlines    text,
+	postcode  text
+	)`,
 
-const address1 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
-const address2 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
-const address3 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
-const address4 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
+	`CREATE TABLE pfx_persons (
+	id        integer primary key autoincrement,
+	name      text,
+	addressid integer default null
+	)`,
+}
+
+var createTablesMysql = []string{
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
+
+	`CREATE TABLE pfx_addresses (
+	id        int primary key auto_increment,
+	xlines    text,
+	postcode  text
+	)`,
+
+	`CREATE TABLE pfx_persons (
+	id        int primary key auto_increment,
+	name      text,
+	addressid int default null
+	)`,
+}
+
+var createTablesPostgresql = []string{
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
+
+	`CREATE TABLE pfx_addresses (
+	id        serial primary key,
+	xlines    text,
+	postcode  text
+	)`,
+
+	`CREATE TABLE pfx_persons (
+	id        serial primary key,
+	name      text,
+	addressid integer default null
+	)`,
+}
+
+const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
+const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
+const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
+const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
 
 const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d)`
 const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d)`
-
 const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d)`

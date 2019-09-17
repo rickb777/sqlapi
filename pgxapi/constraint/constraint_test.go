@@ -20,20 +20,22 @@ import (
 	"testing"
 )
 
-var db pgxapi.SqlDB
+// Environment:
+// PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
+// PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
 
-func connect(t *testing.T) {
+func connect(t *testing.T) pgxapi.SqlDB {
 	lgr := testingadapter.NewLogger(t)
-	var err error
-	db, err = pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
+	db, err := pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
 	if err != nil {
 		t.Log(err)
 		t.Skip()
 	}
+	return db
 }
 
 func newDatabase(t *testing.T) pgxapi.Database {
-	connect(t)
+	db := connect(t)
 	if db == nil {
 		return nil
 	}
@@ -45,7 +47,7 @@ func newDatabase(t *testing.T) pgxapi.Database {
 	return d
 }
 
-func cleanup() {
+func cleanup(db pgxapi.SqlDB) {
 	if db != nil {
 		db.Close()
 		db = nil
@@ -55,7 +57,7 @@ func cleanup() {
 func TestPgxCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup()
+	defer cleanup(d.DB())
 
 	cc0 := constraint.CheckConstraint{
 		Expression: "role < 3",
@@ -70,7 +72,7 @@ func TestPgxCheckConstraint(t *testing.T) {
 func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup()
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -87,7 +89,7 @@ func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup()
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -104,7 +106,7 @@ func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T)
 func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup()
+	defer cleanup(d.DB())
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addressid",
@@ -114,17 +116,10 @@ func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
 
-	_, err := d.DB().ExecContext(context.Background(), createTables1)
-	g.Expect(err).To(BeNil())
-
-	_, err = d.DB().ExecContext(context.Background(), createTables2)
-	g.Expect(err).To(BeNil())
-
-	_, err = d.DB().ExecContext(context.Background(), emptyTables1)
-	g.Expect(err).To(BeNil())
-
-	_, err = d.DB().ExecContext(context.Background(), emptyTables2)
-	g.Expect(err).To(BeNil())
+	for _, s := range createTablesPostgresql {
+		_, err := d.DB().ExecContext(context.Background(), s)
+		g.Expect(err).To(BeNil())
+	}
 
 	aid1 := insertOne(g, d, address1)
 	aid2 := insertOne(g, d, address2)
@@ -140,16 +135,12 @@ func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m1).To(HaveLen(2))
-	g.Expect(m1.Contains(aid1)).To(BeTrue())
-	g.Expect(m1.Contains(aid2)).To(BeTrue())
+	g.Expect(m1.ToSlice()).To(ConsistOf(aid1, aid2))
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m2).To(HaveLen(2))
-	g.Expect(m2.Contains(aid3)).To(BeTrue())
-	g.Expect(m2.Contains(aid4)).To(BeTrue())
+	g.Expect(m2.ToSlice()).To(ConsistOf(aid3, aid4))
 }
 
 func TestPgxFkConstraintOfField(t *testing.T) {
@@ -187,28 +178,28 @@ func insertOne(g *GomegaWithT, d pgxapi.Database, query string) int64 {
 
 //-------------------------------------------------------------------------------------------------
 
-const createTables1 = `
-CREATE TABLE IF NOT EXISTS pfx_addresses (
- id        serial primary key,
- lines     text,
- postcode  text
-)`
+var createTablesPostgresql = []string{
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
 
-const createTables2 = `
-CREATE TABLE IF NOT EXISTS pfx_persons (
- uid       serial primary key,
- name      text,
- addressid integer default null
-)`
+	`CREATE TABLE pfx_addresses (
+	id        serial primary key,
+	xlines    text,
+	postcode  text
+	)`,
 
-const emptyTables1 = `DELETE FROM pfx_persons`
-const emptyTables2 = `DELETE FROM pfx_addresses`
+	`CREATE TABLE pfx_persons (
+	id        serial primary key,
+	name      text,
+	addressid integer default null
+	)`,
+}
 
-const address1 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
-const address2 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`
-const address3 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('Corner Shop', 'FX1 3CC') RETURNING id`
-const address4 = `INSERT INTO pfx_addresses (lines, postcode) VALUES ('4 The Oaks', 'FX1 5EE') RETURNING id`
+const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
+const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`
+const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC') RETURNING id`
+const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE') RETURNING id`
 
-const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d) RETURNING uid`
-const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d) RETURNING uid`
-const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d) RETURNING uid`
+const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d) RETURNING id`
+const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d) RETURNING id`
+const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d) RETURNING id`

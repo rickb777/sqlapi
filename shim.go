@@ -3,12 +3,14 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
+	"github.com/rickb777/sqlapi/dialect"
 	"log"
 )
 
-func WrapDB(ex *sql.DB) SqlDB {
-	return &shim{ex: ex}
+func WrapDB(ex *sql.DB, di dialect.Dialect) SqlDB {
+	return &shim{ex: ex, di: di}
 }
 
 type basicExecer interface {
@@ -25,6 +27,7 @@ var _ basicExecer = new(sql.Tx)
 
 type shim struct {
 	ex   basicExecer
+	di   dialect.Dialect
 	isTx bool
 }
 
@@ -42,11 +45,28 @@ func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...inter
 }
 
 func (sh *shim) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	if sh.di.HasLastInsertId() {
+		return sh.mysqlInsertContext(ctx, query, args...)
+	}
+	return sh.postgresInsertContext(ctx, query, args...)
+}
+
+func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	res, err := sh.ex.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
 	id, err := res.LastInsertId()
+	return id, errors.Wrapf(err, "%s %v", query, args)
+}
+
+func (sh *shim) postgresInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	row := sh.ex.QueryRowContext(ctx, query, args...)
+	var id int64
+	err := row.Scan(&id)
+	if err != nil && err != pgx.ErrNoRows {
+		return 0, errors.Wrapf(err, "%s %v", query, args)
+	}
 	return id, errors.Wrapf(err, "%s %v", query, args)
 }
 

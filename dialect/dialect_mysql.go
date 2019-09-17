@@ -133,6 +133,10 @@ func (dialect mysql) HasNumberedPlaceholders() bool {
 	return false
 }
 
+func (dialect mysql) HasLastInsertId() bool {
+	return true
+}
+
 func (dialect mysql) Placeholders(n int) string {
 	return simpleQueryPlaceholders(n)
 }

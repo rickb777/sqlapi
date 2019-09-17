@@ -19,7 +19,7 @@ rm -f reports/*.out reports/*.html */*.txt demo/*_sql.go
 
 ### Collection Types ###
 # these generated files hardly ever need to change (see github.com/rickb777/runtemplate to do so)
-[ -f schema/type_set.go ]  || runtemplate -tpl simple/set.tpl  -output schema/type_set.go  Type=Type   Comparable:true Ordered:false Numeric:false
+[ -f schema/type_set.go ]  || runtemplate -tpl simple/set.tpl  -output schema/type_set.go Type=Type Comparable:true Ordered:false Numeric:false
 [ -f support/functions_gen.go ] || ./support/functions.sh
 [ -f pgxapi/support/functions_gen.go ] || ./pgxapi/support/functions.sh
 #[ -f database_gen.go ] || ./database.sh
@@ -35,7 +35,7 @@ export PGPASSWORD='TestPasswd.9.9.9'
 gofmt -l -w *.go */*.go
 go vet ./...
 go install ./...
-go test ./...
+./test.sh all
 
 ### Build Phase 2 ###
 
