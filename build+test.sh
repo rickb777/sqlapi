@@ -35,7 +35,7 @@ export PGPASSWORD='TestPasswd.9.9.9'
 gofmt -l -w *.go */*.go
 go vet ./...
 go install ./...
-./test.sh all
+./test.sh sqlite
 
 ### Build Phase 2 ###
 
@@ -51,4 +51,5 @@ go test . -covermode=count -coverprofile=reports/dot.out .
 go tool cover -func=reports/dot.out
 [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
-#git checkout util/version.go
+echo
+echo "Now start MySQL nd PostgreSQL, then run './test.sh all'"
