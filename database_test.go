@@ -132,10 +132,10 @@ func TestLoggingError(t *testing.T) {
 func TestListTables(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
-	defer cleanup(d.DB())
+	db := newDatabase(t)
+	defer cleanup(db.DB())
 
-	list, err := d.ListTables(nil)
+	list, err := db.ListTables(nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")

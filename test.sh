@@ -39,22 +39,22 @@ for db in $DBS; do
     postgres)
       echo
       echo "PostgreSQL (no quotes)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES ||:
+      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES ||:
+      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
       ;;
 
     pgx)
       echo
       echo "PGX (no quotes)...."
-      #GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES ||:
+      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
       echo
       echo "PGX (ANSI)...."
-      #GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES ||:
+      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
-      PGUSER=testuser PGPASSWORD=TestPasswd.9.9.9 PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/... ||:
+      PGUSER=testuser PGPASSWORD=TestPasswd.9.9.9 PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/...
       ;;
 
     sqlite)

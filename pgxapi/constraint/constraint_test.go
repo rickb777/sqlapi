@@ -3,11 +3,8 @@ package constraint_test
 import (
 	"context"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/log/testingadapter"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
