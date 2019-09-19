@@ -10,6 +10,7 @@ install:
   - go get -t -v ./...
   - go get github.com/mattn/goveralls
   - docker pull postgres:11-alpine
+  - docker pull mysql:5.7
 
 script:
   - ./build+test.sh
