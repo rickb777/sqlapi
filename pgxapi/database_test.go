@@ -17,6 +17,7 @@ import (
 // Environment:
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
+// (see https://www.postgresql.org/docs/11/libpq-envars.html)
 
 func connect(t *testing.T) SqlDB {
 	lgr := testingadapter.NewLogger(t)

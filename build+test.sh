@@ -28,14 +28,13 @@ rm -f reports/*.out reports/*.html */*.txt demo/*_sql.go
 
 ./version.sh
 
-export PGDATABASE='test'
-export PGUSER='testuser'
-export PGPASSWORD='TestPasswd.9.9.9'
-
 gofmt -l -w *.go */*.go
 go vet ./...
 go install ./...
-./test.sh sqlite
+
+./test.sh sqlite postgres pgx
+
+docker rm -f test-postgres
 
 ### Build Phase 2 ###
 
@@ -50,6 +49,3 @@ echo .
 go test . -covermode=count -coverprofile=reports/dot.out .
 go tool cover -func=reports/dot.out
 [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN
-
-echo
-echo "Now start MySQL nd PostgreSQL, then run './test.sh all'"

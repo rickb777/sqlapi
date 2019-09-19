@@ -16,7 +16,63 @@ cd "$(dirname $0)"
 PATH=$PWD/..:$HOME/go/bin:$PATH
 
 unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
-export PGHOST=localhost
+
+export PGHOST='localhost'
+export PGDATABASE='test'
+export PGUSER='testuser'
+export PGPASSWORD='TestPasswd.9.9.9'
+
+function startMysqlDocker
+{
+  if [ ! -f .test-mysql-$$ ]; then
+    touch .test-mysql-$$
+    echo "Using docker to provide MySQL means"
+    echo " 1. if you have one, you must stop your local MySQL instance"
+    echo " 2. docker pull mysql:5.7"
+    echo
+    echo "starting docker test-postgres..."
+    docker run --name test-mysql -e MYSQL_DATABASE=$PGDATABASE -e MYSQL_USER=$PGUSER -e MYSQL_ROOT_PASSWORD="$PGPASSWORD" -p 127.0.0.1:3306:3306/tcp -d mysql:5.7
+    sleep 2
+  fi
+}
+
+function stopMysqlDocker
+{
+  if [ -f .test-mysql-$$ ]; then
+    rm .test-mysql-$$
+    docker rm -f test-mysql >/dev/null 2>&1
+  fi
+}
+
+function startPostgresDocker
+{
+  if [ ! -f .test-postgres-$$ ]; then
+    touch .test-postgres-$$
+    echo "Using docker to provide PostgreSQL means"
+    echo " 1. if you have one, you must stop your local PostgreSQL instance"
+    echo " 2. docker pull postgres:11-alpine"
+    echo
+    echo "starting docker test-postgres..."
+    docker run --name test-mysql -e POSTGRES_DB=$PGDATABASE -e POSTGRES_USER=$PGUSER -e POSTGRES_PASSWORD="$PGPASSWORD" -p 127.0.0.1:5432:5432/tcp -d postgres:11-alpine
+    sleep 2
+  fi
+}
+
+function stopPostgresDocker
+{
+  if [ -f .test-postgres-$$ ]; then
+    rm .test-postgres-$$
+    docker rm -f test-postgres >/dev/null 2>&1
+  fi
+}
+
+trap stopMysqlDocker EXIT
+trap stopPostgresDocker EXIT
+
+if [ "$1" = "-v" ]; then
+  V=-v
+  shift
+fi
 
 DBS=$*
 if [ "$1" = "all" ]; then
@@ -31,40 +87,43 @@ for db in $DBS; do
 
   case $db in
     mysql)
+      startMysqlDocker
       echo
       echo "MySQL...."
-      GO_DRIVER=mysql GO_DSN=testuser:TestPasswd.9.9.9@/test go test -v $PACKAGES
+      GO_DRIVER=mysql GO_DSN="testuser:TestPasswd.9.9.9@/test" go test $V $PACKAGES
       ;;
 
     postgres)
+      startPostgresDocker
       echo
       echo "PostgreSQL (no quotes)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$PGUSER:$PGPASSWORD@/$PGDATABASE?sslmode=disable" GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$PGUSER:$PGPASSWORD@/$PGDATABASE?sslmode=disable" GO_QUOTER=ansi go test $V $PACKAGES
       ;;
 
     pgx)
+      startPostgresDocker
       echo
       echo "PGX (no quotes)...."
-      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$PGUSER:$PGPASSWORD@/$PGDATABASE?sslmode=disable" GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "PGX (ANSI)...."
-      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$PGUSER:$PGPASSWORD@/$PGDATABASE?sslmode=disable" GO_QUOTER=ansi go test $V $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
-      PGUSER=testuser PGPASSWORD=TestPasswd.9.9.9 PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/...
+      GO_QUOTER=ansi go test ./pgxapi/...
       ;;
 
     sqlite)
       unset GO_DRIVER GO_DSN
       echo
       echo "SQLite3 (no quotes)..."
-      GO_QUOTER=none go test -v $PACKAGES
+      GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "SQLite3 (ANSI)..."
-      GO_QUOTER=ansi go test -v $PACKAGES
+      GO_QUOTER=ansi go test $V $PACKAGES
       ;;
 
     *)

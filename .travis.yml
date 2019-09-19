@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - "1.12"
+  - "1.13"
 
 env:
   - GO111MODULE=on
@@ -9,6 +9,7 @@ env:
 install:
   - go get -t -v ./...
   - go get github.com/mattn/goveralls
+  - docker pull postgres:11-alpine
 
 script:
   - ./build+test.sh

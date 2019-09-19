@@ -29,11 +29,11 @@ import (
 // GO_DSN     - the database DSN
 // GO_VERBOSE - true for query logging
 
-func skipIfNoPostgresDB(t *testing.T, di dialect.Dialect) {
-	if (di.Index() == dialect.PostgresIndex || di.Index() == dialect.PgxIndex) && os.Getenv("PGHOST") == "" {
-		t.Skip()
-	}
-}
+//func skipIfNoPostgresDB(t *testing.T, di dialect.Dialect) {
+//	if (di.Index() == dialect.PostgresIndex || di.Index() == dialect.PgxIndex) && os.Getenv("PGHOST") == "" {
+//		t.Skip()
+//	}
+//}
 
 func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
@@ -41,7 +41,7 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 		dbDriver = "sqlite3"
 	}
 
-	di := dialect.PickDialect(dbDriver) //.WithQuoter(dialect.NoQuoter)
+	di := dialect.PickDialect(dbDriver)
 	quoter, ok := os.LookupEnv("GO_QUOTER")
 	if ok {
 		switch strings.ToLower(quoter) {
@@ -56,7 +56,7 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 		}
 	}
 
-	skipIfNoPostgresDB(t, di)
+	//skipIfNoPostgresDB(t, di)
 
 	dsn, ok := os.LookupEnv("GO_DSN")
 	if !ok {
