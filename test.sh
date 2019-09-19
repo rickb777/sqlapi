@@ -15,7 +15,7 @@ cd "$(dirname $0)"
 
 PATH=$PWD/..:$HOME/go/bin:$PATH
 
-unset GO_DRIVER GO_DSN GO_QUOTER
+unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
 export PGHOST=localhost
 
 DBS=$*

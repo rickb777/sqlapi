@@ -1,5 +1,5 @@
 #!/bin/bash -e
-cd $(dirname $0)
+cd "$(dirname $0)"
 
 function announce
 {
@@ -8,8 +8,8 @@ function announce
 }
 
 PATH=$HOME/go/bin:$PATH
-
 unset GOPATH
+export GO111MODULE=on
 
 go mod download
 
@@ -49,7 +49,7 @@ done
 echo .
 go test . -covermode=count -coverprofile=reports/dot.out .
 go tool cover -func=reports/dot.out
-[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
 echo
 echo "Now start MySQL nd PostgreSQL, then run './test.sh all'"

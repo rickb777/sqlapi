@@ -1,5 +1,5 @@
 #!/bin/sh -e
-V=$1
+V="$1"
 if [ -z "$V" ]; then
   V=$(git describe --tags --always 2>/dev/null)
 fi
