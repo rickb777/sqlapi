@@ -19,8 +19,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Environment:
@@ -35,7 +37,7 @@ import (
 //	}
 //}
 
-func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
+func connect(t *testing.T, fail bool) (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
 	if !ok {
 		dbDriver = "sqlite3"
@@ -70,15 +72,41 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 
 	err = db.Ping()
 	if err != nil {
-		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+		if !fail {
+			t.Logf("Warning: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+			time.Sleep(time.Second)
+			return nil, nil
+		}
 	}
 
 	fmt.Printf("Successfully connected to %s.\n", dbDriver)
 	return db, di
 }
 
+func connectWithRetries(t *testing.T) (*sql.DB, dialect.Dialect) {
+	rs := os.Getenv("RETRIES")
+	if rs == "" {
+		rs = "1"
+	}
+
+	retries, err := strconv.Atoi(rs)
+	if err != nil {
+		t.Fatalf("Error: RETRIES=%q must be a number.\n\n", rs)
+	}
+
+	for i := retries; i > 0; i-- {
+		db, di := connect(t, i > 0)
+		if db != nil {
+			time.Sleep(2 * time.Second)
+			return db, di
+		}
+	}
+	t.Fatalf("Error: Unable to ping database; test is only partially complete.\n\n")
+	return nil, nil
+}
+
 func newDatabase(t *testing.T) sqlapi.Database {
-	db, di := connect(t)
+	db, di := connectWithRetries(t)
 
 	var lgr *log.Logger
 	goVerbose, ok := os.LookupEnv("GO_VERBOSE")

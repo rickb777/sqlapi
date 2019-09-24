@@ -13,10 +13,11 @@
 
 cd "$(dirname $0)"
 
-PATH=$PWD/..:$HOME/go/bin:$PATH
+PATH=$HOME/go/bin:$PATH
 
 unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
 
+# these names are as used by PostgreSQL, complementing the DSN
 export PGHOST='localhost'
 export PGDATABASE='test'
 export PGUSER='testuser'
@@ -31,16 +32,8 @@ function startMysqlDocker
     echo " 2. docker pull mysql:5.7"
     echo
     echo "starting docker test-postgres..."
-    docker run --name test-mysql -e MYSQL_DATABASE=$PGDATABASE -e MYSQL_USER=$PGUSER -e MYSQL_ROOT_PASSWORD="$PGPASSWORD" -p 127.0.0.1:3306:3306/tcp -d mysql:5.7
-    sleep 2
-  fi
-}
-
-function stopMysqlDocker
-{
-  if [ -f .test-mysql-$$ ]; then
-    rm .test-mysql-$$
-    docker rm -f test-mysql >/dev/null 2>&1
+    docker run --name test-mysql -e MYSQL_DATABASE=$PGDATABASE -e MYSQL_USER=$PGUSER -e MYSQL_PASSWORD="$PGPASSWORD" -e MYSQL_ROOT_PASSWORD=mysql -p 127.0.0.1:3306:3306/tcp -d mysql:5.7
+    sleep 1
   fi
 }
 
@@ -53,21 +46,25 @@ function startPostgresDocker
     echo " 2. docker pull postgres:11-alpine"
     echo
     echo "starting docker test-postgres..."
-    docker run --name test-mysql -e POSTGRES_DB=$PGDATABASE -e POSTGRES_USER=$PGUSER -e POSTGRES_PASSWORD="$PGPASSWORD" -p 127.0.0.1:5432:5432/tcp -d postgres:11-alpine
-    sleep 2
+    docker run --name test-postgres -e POSTGRES_DB=$PGDATABASE -e POSTGRES_USER=$PGUSER -e POSTGRES_PASSWORD="$PGPASSWORD" -p 127.0.0.1:5432:5432/tcp -d postgres:11-alpine
+    sleep 1
   fi
 }
 
-function stopPostgresDocker
+function stopDockers
 {
+  if [ -f .test-mysql-$$ ]; then
+    rm .test-mysql-$$
+    docker rm -f test-mysql #>/dev/null 2>&1
+  fi
+
   if [ -f .test-postgres-$$ ]; then
     rm .test-postgres-$$
     docker rm -f test-postgres >/dev/null 2>&1
   fi
 }
 
-trap stopMysqlDocker EXIT
-trap stopPostgresDocker EXIT
+trap stopDockers EXIT
 
 if [ "$1" = "-v" ]; then
   V=-v
@@ -90,7 +87,7 @@ for db in $DBS; do
       startMysqlDocker
       echo
       echo "MySQL...."
-      GO_DRIVER=mysql GO_DSN="testuser:TestPasswd.9.9.9@/test" go test $V $PACKAGES
+      GO_DRIVER=mysql GO_DSN="testuser:TestPasswd.9.9.9@/test" go test $V ./constraint
       ;;
 
     postgres)

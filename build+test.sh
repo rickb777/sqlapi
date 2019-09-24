@@ -32,7 +32,7 @@ gofmt -l -w *.go */*.go
 go vet ./...
 go install ./...
 
-./test.sh sqlite postgres pgx
+./test.sh all
 
 docker rm -f test-postgres
 

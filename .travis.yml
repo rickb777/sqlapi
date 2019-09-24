@@ -6,6 +6,9 @@ go:
 env:
   - GO111MODULE=on
 
+services:
+  - docker
+
 install:
   - go get -t -v ./...
   - go get github.com/mattn/goveralls
