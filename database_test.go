@@ -1,4 +1,4 @@
-package sqlapi
+package sqlapi_test
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
+	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/where/quote"
 	"io"
@@ -24,19 +25,13 @@ import (
 // GO_DSN     - the database DSN
 // GO_VERBOSE - true for query logging
 
-func skipIfNoPostgresDB(t *testing.T, di dialect.Dialect) {
-	if (di.Index() == dialect.PostgresIndex || di.Index() == dialect.PgxIndex) && os.Getenv("PGHOST") == "" {
-		t.Skip()
-	}
-}
-
 func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
 	if !ok {
 		dbDriver = "sqlite3"
 	}
 
-	di := dialect.PickDialect(dbDriver) //.WithQuoter(dialect.NoQuoter)
+	di := dialect.PickDialect(dbDriver)
 	quoter, ok := os.LookupEnv("GO_QUOTER")
 	if ok {
 		switch strings.ToLower(quoter) {
@@ -50,8 +45,6 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
 		}
 	}
-
-	skipIfNoPostgresDB(t, di)
 
 	dsn, ok := os.LookupEnv("GO_DSN")
 	if !ok {
@@ -72,7 +65,7 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	return db, di
 }
 
-func newDatabase(t *testing.T) Database {
+func newDatabase(t *testing.T) sqlapi.Database {
 	db, di := connect(t)
 
 	var lgr *log.Logger
@@ -81,10 +74,10 @@ func newDatabase(t *testing.T) Database {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return NewDatabase(WrapDB(db, di), di, lgr, nil)
+	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
 }
 
-func cleanup(db Execer) {
+func cleanup(db sqlapi.Execer) {
 	if db != nil {
 		if c, ok := db.(io.Closer); ok {
 			c.Close()
@@ -99,7 +92,7 @@ func TestLoggingOnOff(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
-	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
+	db := sqlapi.NewDatabase(nil, dialect.Sqlite, logger, nil)
 	db.Logger().LogQuery("one")
 	db.Logger().TraceLogging(false)
 	db.Logger().LogQuery("two")
@@ -116,7 +109,7 @@ func TestLoggingError(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
 
-	db := NewDatabase(nil, dialect.Sqlite, logger, nil)
+	db := sqlapi.NewDatabase(nil, dialect.Sqlite, logger, nil)
 	db.Logger().LogError(fmt.Errorf("one"))
 	db.Logger().TraceLogging(false)
 	db.Logger().LogError(fmt.Errorf("two"))

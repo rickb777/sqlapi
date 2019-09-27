@@ -18,6 +18,11 @@ PATH=$PWD/..:$HOME/go/bin:$PATH
 unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
 export PGHOST=localhost
 
+if [[ -z $DBUSER ]]; then
+  DBUSER=testuser
+  DBPASS=TestPasswd.9.9.9
+fi
+
 DBS=$*
 if [ "$1" = "all" ]; then
   DBS="sqlite mysql postgres pgx"
@@ -33,28 +38,28 @@ for db in $DBS; do
     mysql)
       echo
       echo "MySQL...."
-      GO_DRIVER=mysql GO_DSN=testuser:TestPasswd.9.9.9@/test go test -v $PACKAGES
+      GO_DRIVER=mysql GO_DSN=$DBUSER:$DBPASS@/test go test -v $PACKAGES
       ;;
 
     postgres)
       echo
       echo "PostgreSQL (no quotes)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test -v $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
-      GO_DRIVER=postgres GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test -v $PACKAGES
       ;;
 
     pgx)
       echo
       echo "PGX (no quotes)...."
-      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test -v $PACKAGES
       echo
       echo "PGX (ANSI)...."
-      GO_DRIVER=pgx GO_DSN="postgres://testuser:TestPasswd.9.9.9@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test -v $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
-      PGUSER=testuser PGPASSWORD=TestPasswd.9.9.9 PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/...
+      PGUSER=$DBUSER PGPASSWORD=$DBPASS PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/...
       ;;
 
     sqlite)
