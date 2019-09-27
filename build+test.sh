@@ -43,13 +43,13 @@ for d in constraint require schema types; do
   announce ./$d
   go test $1 -covermode=count -coverprofile=reports/$d.out ./$d
   go tool cover -html=reports/$d.out -o reports/$d.html
-  [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+  [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
 echo .
 go test . -covermode=count -coverprofile=reports/dot.out .
 go tool cover -func=reports/dot.out
-[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 
 echo
 echo "Now start MySQL nd PostgreSQL, then run './test.sh all'"

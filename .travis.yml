@@ -16,3 +16,4 @@ install:
 
 script:
   - ./build+test.sh
+  - ./test.sh all
