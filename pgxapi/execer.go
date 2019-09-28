@@ -57,8 +57,9 @@ type Execer interface {
 	ExecContext(ctx context.Context, sql string, arguments ...interface{}) (int64, error)
 
 	// InsertContext executes a query and returns the insertion ID.
+	// The primary key column, pk, is used for some dialects, notably PostgreSQL.
 	// The arguments are for any placeholder parameters in the query.
-	InsertContext(ctx context.Context, query string, arguments ...interface{}) (int64, error)
+	InsertContext(ctx context.Context, pk, query string, arguments ...interface{}) (int64, error)
 
 	// PrepareContext creates a prepared statement for later queries or executions.
 	// Multiple queries or executions may be run concurrently from the

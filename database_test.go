@@ -187,7 +187,31 @@ func TestQueryContext(t *testing.T) {
 	g.Expect(rows.Next()).NotTo(BeTrue())
 }
 
-func TestTransactCommit(t *testing.T) {
+func TestTransactCommitUsingInsert(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := newDatabase(t)
+	defer cleanup(d.DB())
+
+	ctx := context.Background()
+	insertFixtures(t, d)
+
+	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+		q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
+		_, e2 := tx.InsertContext(ctx, "id", q, "5 Pantagon Vale", "FX1 5EE")
+		return e2
+	})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+
+	var count int
+	err = row.Scan(&count)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(count).To(Equal(5))
+}
+
+func TestTransactCommitUsingExec(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)

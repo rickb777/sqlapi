@@ -31,10 +31,7 @@ func insertFixtures(t *testing.T, d sqlapi.Database) (aid1, aid2, aid3, aid4 int
 }
 
 func insertOne(g *gomega.GomegaWithT, d sqlapi.Database, query string) int64 {
-	if !d.Dialect().HasLastInsertId() {
-		query = query + " RETURNING id"
-	}
-	id, err := d.DB().InsertContext(context.Background(), query)
+	id, err := d.DB().InsertContext(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }

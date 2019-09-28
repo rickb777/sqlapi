@@ -3,6 +3,7 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/jackc/pgx"
@@ -11,7 +12,7 @@ import (
 )
 
 func WrapDB(ex *sql.DB, di dialect.Dialect) SqlDB {
-	return &shim{ex: ex, di: di}
+	return &shim{ex: ex, di: di, isTx: false}
 }
 
 type basicExecer interface {
@@ -45,11 +46,11 @@ func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...inter
 	return sh.ex.QueryRowContext(ctx, query, args...)
 }
 
-func (sh *shim) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	if sh.di.HasLastInsertId() {
 		return sh.mysqlInsertContext(ctx, query, args...)
 	}
-	return sh.postgresInsertContext(ctx, query, args...)
+	return sh.postgresInsertContext(ctx, pk, query, args...)
 }
 
 func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
@@ -61,8 +62,9 @@ func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...in
 	return id, errors.Wrapf(err, "%s %v", query, args)
 }
 
-func (sh *shim) postgresInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	row := sh.ex.QueryRowContext(ctx, query, args...)
+func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
+	row := sh.ex.QueryRowContext(ctx, q2, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
@@ -97,7 +99,7 @@ func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return &shim{ex: tx, isTx: true}, nil
+	return &shim{ex: tx, di: sh.di, isTx: true}, nil
 }
 
 func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(SqlTx) error) (err error) {

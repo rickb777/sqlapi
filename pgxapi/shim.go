@@ -64,8 +64,9 @@ func (sh *shim) QueryRowExRaw(ctx context.Context, query string, options *pgx.Qu
 	return sh.ex.QueryRowEx(ctx, query, options, args...)
 }
 
-func (sh *shim) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	row := sh.ex.QueryRowEx(ctx, query, nil, args...)
+func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
+	row := sh.ex.QueryRowEx(ctx, q2, nil, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {

@@ -77,7 +77,7 @@ func (e stubExecer) BeginBatch() *pgx.Batch {
 	panic("implement me")
 }
 
-func (e stubExecer) InsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (e stubExecer) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	panic("implement me")
 }
 

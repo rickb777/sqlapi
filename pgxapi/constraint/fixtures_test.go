@@ -30,7 +30,7 @@ func insertFixtures(t *testing.T, d pgxapi.Database) (aid1, aid2, aid3, aid4 int
 }
 
 func insertOne(g *gomega.GomegaWithT, d pgxapi.Database, query string) int64 {
-	id, err := d.DB().InsertContext(context.Background(), query)
+	id, err := d.DB().InsertContext(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }
@@ -52,11 +52,11 @@ var createTablesPostgresql = []string{
 	)`,
 }
 
-const address1 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
-const address2 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`
-const address3 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC') RETURNING id`
-const address4 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE') RETURNING id`
+const address1 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
+const address2 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
+const address3 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
+const address4 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
 
-const person1a = `INSERT INTO constraint_persons (name, addressid) VALUES ('John Brown', %d) RETURNING id`
-const person1b = `INSERT INTO constraint_persons (name, addressid) VALUES ('Mary Brown', %d) RETURNING id`
-const person2a = `INSERT INTO constraint_persons (name, addressid) VALUES ('Anne Bollin', %d) RETURNING id`
+const person1a = `INSERT INTO constraint_persons (name, addressid) VALUES ('John Brown', %d)`
+const person1b = `INSERT INTO constraint_persons (name, addressid) VALUES ('Mary Brown', %d)`
+const person2a = `INSERT INTO constraint_persons (name, addressid) VALUES ('Anne Bollin', %d)`

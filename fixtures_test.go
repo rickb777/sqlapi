@@ -31,10 +31,7 @@ func insertFixtures(t *testing.T, d sqlapi.Database) (aid1, aid2, aid3, aid4 int
 }
 
 func insertOne(g *gomega.GomegaWithT, d sqlapi.Database, query string) int64 {
-	if !d.Dialect().HasLastInsertId() {
-		query = query + " RETURNING id"
-	}
-	id, err := d.DB().InsertContext(context.Background(), query)
+	id, err := d.DB().InsertContext(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }
@@ -105,7 +102,7 @@ var createTablesPostgresql = []string{
 const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
 const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
 const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
-const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
+const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 4DD')`
 
 const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d)`
 const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d)`
