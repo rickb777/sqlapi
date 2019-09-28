@@ -57,13 +57,13 @@ v shadow ./...
 
 v go install ./...
 
-v ./test.sh sqlite
+v ./test.sh $1
 
 ### Build Phase 2 ###
 
 for d in constraint require schema types; do
   announce ./$d
-  go test $1 -covermode=count -coverprofile=reports/$d.out ./$d
+  go test ./$d -covermode=count -coverprofile=reports/$d.out ./$d
   go tool cover -html=reports/$d.out -o reports/$d.html
   [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
@@ -74,4 +74,4 @@ go tool cover -func=reports/dot.out
 [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 
 echo
-echo "Now start MySQL nd PostgreSQL, then run './test.sh all'"
+echo "Now start MySQL and PostgreSQL, then run './test.sh all'"

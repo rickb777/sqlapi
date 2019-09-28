@@ -11,12 +11,15 @@ import (
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/where/quote"
+	"sync"
 	"testing"
 )
 
 // Environment:
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
+
+var lock = sync.Mutex{}
 
 func connect(t *testing.T) pgxapi.SqlDB {
 	lgr := testingadapter.NewLogger(t)
@@ -25,6 +28,7 @@ func connect(t *testing.T) pgxapi.SqlDB {
 		t.Log(err)
 		t.Skip()
 	}
+	lock.Lock()
 	return db
 }
 
@@ -44,6 +48,7 @@ func newDatabase(t *testing.T) pgxapi.Database {
 func cleanup(db pgxapi.SqlDB) {
 	if db != nil {
 		db.Close()
+		lock.Unlock()
 		db = nil
 	}
 }
@@ -57,10 +62,10 @@ func TestPgxCheckConstraint(t *testing.T) {
 		Expression: "role < 3",
 	}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(cc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(cc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" CHECK (role < 3)`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" CHECK (role < 3)`), s)
 }
 
 func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
@@ -74,10 +79,10 @@ func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 		Update:           "restrict",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" foreign key ("addresspk") references "constraint_addresses" ("identity") on update restrict on delete cascade`), s)
 }
 
 func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
@@ -91,10 +96,10 @@ func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T)
 		Update:           "restrict",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints().FkConstraints()[0]
 	s := fkc.ConstraintSql(quote.NoQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT pfx_persons_c0 foreign key (addresspk) references pfx_addresses on update restrict on delete cascade`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT constraint_persons_c0 foreign key (addresspk) references constraint_addresses on update restrict on delete cascade`), s)
 }
 
 func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
@@ -110,7 +115,7 @@ func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 		Update:           "cascade",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 
 	fkc := persons.Constraints().FkConstraints()[0]
 

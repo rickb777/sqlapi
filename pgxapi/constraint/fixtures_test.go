@@ -36,27 +36,27 @@ func insertOne(g *gomega.GomegaWithT, d pgxapi.Database, query string) int64 {
 }
 
 var createTablesPostgresql = []string{
-	`DROP TABLE IF EXISTS pfx_addresses`,
-	`DROP TABLE IF EXISTS pfx_persons`,
+	`DROP TABLE IF EXISTS constraint_addresses`,
+	`DROP TABLE IF EXISTS constraint_persons`,
 
-	`CREATE TABLE pfx_addresses (
+	`CREATE TABLE constraint_addresses (
 	id        serial primary key,
 	xlines    text,
 	postcode  text
 	)`,
 
-	`CREATE TABLE pfx_persons (
+	`CREATE TABLE constraint_persons (
 	id        serial primary key,
 	name      text,
 	addressid integer default null
 	)`,
 }
 
-const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
-const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`
-const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC') RETURNING id`
-const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE') RETURNING id`
+const address1 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA') RETURNING id`
+const address2 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB') RETURNING id`
+const address3 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC') RETURNING id`
+const address4 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE') RETURNING id`
 
-const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d) RETURNING id`
-const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d) RETURNING id`
-const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d) RETURNING id`
+const person1a = `INSERT INTO constraint_persons (name, addressid) VALUES ('John Brown', %d) RETURNING id`
+const person1b = `INSERT INTO constraint_persons (name, addressid) VALUES ('Mary Brown', %d) RETURNING id`
+const person2a = `INSERT INTO constraint_persons (name, addressid) VALUES ('Anne Bollin', %d) RETURNING id`

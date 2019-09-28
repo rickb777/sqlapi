@@ -24,7 +24,9 @@ if [[ -z $DBUSER ]]; then
 fi
 
 DBS=$*
-if [ "$1" = "all" ]; then
+if [[ -z $1 ]]; then
+  DBS="sqlite"
+elif [[ $1 = "all" ]]; then
   DBS="sqlite mysql postgres pgx"
 fi
 

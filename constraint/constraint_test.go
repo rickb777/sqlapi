@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -28,6 +29,9 @@ import (
 // GO_QUOTER  - the identifier quoter (ansi, mysql, none)
 // GO_DSN     - the database DSN
 // GO_VERBOSE - true for query logging
+
+// lock is used to force the tests against a real DB to run sequentially.
+var lock = sync.Mutex{}
 
 func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
@@ -60,6 +64,8 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
 	}
 
+	lock.Lock()
+
 	err = db.Ping()
 	if err != nil {
 		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
@@ -86,6 +92,7 @@ func cleanup(db sqlapi.Execer) {
 		if c, ok := db.(io.Closer); ok {
 			c.Close()
 		}
+		lock.Unlock()
 		os.Remove("test.db")
 	}
 }
@@ -99,10 +106,10 @@ func TestCheckConstraint(t *testing.T) {
 		Expression: "role < 3",
 	}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(cc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(cc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" CHECK (role < 3)`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" CHECK (role < 3)`), s)
 }
 
 func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
@@ -116,10 +123,10 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 		Update:           "restrict",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "pfx_persons_c0" foreign key ("addresspk") references "pfx_addresses" ("identity") on update restrict on delete cascade`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" foreign key ("addresspk") references "constraint_addresses" ("identity") on update restrict on delete cascade`), s)
 }
 
 func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
@@ -133,10 +140,10 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 		Update:           "restrict",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints().FkConstraints()[0]
 	s := fkc.ConstraintSql(quote.NoQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT pfx_persons_c0 foreign key (addresspk) references pfx_addresses on update restrict on delete cascade`), s)
+	g.Expect(s).To(Equal(`CONSTRAINT constraint_persons_c0 foreign key (addresspk) references constraint_addresses on update restrict on delete cascade`), s)
 }
 
 func TestIdsUsedAsForeignKeys(t *testing.T) {
@@ -152,7 +159,7 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 		Update:           "cascade",
 		Delete:           "cascade"}
 
-	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
+	persons := vanilla.NewRecordTable("persons", d).WithPrefix("constraint_").WithConstraint(fkc0)
 
 	fkc := persons.Constraints().FkConstraints()[0]
 

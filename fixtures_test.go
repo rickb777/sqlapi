@@ -1,4 +1,4 @@
-package constraint_test
+package sqlapi_test
 
 import (
 	"context"
@@ -52,16 +52,16 @@ func createTablesSql(di dialect.Dialect) []string {
 }
 
 var createTablesSqlite = []string{
-	`DROP TABLE IF EXISTS constraint_addresses`,
-	`DROP TABLE IF EXISTS constraint_persons`,
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
 
-	`CREATE TABLE constraint_addresses (
+	`CREATE TABLE pfx_addresses (
 	id        integer primary key autoincrement,
 	xlines    text,
 	postcode  text
 	)`,
 
-	`CREATE TABLE constraint_persons (
+	`CREATE TABLE pfx_persons (
 	id        integer primary key autoincrement,
 	name      text,
 	addressid integer default null
@@ -69,16 +69,16 @@ var createTablesSqlite = []string{
 }
 
 var createTablesMysql = []string{
-	`DROP TABLE IF EXISTS constraint_addresses`,
-	`DROP TABLE IF EXISTS constraint_persons`,
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
 
-	`CREATE TABLE constraint_addresses (
+	`CREATE TABLE pfx_addresses (
 	id        int primary key auto_increment,
 	xlines    text,
 	postcode  text
 	)`,
 
-	`CREATE TABLE constraint_persons (
+	`CREATE TABLE pfx_persons (
 	id        int primary key auto_increment,
 	name      text,
 	addressid int default null
@@ -86,27 +86,27 @@ var createTablesMysql = []string{
 }
 
 var createTablesPostgresql = []string{
-	`DROP TABLE IF EXISTS constraint_addresses`,
-	`DROP TABLE IF EXISTS constraint_persons`,
+	`DROP TABLE IF EXISTS pfx_addresses`,
+	`DROP TABLE IF EXISTS pfx_persons`,
 
-	`CREATE TABLE constraint_addresses (
+	`CREATE TABLE pfx_addresses (
 	id        serial primary key,
 	xlines    text,
 	postcode  text
 	)`,
 
-	`CREATE TABLE constraint_persons (
+	`CREATE TABLE pfx_persons (
 	id        serial primary key,
 	name      text,
 	addressid integer default null
 	)`,
 }
 
-const address1 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
-const address2 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
-const address3 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
-const address4 = `INSERT INTO constraint_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
+const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
+const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
+const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
+const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
 
-const person1a = `INSERT INTO constraint_persons (name, addressid) VALUES ('John Brown', %d)`
-const person1b = `INSERT INTO constraint_persons (name, addressid) VALUES ('Mary Brown', %d)`
-const person2a = `INSERT INTO constraint_persons (name, addressid) VALUES ('Anne Bollin', %d)`
+const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d)`
+const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d)`
+const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d)`

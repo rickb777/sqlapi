@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx"
@@ -20,6 +21,8 @@ import (
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
 // (see https://www.postgresql.org/docs/11/libpq-envars.html)
 
+var lock = sync.Mutex{}
+
 func connect(t *testing.T) SqlDB {
 	lgr := testingadapter.NewLogger(t)
 	db, err := ConnectEnv(lgr, pgx.LogLevelInfo)
@@ -27,6 +30,7 @@ func connect(t *testing.T) SqlDB {
 		t.Log(err)
 		t.Skip()
 	}
+	lock.Lock()
 	return db
 }
 
@@ -46,6 +50,7 @@ func newDatabase(t *testing.T) Database {
 func cleanup(db SqlDB) {
 	if db != nil {
 		db.Close()
+		lock.Unlock()
 		db = nil
 	}
 }
@@ -57,9 +62,10 @@ func TestLoggingOnOff(t *testing.T) {
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
-	db := NewDatabase(sh, dialect.Sqlite, nil)
-	db.Logger().LogError(errors.New("one"))
-	db.Logger().LogError(errors.New("two"))
+	d := NewDatabase(sh, dialect.Sqlite, nil)
+	lgr := d.Logger()
+	lgr.LogError(errors.New("one"))
+	lgr.LogError(errors.New("two"))
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:two]\n"))
@@ -72,10 +78,11 @@ func TestLoggingError(t *testing.T) {
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
 
-	db := NewDatabase(sh, dialect.Sqlite, nil)
-	db.Logger().LogIfError(nil)
-	db.Logger().LogIfError(fmt.Errorf("four"))
-	db.Logger().LogIfError(nil)
+	d := NewDatabase(sh, dialect.Sqlite, nil)
+	lgr := d.Logger()
+	lgr.LogIfError(nil)
+	lgr.LogIfError(fmt.Errorf("four"))
+	lgr.LogIfError(nil)
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error [error:four]\n"))
