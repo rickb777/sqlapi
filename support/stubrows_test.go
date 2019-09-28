@@ -2,8 +2,9 @@ package support
 
 import (
 	"database/sql"
-	"github.com/rickb777/sqlapi"
 	"reflect"
+
+	"github.com/rickb777/sqlapi"
 )
 
 type StubRow []interface{}

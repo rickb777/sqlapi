@@ -3,8 +3,9 @@ package pgxapi
 import (
 	"database/sql"
 	"fmt"
-	"github.com/rickb777/where/quote"
 	"strings"
+
+	"github.com/rickb777/where/quote"
 )
 
 // Named creates NamedArg values; it is synonymous with sql.Named().

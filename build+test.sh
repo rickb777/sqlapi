@@ -1,5 +1,8 @@
 #!/bin/bash -e
 cd "$(dirname $0)"
+PATH=$HOME/go/bin:$PATH
+unset GOPATH
+export GO111MODULE=on
 
 function announce
 {
@@ -7,9 +10,23 @@ function announce
   echo $@
 }
 
-PATH=$HOME/go/bin:$PATH
-unset GOPATH
-export GO111MODULE=on
+function v
+{
+  announce $@
+  $@
+}
+
+if ! type -p goveralls; then
+  v go install github.com/mattn/goveralls
+fi
+
+if ! type -p shadow; then
+  v go install golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+fi
+
+if ! type -p goreturns; then
+  v go install github.com/sqs/goreturns
+fi
 
 go mod download
 
@@ -32,10 +49,15 @@ export PGDATABASE='test'
 export PGUSER='testuser'
 export PGPASSWORD='TestPasswd.9.9.9'
 
-gofmt -l -w *.go */*.go
-go vet ./...
-go install ./...
-./test.sh sqlite
+v goreturns -l -w *.go */*.go
+
+v go vet ./...
+
+v shadow ./...
+
+v go install ./...
+
+v ./test.sh sqlite
 
 ### Build Phase 2 ###
 

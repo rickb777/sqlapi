@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
+	"testing"
+
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/log/testingadapter"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
-	"log"
-	"strings"
-	"testing"
 )
 
 // Environment:

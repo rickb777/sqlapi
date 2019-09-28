@@ -3,8 +3,9 @@ package pgxapi
 import (
 	"context"
 	"database/sql"
-	"github.com/jackc/pgx"
 	"time"
+
+	"github.com/jackc/pgx"
 )
 
 type Getter interface {

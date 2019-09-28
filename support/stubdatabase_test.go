@@ -3,11 +3,12 @@ package support
 import (
 	"context"
 	"fmt"
+	"io"
+	"regexp"
+
 	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
-	"io"
-	"regexp"
 )
 
 type StubDatabase struct {

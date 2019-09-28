@@ -1,9 +1,14 @@
 package constraint_test
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"strings"
+	"testing"
+
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/stdlib"
 	_ "github.com/lib/pq"
@@ -16,11 +21,6 @@ import (
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/sqlapi/vanilla"
 	"github.com/rickb777/where/quote"
-	"io"
-	"log"
-	"os"
-	"strings"
-	"testing"
 )
 
 // Environment:
@@ -144,6 +144,8 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	d := newDatabase(t)
 	defer cleanup(d.DB())
 
+	aid1, aid2, aid3, aid4 := insertFixtures(t, d)
+
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addressid",
 		Parent:           constraint.Reference{TableName: "addresses", Column: "id"},
@@ -151,20 +153,6 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 		Delete:           "cascade"}
 
 	persons := vanilla.NewRecordTable("persons", d).WithPrefix("pfx_").WithConstraint(fkc0)
-
-	for _, s := range createTablesSql(d.Dialect()) {
-		_, err := d.DB().ExecContext(context.Background(), s)
-		g.Expect(err).To(BeNil())
-	}
-
-	aid1 := insertOne(g, d, address1)
-	aid2 := insertOne(g, d, address2)
-	aid3 := insertOne(g, d, address3)
-	aid4 := insertOne(g, d, address4)
-
-	insertOne(g, d, fmt.Sprintf(person1a, aid1))
-	insertOne(g, d, fmt.Sprintf(person1b, aid1))
-	insertOne(g, d, fmt.Sprintf(person2a, aid2))
 
 	fkc := persons.Constraints().FkConstraints()[0]
 
@@ -204,87 +192,3 @@ func TestFkConstraintOfField(t *testing.T) {
 		Delete: "cascade",
 	}))
 }
-
-func insertOne(g *GomegaWithT, d sqlapi.Database, query string) int64 {
-	fmt.Fprintf(os.Stderr, "%s\n", query)
-	if !d.Dialect().HasLastInsertId() {
-		query = query + " RETURNING id"
-	}
-	id, err := d.DB().InsertContext(context.Background(), query)
-	g.Expect(err).To(BeNil())
-	return id
-}
-
-//-------------------------------------------------------------------------------------------------
-
-func createTablesSql(di dialect.Dialect) []string {
-	switch di.Index() {
-	case dialect.SqliteIndex:
-		return createTablesSqlite
-	case dialect.MysqlIndex:
-		return createTablesMysql
-	case dialect.PostgresIndex:
-		return createTablesPostgresql
-	}
-	panic(di.String() + " unsupported")
-}
-
-var createTablesSqlite = []string{
-	`DROP TABLE IF EXISTS pfx_addresses`,
-	`DROP TABLE IF EXISTS pfx_persons`,
-
-	`CREATE TABLE pfx_addresses (
-	id        integer primary key autoincrement,
-	xlines    text,
-	postcode  text
-	)`,
-
-	`CREATE TABLE pfx_persons (
-	id        integer primary key autoincrement,
-	name      text,
-	addressid integer default null
-	)`,
-}
-
-var createTablesMysql = []string{
-	`DROP TABLE IF EXISTS pfx_addresses`,
-	`DROP TABLE IF EXISTS pfx_persons`,
-
-	`CREATE TABLE pfx_addresses (
-	id        int primary key auto_increment,
-	xlines    text,
-	postcode  text
-	)`,
-
-	`CREATE TABLE pfx_persons (
-	id        int primary key auto_increment,
-	name      text,
-	addressid int default null
-	)`,
-}
-
-var createTablesPostgresql = []string{
-	`DROP TABLE IF EXISTS pfx_addresses`,
-	`DROP TABLE IF EXISTS pfx_persons`,
-
-	`CREATE TABLE pfx_addresses (
-	id        serial primary key,
-	xlines    text,
-	postcode  text
-	)`,
-
-	`CREATE TABLE pfx_persons (
-	id        serial primary key,
-	name      text,
-	addressid integer default null
-	)`,
-}
-
-const address1 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Laurel Cottage', 'FX1 1AA')`
-const address2 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('2 Nutmeg Lane', 'FX1 2BB')`
-const address3 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('Corner Shop', 'FX1 3CC')`
-const address4 = `INSERT INTO pfx_addresses (xlines, postcode) VALUES ('4 The Oaks', 'FX1 5EE')`
-
-const person1a = `INSERT INTO pfx_persons (name, addressid) VALUES ('John Brown', %d)`
-const person1b = `INSERT INTO pfx_persons (name, addressid) VALUES ('Mary Brown', %d)`
-const person2a = `INSERT INTO pfx_persons (name, addressid) VALUES ('Anne Bollin', %d)`

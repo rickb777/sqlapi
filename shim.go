@@ -3,10 +3,11 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"log"
+
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
-	"log"
 )
 
 func WrapDB(ex *sql.DB, di dialect.Dialect) SqlDB {

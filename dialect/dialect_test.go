@@ -2,10 +2,11 @@ package dialect
 
 import (
 	"bytes"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/where/quote"
-	"testing"
 )
 
 // assertion of conformance

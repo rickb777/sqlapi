@@ -1,9 +1,10 @@
 package pgxapi
 
 import (
-	"github.com/jackc/pgx"
 	"sync/atomic"
 	"time"
+
+	"github.com/jackc/pgx"
 )
 
 type toggleLogger struct {

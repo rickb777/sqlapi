@@ -6,6 +6,7 @@ package vanilla
 import (
 	"context"
 	"database/sql"
+
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/constraint"
 	"github.com/rickb777/sqlapi/dialect"

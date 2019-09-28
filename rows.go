@@ -2,6 +2,7 @@ package sqlapi
 
 import (
 	"database/sql"
+
 	"github.com/rickb777/collection"
 )
 

@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"strings"
+	"testing"
+
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/stdlib"
 	_ "github.com/lib/pq"
@@ -12,11 +18,6 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/where/quote"
-	"io"
-	"log"
-	"os"
-	"strings"
-	"testing"
 )
 
 // Environment:
@@ -136,4 +137,20 @@ func TestListTables(t *testing.T) {
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "pg_")
 	})).To(HaveLen(0))
+}
+
+func TestQueryContext(t *testing.T) {
+	//g := NewGomegaWithT(t)
+	//
+	//db := newDatabase(t)
+	//defer cleanup(db.DB())
+	//
+	//	list, err := db.DB().QueryContext(context.Background(), "")
+	//	g.Expect(err).NotTo(HaveOccurred())
+	//	g.Expect(list.Filter(func(s string) bool {
+	//		return strings.HasPrefix(s, "sql_")
+	//	})).To(HaveLen(0))
+	//	g.Expect(list.Filter(func(s string) bool {
+	//		return strings.HasPrefix(s, "pg_")
+	//	})).To(HaveLen(0))
 }

@@ -2,6 +2,8 @@ package support
 
 import (
 	"database/sql"
+	"testing"
+
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
@@ -9,7 +11,6 @@ import (
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
 	"github.com/rickb777/where/quote"
-	"testing"
 )
 
 func xTestUpdateFieldsSQL(t *testing.T) {

@@ -1,8 +1,9 @@
 package require
 
 import (
-	. "github.com/onsi/gomega"
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestWrongSizeZero(t *testing.T) {

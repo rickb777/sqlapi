@@ -3,10 +3,11 @@ package dialect
 import (
 	"bytes"
 	"fmt"
+	"strconv"
+
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/where/quote"
-	"strconv"
 )
 
 type postgres struct {

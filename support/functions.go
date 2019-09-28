@@ -3,12 +3,13 @@ package support
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
 	"github.com/rickb777/where/quote"
-	"strings"
 )
 
 // ReplaceTableName replaces all occurrences of "{TABLE}" with the table's name.

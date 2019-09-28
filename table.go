@@ -2,6 +2,7 @@ package sqlapi
 
 import (
 	"context"
+
 	"github.com/rickb777/sqlapi/dialect"
 )
 

@@ -1,9 +1,10 @@
 package dialect
 
 import (
+	"strings"
+
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/where/quote"
-	"strings"
 )
 
 // Dialect is an abstraction of a type of database.

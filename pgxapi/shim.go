@@ -3,10 +3,11 @@ package pgxapi
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
-	"log"
 )
 
 func WrapDB(pool *pgx.ConnPool, lgr pgx.Logger) SqlDB {

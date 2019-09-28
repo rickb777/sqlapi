@@ -3,9 +3,10 @@ package pgxapi
 import (
 	"context"
 	"database/sql"
+	"regexp"
+
 	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi/dialect"
-	"regexp"
 )
 
 type DBStats = sql.DBStats

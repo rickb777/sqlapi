@@ -3,10 +3,11 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
-	"github.com/rickb777/collection"
-	"github.com/rickb777/sqlapi/dialect"
 	"log"
 	"regexp"
+
+	"github.com/rickb777/collection"
+	"github.com/rickb777/sqlapi/dialect"
 )
 
 type DBStats = sql.DBStats

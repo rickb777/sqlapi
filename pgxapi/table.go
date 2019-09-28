@@ -2,6 +2,7 @@ package pgxapi
 
 import (
 	"context"
+
 	"github.com/rickb777/sqlapi/dialect"
 )
 

@@ -1,10 +1,11 @@
 package types
 
 import (
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestParseTag(t *testing.T) {

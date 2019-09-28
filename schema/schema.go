@@ -2,9 +2,10 @@ package schema
 
 import (
 	"fmt"
-	. "github.com/rickb777/sqlapi/types"
 	"sort"
 	"strings"
+
+	. "github.com/rickb777/sqlapi/types"
 )
 
 type SqlEncode int
