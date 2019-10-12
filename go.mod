@@ -5,7 +5,7 @@ require (
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.3.1 // indirect
-	github.com/jackc/pgx v3.4.0+incompatible
+	github.com/jackc/pgx v3.5.0+incompatible
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
 	github.com/juju/testing v0.0.0-20190613124551-e81189438503 // indirect
 	github.com/lib/pq v1.1.1

@@ -23,6 +23,11 @@ if [[ -z $DBUSER ]]; then
   DBPASS=TestPasswd.9.9.9
 fi
 
+if [[ $1 = "-v" ]]; then
+  V=-v
+  shift
+fi
+
 DBS=$*
 if [[ -z $1 ]]; then
   DBS="sqlite"
@@ -40,38 +45,38 @@ for db in $DBS; do
     mysql)
       echo
       echo "MySQL...."
-      GO_DRIVER=mysql GO_DSN=$DBUSER:$DBPASS@/test go test -v $PACKAGES
+      GO_DRIVER=mysql GO_DSN=$DBUSER:$DBPASS@/test go test $V $PACKAGES
       ;;
 
     postgres)
       echo
       echo "PostgreSQL (no quotes)...."
-      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
-      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test $V $PACKAGES
       ;;
 
     pgx)
       echo
       echo "PGX (no quotes)...."
-      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "PGX (ANSI)...."
-      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test -v $PACKAGES
+      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test $V $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
-      PGUSER=$DBUSER PGPASSWORD=$DBPASS PGDATABASE=test GO_QUOTER=ansi go test -v ./pgxapi/...
+      PGUSER=$DBUSER PGPASSWORD=$DBPASS PGDATABASE=test GO_QUOTER=ansi go test $V ./pgxapi/...
       ;;
 
     sqlite)
       unset GO_DRIVER GO_DSN
       echo
       echo "SQLite3 (no quotes)..."
-      GO_QUOTER=none go test -v $PACKAGES
+      GO_QUOTER=none go test $V $PACKAGES
       echo
       echo "SQLite3 (ANSI)..."
-      GO_QUOTER=ansi go test -v $PACKAGES
+      GO_QUOTER=ansi go test $V $PACKAGES
       ;;
 
     *)
