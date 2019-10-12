@@ -2,4 +2,4 @@
 
 package sqlapi
 
-const Version = "v0.38.0"
+const Version = "v0.38.1"
