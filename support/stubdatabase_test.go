@@ -54,6 +54,10 @@ type stubExecer struct {
 	rows       sqlapi.SqlRows
 }
 
+func (e stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
+	return e.rows, nil
+}
+
 func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	return e.stubResult, nil
 }
@@ -64,10 +68,6 @@ func (e stubExecer) InsertContext(ctx context.Context, query string, args ...int
 
 func (stubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
 	return nil, nil
-}
-
-func (se stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
-	return se.rows, nil
 }
 
 func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {

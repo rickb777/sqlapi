@@ -3,6 +3,7 @@ package support
 import (
 	"github.com/jackc/pgx"
 	"github.com/rickb777/sqlapi/pgxapi"
+	"reflect"
 )
 
 type StubRow []interface{}
@@ -23,7 +24,8 @@ func (r *StubRows) Next() bool {
 
 func (r *StubRows) Scan(dest ...interface{}) error {
 	for i, v := range r.Rows[r.I] {
-		dest[i] = v
+		vv := reflect.ValueOf(v)
+		reflect.ValueOf(dest[i]).Elem().Set(vv)
 	}
 	r.I++
 	return nil

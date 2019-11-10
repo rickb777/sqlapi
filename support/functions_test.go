@@ -88,10 +88,7 @@ func xTestSliceSql(t *testing.T) {
 func TestQuery_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := &StubDatabase{
-		execer: stubExecer{},
-		stdLog: &stubLogger{},
-	}
+	d := &StubDatabase{execer: stubExecer{}, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
 			Prefix: "p.",
@@ -125,6 +122,46 @@ func TestExec_happy(t *testing.T) {
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(d.stdLog.logged).To(ConsistOf(`DELETE FROM p.table WHERE x=$1 [123]` + "\n"))
+}
+
+func TestUpdateFields(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	e := stubExecer{stubResult: 2}
+	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
+	tbl := StubTable{
+		name: sqlapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := UpdateFields(tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
+
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(d.stdLog.logged).To(ConsistOf(`UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [1 2 bar]` + "\n"))
+}
+
+func TestDeleteByColumn(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	e := stubExecer{stubResult: 2}
+	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
+	tbl := StubTable{
+		name: sqlapi.TableName{
+			Prefix: "p.",
+			Name:   "table",
+		},
+		dialect:  dialect.Postgres,
+		database: d,
+	}
+
+	_, err := DeleteByColumn(tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
+
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(d.stdLog.logged).To(ConsistOf(`DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [1 2 3 4]` + "\n"))
 }
 
 func TestGetIntIntIndex_happy(t *testing.T) {

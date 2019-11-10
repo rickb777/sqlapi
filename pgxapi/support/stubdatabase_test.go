@@ -12,7 +12,6 @@ import (
 
 type StubDatabase struct {
 	execer stubExecer
-	pgxLog pgxapi.Logger
 }
 
 // Type conformance checks
@@ -27,7 +26,7 @@ func (*StubDatabase) Dialect() dialect.Dialect {
 }
 
 func (d *StubDatabase) Logger() pgxapi.Logger {
-	return d.pgxLog
+	return d.execer.Logger()
 }
 
 func (*StubDatabase) Wrapper() interface{} {
@@ -52,17 +51,21 @@ func (r *stubLogger) Log(level pgx.LogLevel, msg string, data map[string]interfa
 
 type stubExecer struct {
 	stubResult int64
+	rows       pgxapi.SqlRows
+	pgxLog     *stubLogger
 }
 
 // Type conformance checks
 var _ pgxapi.Execer = &stubExecer{}
 
 func (e stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
-	return nil, nil
+	e.pgxLog.Log(pgx.LogLevelInfo, fmt.Sprintf("%s %v", query, args), nil)
+	return e.rows, nil
 }
 
 func (e stubExecer) QueryExRaw(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (pgxapi.SqlRows, error) {
-	panic("implement me")
+	e.pgxLog.Log(pgx.LogLevelInfo, fmt.Sprintf("%s %v", sql, args), nil)
+	return e.rows, nil
 }
 
 func (e stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) pgxapi.SqlRow {
@@ -82,6 +85,7 @@ func (e stubExecer) InsertContext(ctx context.Context, query string, args ...int
 }
 
 func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	e.pgxLog.Log(pgx.LogLevelInfo, fmt.Sprintf("%s %v", query, args), nil)
 	return e.stubResult, nil
 }
 
@@ -94,20 +98,5 @@ func (e stubExecer) IsTx() bool {
 }
 
 func (e stubExecer) Logger() pgxapi.Logger {
-	panic("implement me")
-}
-
-//-------------------------------------------------------------------------------------------------
-
-type stubResult struct {
-	li, ra int64
-	err    error
-}
-
-func (r stubResult) LastInsertId() (int64, error) {
-	return r.li, r.err
-}
-
-func (r stubResult) RowsAffected() (int64, error) {
-	return r.ra, r.err
+	return pgxapi.NewLogger(e.pgxLog)
 }
