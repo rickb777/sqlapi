@@ -26,9 +26,14 @@ type Dialect interface {
 	InsertHasReturningPhrase() bool
 	ShowTables() string
 
+	// ReplacePlaceholders alters a query string by replacing the '?' placeholders with the appropriate
+	// placeholders needed by this dialect. For MySQL and SQlite3, the string is returned unchanged.
 	ReplacePlaceholders(sql string, args []interface{}) string
+	// Placeholders returns a comma-separated list of n placeholders.
 	Placeholders(n int) string
+	// HasNumberedPlaceholders returns true for dialects such as PostgreSQL that use numbered placeholders.
 	HasNumberedPlaceholders() bool
+	// HasLastInsertId returns true for dialects such as MySQL that return a last-insert ID after each INSERT.
 	HasLastInsertId() bool
 }
 

@@ -70,8 +70,7 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows,
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	ex := tbl.Execer()
-	rows, err := ex.QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
 }
 
@@ -80,13 +79,18 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows,
 // The query is logged using whatever logger is configured. If an error arises, this too is logged.
 func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
-	lgr.LogQuery(q2, args...)
-	n, err := tbl.Execer().ExecContext(tbl.Ctx(), q2, args...)
-	if err != nil {
-		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
-	}
+	n, err := doExec(tbl, q2, args...)
 	return n, require.ChainErrorIfExecNotSatisfiedBy(err, req, n)
+}
+
+func doExec(tbl sqlapi.Table, query string, args ...interface{}) (int64, error) {
+	lgr := tbl.Database().Logger()
+	lgr.LogQuery(query, args...)
+	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
+	if err != nil {
+		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+	}
+	return n, err
 }
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
@@ -104,16 +108,68 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 	return query, args
 }
 
+// DeleteByColumn deletes rows from the table, given some values and the name of the column they belong to.
+// The list of values can be arbitrarily long.
+func DeleteByColumn(tbl sqlapi.Table, req require.Requirement, column string, v ...int64) (int64, error) {
+	const batch = 1000 // limited by Oracle DB
+	const qt = "DELETE FROM %s WHERE %s IN (%s)"
+	qName := tbl.Dialect().Quoter().Quote(tbl.Name().String())
+
+	if req == require.All {
+		req = require.Exactly(len(v))
+	}
+
+	var count, n int64
+	var err error
+	var max = batch
+	if len(v) < batch {
+		max = len(v)
+	}
+	d := tbl.Dialect()
+	col := d.Quoter().Quote(column)
+	args := make([]interface{}, max)
+
+	if len(v) > batch {
+		pl := d.Placeholders(batch)
+		query := fmt.Sprintf(qt, qName, col, pl)
+
+		for len(v) > batch {
+			for i := 0; i < batch; i++ {
+				args[i] = v[i]
+			}
+
+			n, err = doExec(tbl, query, args...)
+			count += n
+			if err != nil {
+				return count, err
+			}
+
+			v = v[batch:]
+		}
+	}
+
+	if len(v) > 0 {
+		pl := d.Placeholders(len(v))
+		query := fmt.Sprintf(qt, qName, col, pl)
+
+		for i := 0; i < len(v); i++ {
+			args[i] = v[i]
+		}
+
+		n, err = doExec(tbl, query, args...)
+		count += n
+	}
+
+	return count, tbl.Logger().LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
+}
+
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
 func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
-	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -122,7 +178,8 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+			lgr := tbl.Database().Logger()
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}
@@ -133,12 +190,9 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
-	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -148,7 +202,8 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+			lgr := tbl.Database().Logger()
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}
@@ -159,12 +214,9 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
-	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -174,7 +226,8 @@ func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
+			lgr := tbl.Database().Logger()
+			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}

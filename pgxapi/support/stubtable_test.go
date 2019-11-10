@@ -20,7 +20,7 @@ func (tbl StubTable) Database() pgxapi.Database {
 }
 
 func (tbl StubTable) Logger() pgxapi.Logger {
-	return nil
+	return tbl.database.Logger()
 }
 
 func (tbl StubTable) Ctx() context.Context {

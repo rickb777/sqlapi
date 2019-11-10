@@ -21,7 +21,7 @@ func (tbl StubTable) Database() sqlapi.Database {
 }
 
 func (tbl StubTable) Logger() sqlapi.Logger {
-	return nil
+	return tbl.database.Logger()
 }
 
 func (tbl StubTable) Ctx() context.Context {
