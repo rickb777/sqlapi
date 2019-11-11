@@ -109,7 +109,7 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 
 // DeleteByColumn deletes rows from the table, given some values and the name of the column they belong to.
 // The list of values can be arbitrarily long.
-func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v ...int64) (int64, error) {
+func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v ...interface{}) (int64, error) {
 	const batch = 1000 // limited by Oracle DB
 	const qt = "DELETE FROM %s WHERE %s IN (%s)"
 	qName := tbl.Dialect().Quoter().Quote(tbl.Name().String())
