@@ -39,7 +39,6 @@ rm -f reports/*.out reports/*.html */*.txt demo/*_sql.go
 [ -f schema/type_set.go ]  || runtemplate -tpl simple/set.tpl  -output schema/type_set.go Type=Type Comparable:true Ordered:false Numeric:false
 [ -f support/functions_gen.go ] || ./support/functions.sh
 [ -f pgxapi/support/functions_gen.go ] || ./pgxapi/support/functions.sh
-#[ -f database_gen.go ] || ./database.sh
 
 ### Build Phase 1 ###
 

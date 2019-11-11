@@ -8,6 +8,9 @@ import (
 	"github.com/rickb777/where"
 )
 
+//-------------------------------------------------------------------------------------------------
+// string
+
 // SliceStringList requests a columnar slice of strings from a specified column.
 func SliceStringList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -63,6 +66,18 @@ func doScanStringPtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// StringAsInterfaceSlice adapts a slice of string to []interface{}.
+func StringAsInterfaceSlice(values []string) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// int
 
 // SliceIntList requests a columnar slice of ints from a specified column.
 func SliceIntList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
@@ -120,6 +135,18 @@ func doScanIntPtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(er
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// IntAsInterfaceSlice adapts a slice of int to []interface{}.
+func IntAsInterfaceSlice(values []int) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// int64
+
 // SliceInt64List requests a columnar slice of int64s from a specified column.
 func SliceInt64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -175,6 +202,18 @@ func doScanInt64PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// Int64AsInterfaceSlice adapts a slice of int64 to []interface{}.
+func Int64AsInterfaceSlice(values []int64) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// int32
 
 // SliceInt32List requests a columnar slice of int32s from a specified column.
 func SliceInt32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
@@ -232,6 +271,18 @@ func doScanInt32PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// Int32AsInterfaceSlice adapts a slice of int32 to []interface{}.
+func Int32AsInterfaceSlice(values []int32) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// int16
+
 // SliceInt16List requests a columnar slice of int16s from a specified column.
 func SliceInt16List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -287,6 +338,18 @@ func doScanInt16PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// Int16AsInterfaceSlice adapts a slice of int16 to []interface{}.
+func Int16AsInterfaceSlice(values []int16) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// int8
 
 // SliceInt8List requests a columnar slice of int8s from a specified column.
 func SliceInt8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
@@ -344,6 +407,18 @@ func doScanInt8PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(e
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// Int8AsInterfaceSlice adapts a slice of int8 to []interface{}.
+func Int8AsInterfaceSlice(values []int8) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// uint
+
 // SliceUintList requests a columnar slice of uints from a specified column.
 func SliceUintList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -399,6 +474,18 @@ func doScanUintPtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(e
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// UintAsInterfaceSlice adapts a slice of uint to []interface{}.
+func UintAsInterfaceSlice(values []uint) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// uint64
 
 // SliceUint64List requests a columnar slice of uint64s from a specified column.
 func SliceUint64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
@@ -456,6 +543,18 @@ func doScanUint64PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// Uint64AsInterfaceSlice adapts a slice of uint64 to []interface{}.
+func Uint64AsInterfaceSlice(values []uint64) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// uint32
+
 // SliceUint32List requests a columnar slice of uint32s from a specified column.
 func SliceUint32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -511,6 +610,18 @@ func doScanUint32PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// Uint32AsInterfaceSlice adapts a slice of uint32 to []interface{}.
+func Uint32AsInterfaceSlice(values []uint32) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// uint16
 
 // SliceUint16List requests a columnar slice of uint16s from a specified column.
 func SliceUint16List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
@@ -568,6 +679,18 @@ func doScanUint16PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// Uint16AsInterfaceSlice adapts a slice of uint16 to []interface{}.
+func Uint16AsInterfaceSlice(values []uint16) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// uint8
+
 // SliceUint8List requests a columnar slice of uint8s from a specified column.
 func SliceUint8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -623,6 +746,18 @@ func doScanUint8PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog func(
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
+
+// Uint8AsInterfaceSlice adapts a slice of uint8 to []interface{}.
+func Uint8AsInterfaceSlice(values []uint8) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// float64
 
 // SliceFloat64List requests a columnar slice of float64s from a specified column.
 func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
@@ -680,6 +815,18 @@ func doScanFloat64PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog fun
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
+// Float64AsInterfaceSlice adapts a slice of float64 to []interface{}.
+func Float64AsInterfaceSlice(values []float64) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
+}
+
+//-------------------------------------------------------------------------------------------------
+// float32
+
 // SliceFloat32List requests a columnar slice of float32s from a specified column.
 func SliceFloat32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
@@ -734,4 +881,13 @@ func doScanFloat32PtrList(req require.Requirement, rows sqlapi.SqlRows, qLog fun
 		}
 	}
 	return list, qLog(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+}
+
+// Float32AsInterfaceSlice adapts a slice of float32 to []interface{}.
+func Float32AsInterfaceSlice(values []float32) []interface{} {
+	ii := make([]interface{}, len(values))
+	for i, v := range values {
+		ii[i] = v
+	}
+	return ii
 }
