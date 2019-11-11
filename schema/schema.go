@@ -174,6 +174,14 @@ func (node *Node) JoinParts(delta int, sep string) string {
 
 type FieldList []*Field
 
+func (list FieldList) NonEmpty() bool {
+	return len(list) > 0
+}
+
+func (list FieldList) IsEmpty() bool {
+	return len(list) == 0
+}
+
 func (list FieldList) DistinctTypes() []Type {
 	m := make(map[string]Type)
 
