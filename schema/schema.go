@@ -45,7 +45,7 @@ type Index struct {
 	Fields FieldList
 }
 
-func (t *TableDescription) HasLastInsertId() bool {
+func (t *TableDescription) HasIntegerPrimaryKey() bool {
 	return t.Primary != nil && t.Primary.Type.Base.IsInteger()
 }
 

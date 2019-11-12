@@ -23,7 +23,6 @@ type Dialect interface {
 	FieldAsColumn(field *schema.Field) string
 	TruncateDDL(tableName string, force bool) []string
 	CreateTableSettings() string
-	InsertHasReturningPhrase() bool
 	ShowTables() string
 
 	// ReplacePlaceholders alters a query string by replacing the '?' placeholders with the appropriate
@@ -33,8 +32,14 @@ type Dialect interface {
 	Placeholders(n int) string
 	// HasNumberedPlaceholders returns true for dialects such as PostgreSQL that use numbered placeholders.
 	HasNumberedPlaceholders() bool
-	// HasLastInsertId returns true for dialects such as MySQL that return a last-insert ID after each INSERT.
+	// HasLastInsertId returns true for dialects such as MySQL that return a last-insert ID after each
+	// INSERT. This allows the corresponding feature of the database/sql API to work.
+	// It is the inverse of InsertHasReturningPhrase.
 	HasLastInsertId() bool
+	// InsertHasReturningPhrase returns true for dialects such as Postgres that use a RETURNING phrase to
+	// obtain the last-insert ID after each INSERT.
+	// It is the inverse of HasLastInsertId.
+	InsertHasReturningPhrase() bool
 }
 
 //-------------------------------------------------------------------------------------------------
