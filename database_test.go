@@ -31,70 +31,6 @@ import (
 
 var lock = sync.Mutex{}
 
-func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
-	dbDriver, ok := os.LookupEnv("GO_DRIVER")
-	if !ok {
-		dbDriver = "sqlite3"
-	}
-
-	di := dialect.PickDialect(dbDriver)
-	quoter, ok := os.LookupEnv("GO_QUOTER")
-	if ok {
-		switch strings.ToLower(quoter) {
-		case "ansi":
-			di = di.WithQuoter(quote.AnsiQuoter)
-		case "mysql":
-			di = di.WithQuoter(quote.MySqlQuoter)
-		case "none":
-			di = di.WithQuoter(quote.NoQuoter)
-		default:
-			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
-		}
-	}
-
-	dsn, ok := os.LookupEnv("GO_DSN")
-	if !ok {
-		dsn = "file::memory:?mode=memory&cache=shared"
-	}
-
-	db, err := sql.Open(dbDriver, dsn)
-	if err != nil {
-		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
-	}
-
-	lock.Lock()
-
-	err = db.Ping()
-	if err != nil {
-		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
-	}
-
-	fmt.Printf("Successfully connected to %s.\n", dbDriver)
-	return db, di
-}
-
-func newDatabase(t *testing.T) sqlapi.Database {
-	db, di := connect(t)
-
-	var lgr *log.Logger
-	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
-	if ok && strings.ToLower(goVerbose) == "true" {
-		lgr = log.New(os.Stdout, "", log.LstdFlags)
-	}
-
-	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
-}
-
-func cleanup(db sqlapi.Execer) {
-	if db != nil {
-		if c, ok := db.(io.Closer); ok {
-			c.Close()
-		}
-		lock.Unlock()
-		os.Remove("test.db")
-	}
-}
-
 func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -249,6 +185,7 @@ func TestTransactRollback(t *testing.T) {
 		tx.ExecContext(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
+	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(Equal("Bang"))
 
 	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
@@ -257,4 +194,70 @@ func TestTransactRollback(t *testing.T) {
 	err = row.Scan(&count)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(count).To(Equal(4))
+}
+
+//-------------------------------------------------------------------------------------------------
+
+func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
+	dbDriver, ok := os.LookupEnv("GO_DRIVER")
+	if !ok {
+		dbDriver = "sqlite3"
+	}
+
+	di := dialect.PickDialect(dbDriver)
+	quoter, ok := os.LookupEnv("GO_QUOTER")
+	if ok {
+		switch strings.ToLower(quoter) {
+		case "ansi":
+			di = di.WithQuoter(quote.AnsiQuoter)
+		case "mysql":
+			di = di.WithQuoter(quote.MySqlQuoter)
+		case "none":
+			di = di.WithQuoter(quote.NoQuoter)
+		default:
+			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
+		}
+	}
+
+	dsn, ok := os.LookupEnv("GO_DSN")
+	if !ok {
+		dsn = "file::memory:?mode=memory&cache=shared"
+	}
+
+	db, err := sql.Open(dbDriver, dsn)
+	if err != nil {
+		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
+	}
+
+	lock.Lock()
+
+	err = db.Ping()
+	if err != nil {
+		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+	}
+
+	fmt.Printf("Successfully connected to %s.\n", dbDriver)
+	return db, di
+}
+
+func newDatabase(t *testing.T) sqlapi.Database {
+	db, di := connect(t)
+
+	var lgr *log.Logger
+	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
+	if ok && strings.ToLower(goVerbose) == "true" {
+		lgr = log.New(os.Stdout, "", log.LstdFlags)
+	}
+
+	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
+}
+
+func cleanup(db sqlapi.Execer) {
+	if db != nil {
+		if c, ok := db.(io.Closer); ok {
+			c.Close()
+		}
+		lock.Unlock()
+		os.Remove("test.db")
+	}
 }

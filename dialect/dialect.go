@@ -66,5 +66,3 @@ func PickDialect(name string) Dialect {
 	}
 	return nil
 }
-
-type dialect string

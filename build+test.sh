@@ -44,10 +44,6 @@ rm -f reports/*.out reports/*.html */*.txt demo/*_sql.go
 
 ./version.sh
 
-export PGDATABASE='test'
-export PGUSER='testuser'
-export PGPASSWORD='TestPasswd.9.9.9'
-
 v goreturns -l -w *.go */*.go
 
 v go vet ./...
@@ -56,21 +52,38 @@ v shadow ./...
 
 v go install ./...
 
-v ./test.sh $1
+v ./test.sh sqlite
 
 ### Build Phase 2 ###
+export PGDATABASE='test'
+export PGUSER='testuser'
+export PGPASSWORD='TestPasswd.9.9.9'
 
-for d in constraint require schema types; do
+rm -f reports/*
+
+# sqlapi test coverage
+echo .
+go test . -covermode=count -coverprofile=reports/sqlapi.out .
+go tool cover -func=reports/sqlapi.out
+#go tool cover -html=reports/sqlapi.out -o reports/sqlapi.html
+[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/sqlapi.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+
+for d in constraint pgxapi require schema support types; do
   announce ./$d
-  go test ./$d -covermode=count -coverprofile=reports/$d.out ./$d
-  go tool cover -html=reports/$d.out -o reports/$d.html
+  go test -covermode=count -coverprofile=reports/$d.out ./$d
+  go tool cover -func=reports/$d.out
+  #go tool cover -html=reports/$d.out -o reports/$d.html
   [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
-echo .
-go test . -covermode=count -coverprofile=reports/dot.out .
-go tool cover -func=reports/dot.out
-[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/dot.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+# pgxapi sub-package test coverage
+for d in constraint support; do
+  announce ./pgxapi/$d
+  go test -covermode=count -coverprofile=reports/pgxapi-$d.out ./pgxapi/$d
+  go tool cover -func=reports/pgxapi-$d.out
+  #go tool cover -html=reports/pgxapi-$d.out -o reports/pgxapi-$d.html
+  [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/pgxapi-$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+done
 
 echo
 echo "Now start MySQL and PostgreSQL, then run './test.sh all'"

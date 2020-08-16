@@ -1,10 +1,15 @@
 language: go
 
 go:
-  - "1.13"
+  - "1.15"
 
 env:
-  - GO111MODULE=on
+  global:
+    - GO111MODULE=on
+    - PGPORT=5432
+    - PGUSER=postgres
+    - PGPASSWORD=
+    - PGDATABASE=test
 
 services:
   - mysql
@@ -20,3 +25,5 @@ install:
 script:
   - ./build+test.sh
   - ./test.sh all
+  - ./pgxapi/pgtest.sh travis
+

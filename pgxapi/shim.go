@@ -125,12 +125,11 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			logPanicData(p, sh.lgr)
-			tx.rollback()
-			err = errors.New("transaction was rolled back")
+			_ = tx.rollback()
+			err = logPanicData(p, sh.lgr)
 
 		} else if err != nil {
-			tx.rollback()
+			_ = tx.rollback()
 
 		} else {
 			err = tx.commit()
@@ -149,8 +148,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) e
 
 	defer func() {
 		if p := recover(); p != nil {
-			logPanicData(p, sh.lgr)
-			err = errors.New("transaction was rolled back")
+			err = logPanicData(p, sh.lgr)
 		}
 		cp.Release(conn)
 	}()
@@ -158,7 +156,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) e
 	return fn(conn)
 }
 
-func logPanicData(p interface{}, lgr pgx.Logger) {
+func logPanicData(p interface{}, lgr pgx.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = errors.WithStack(e)
@@ -171,6 +169,7 @@ func logPanicData(p interface{}, lgr pgx.Logger) {
 	} else {
 		log.Printf("panic recovered: %+v", p)
 	}
+	return p.(error)
 }
 
 func (sh *shim) Close() {

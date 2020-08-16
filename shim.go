@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/jackc/pgx"
+
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
 )
@@ -102,9 +103,10 @@ func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 	return &shim{ex: tx, di: sh.di, isTx: true}, nil
 }
 
+// Transact takes a function and executes it within a database transaction.
 func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(SqlTx) error) (err error) {
-	if tx, isTx := sh.ex.(SqlTx); isTx {
-		return fn(tx) // nested transactions are inlined
+	if _, isTx := sh.ex.(*sql.Tx); isTx {
+		return fn(sh) // nested transactions are inlined
 	}
 
 	var tx SqlTx
@@ -115,12 +117,11 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			logPanicData(p)
-			tx.rollback()
-			err = errors.New("transaction was rolled back")
+			_ = tx.rollback()
+			err = logPanicData(p)
 
 		} else if err != nil {
-			tx.rollback()
+			_ = tx.rollback()
 
 		} else {
 			err = tx.commit()
@@ -139,8 +140,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) e
 
 	defer func() {
 		if p := recover(); p != nil {
-			logPanicData(p)
-			err = errors.New("transaction was rolled back")
+			err = logPanicData(p)
 		}
 		conn.Close()
 	}()
@@ -148,7 +148,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) e
 	return fn(conn)
 }
 
-func logPanicData(p interface{}) {
+func logPanicData(p interface{}) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = errors.WithStack(e)
@@ -156,6 +156,7 @@ func logPanicData(p interface{}) {
 		p = errors.Errorf("%+v", p)
 	}
 	log.Printf("panic recovered: %+v", p)
+	return p.(error)
 }
 
 func (sh *shim) Close() error {
