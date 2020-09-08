@@ -23,5 +23,4 @@ install:
 
 script:
   - ./build+test.sh travis
-  - ./test.sh mysql postgres pgx
 
