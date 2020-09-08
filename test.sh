@@ -18,9 +18,23 @@ PATH=$HOME/go/bin:$PATH
 unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
 export PGHOST=localhost
 
+#
+# accommodate different ways of running this script, including Travis
+#
+if [[ -n $PGUSER ]]; then
+  DBUSER=$PGUSER
+  DBPASS=$PASSWORD
+fi
+
 if [[ -z $DBUSER ]]; then
-  DBUSER=testuser
-  DBPASS=TestPasswd.9.9.9
+  export DBUSER=testuser
+  export DBPASS=TestPasswd.9.9.9
+fi
+
+if [[ -z $PGUSER ]]; then
+  export PGUSER=$DBUSER
+  export PGPASSWORD=$DBPASS
+  export PGDATABASE=test
 fi
 
 if [[ $1 = "-v" ]]; then
@@ -67,7 +81,7 @@ for db in $DBS; do
       echo
       echo "PGXAPI (ANSI)...."
       go clean -testcache ||:
-      PGUSER=$DBUSER PGPASSWORD=$DBPASS PGDATABASE=test GO_QUOTER=ansi go test $V ./pgxapi/...
+      GO_QUOTER=ansi go test $V ./pgxapi/...
       ;;
 
     sqlite)
