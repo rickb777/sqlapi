@@ -22,7 +22,6 @@ install:
   - go install github.com/mattn/goveralls
 
 script:
-  - ./build+test.sh
-  - ./test.sh all
-  - ./pgxapi/pgtest.sh travis
+  - ./build+test.sh travis
+  - ./test.sh mysql postgres pgx
 

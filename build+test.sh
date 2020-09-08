@@ -65,15 +65,13 @@ rm -f reports/*
 echo .
 go test . -covermode=count -coverprofile=reports/sqlapi.out .
 go tool cover -func=reports/sqlapi.out
-#go tool cover -html=reports/sqlapi.out -o reports/sqlapi.html
-[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/sqlapi.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+#[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/sqlapi.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 
-for d in constraint pgxapi require schema support types; do
+for d in constraint require schema support types; do
   announce ./$d
   go test -covermode=count -coverprofile=reports/$d.out ./$d
   go tool cover -func=reports/$d.out
-  #go tool cover -html=reports/$d.out -o reports/$d.html
-  [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+  #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
 # pgxapi sub-package test coverage
@@ -81,9 +79,10 @@ for d in constraint support; do
   announce ./pgxapi/$d
   go test -covermode=count -coverprofile=reports/pgxapi-$d.out ./pgxapi/$d
   go tool cover -func=reports/pgxapi-$d.out
-  #go tool cover -html=reports/pgxapi-$d.out -o reports/pgxapi-$d.html
-  [ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/pgxapi-$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
+  #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/pgxapi-$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
+
+./pgxapi/pgtest.sh $1
 
 echo
 echo "Now start MySQL and PostgreSQL, then run './test.sh all'"
