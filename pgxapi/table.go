@@ -73,6 +73,10 @@ type Table interface {
 }
 
 // TableCreator is a table with create/delete/truncate methods.
+//
+// Many methods of this and the derived tables accept context.Context as their first parameter,
+// following standard practice. However, it is acceptable to pass nil if appropriate because
+// the default context.Background() will be substituted in this case.
 type TableCreator interface {
 	Table
 

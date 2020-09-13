@@ -48,7 +48,7 @@ func (sh *shim) QueryContext(ctx context.Context, query string, args ...interfac
 }
 
 func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error) {
-	rows, err := sh.ex.QueryEx(ctx, query, options, args...)
+	rows, err := sh.ex.QueryEx(defaultCtx(ctx), query, options, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -61,12 +61,12 @@ func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...inter
 }
 
 func (sh *shim) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow {
-	return sh.ex.QueryRowEx(ctx, query, options, args...)
+	return sh.ex.QueryRowEx(defaultCtx(ctx), query, options, args...)
 }
 
 func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
-	row := sh.ex.QueryRowEx(ctx, q2, nil, args...)
+	row := sh.ex.QueryRowEx(defaultCtx(ctx), q2, nil, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
@@ -76,7 +76,7 @@ func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...int
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	tag, err := sh.ex.ExecEx(ctx, query, nil, args...)
+	tag, err := sh.ex.ExecEx(defaultCtx(ctx), query, nil, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -84,7 +84,7 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 }
 
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
-	ps, err := sh.ex.PrepareEx(ctx, name, query, nil)
+	ps, err := sh.ex.PrepareEx(defaultCtx(ctx), name, query, nil)
 	return ps, errors.Wrapf(err, "%s %s", name, query)
 }
 
@@ -104,7 +104,7 @@ func (sh *shim) Logger() Logger {
 // ConnPool-specific methods
 
 func (sh *shim) beginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
-	tx, err := sh.ex.(*pgx.ConnPool).BeginEx(ctx, opts)
+	tx, err := sh.ex.(*pgx.ConnPool).BeginEx(defaultCtx(ctx), opts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -139,7 +139,7 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 	return fn(tx)
 }
 
-func (sh *shim) SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) error {
+func (sh *shim) SingleConn(_ context.Context, fn func(conn *pgx.Conn) error) error {
 	cp := sh.ex.(*pgx.ConnPool)
 	conn, err := cp.Acquire()
 	if err != nil {
@@ -183,7 +183,7 @@ func (sh *shim) PingContext(ctx context.Context) error {
 		return err
 	}
 	defer cp.Release(conn)
-	return conn.Ping(ctx)
+	return conn.Ping(defaultCtx(ctx))
 }
 
 func (sh *shim) Stats() DBStats {
@@ -199,4 +199,11 @@ func (sh *shim) commit() error {
 
 func (sh *shim) rollback() error {
 	return sh.ex.(*pgx.Tx).Rollback()
+}
+
+func defaultCtx(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }

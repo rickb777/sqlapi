@@ -40,11 +40,11 @@ var _ SqlTx = new(shim)
 //-------------------------------------------------------------------------------------------------
 
 func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	return sh.ex.QueryContext(ctx, query, args...)
+	return sh.ex.QueryContext(defaultCtx(ctx), query, args...)
 }
 
 func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	return sh.ex.QueryRowContext(ctx, query, args...)
+	return sh.ex.QueryRowContext(defaultCtx(ctx), query, args...)
 }
 
 func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
@@ -55,7 +55,7 @@ func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...int
 }
 
 func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	res, err := sh.ex.ExecContext(ctx, query, args...)
+	res, err := sh.ex.ExecContext(defaultCtx(ctx), query, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -65,7 +65,7 @@ func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...in
 
 func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
-	row := sh.ex.QueryRowContext(ctx, q2, args...)
+	row := sh.ex.QueryRowContext(defaultCtx(ctx), q2, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
@@ -75,7 +75,7 @@ func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, arg
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	res, err := sh.ex.ExecContext(ctx, query, args...)
+	res, err := sh.ex.ExecContext(defaultCtx(ctx), query, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -84,7 +84,7 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 }
 
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (SqlStmt, error) {
-	ps, err := sh.ex.PrepareContext(ctx, query)
+	ps, err := sh.ex.PrepareContext(defaultCtx(ctx), query)
 	return ps, errors.Wrapf(err, "%s %s", name, query)
 }
 
@@ -96,7 +96,7 @@ func (sh *shim) IsTx() bool {
 // sql.DB specific methods
 
 func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
-	tx, err := sh.ex.(*sql.DB).BeginTx(ctx, opts)
+	tx, err := sh.ex.(*sql.DB).BeginTx(defaultCtx(ctx), opts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -180,4 +180,11 @@ func (sh *shim) commit() error {
 
 func (sh *shim) rollback() error {
 	return sh.ex.(*sql.Tx).Rollback()
+}
+
+func defaultCtx(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }

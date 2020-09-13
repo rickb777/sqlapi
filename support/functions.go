@@ -75,7 +75,7 @@ func Query(ctx context.Context, tbl sqlapi.Table, query string, args ...interfac
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(defaultCtx(ctx), q2, args...)
+	rows, err := tbl.Execer().QueryContext(ctx, q2, args...)
 	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
 }
 
@@ -93,7 +93,7 @@ func Exec(ctx context.Context, tbl sqlapi.Table, req require.Requirement, query 
 func doExec(ctx context.Context, tbl sqlapi.Table, query string, args ...interface{}) (int64, error) {
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(query, args...)
-	n, err := tbl.Execer().ExecContext(defaultCtx(ctx), query, args...)
+	n, err := tbl.Execer().ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 	}
@@ -180,7 +180,7 @@ func DeleteByColumn(ctx context.Context, tbl sqlapi.Table, req require.Requireme
 func GetIntIntIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := Query(defaultCtx(ctx), tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func GetIntIntIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, keyCo
 func GetStringIntIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := Query(defaultCtx(ctx), tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func GetStringIntIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, ke
 func GetIntStringIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := Query(defaultCtx(ctx), tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,11 +249,4 @@ func GetIntStringIndex(ctx context.Context, tbl sqlapi.Table, q quote.Quoter, ke
 		index[k] = v
 	}
 	return index, nil
-}
-
-func defaultCtx(ctx context.Context) context.Context {
-	if ctx == nil {
-		return context.Background()
-	}
-	return ctx
 }
