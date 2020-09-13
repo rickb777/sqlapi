@@ -1,8 +1,6 @@
 package sqlapi
 
 import (
-	"context"
-
 	"github.com/rickb777/sqlapi/dialect"
 )
 
@@ -32,9 +30,6 @@ type Table interface {
 	// (not included here because of package inter-dependencies)
 	//Constraints() constraint.Constraints
 
-	// Ctx gets the current request context.
-	Ctx() context.Context
-
 	// Dialect gets the database dialect.
 	Dialect() dialect.Dialect
 
@@ -47,10 +42,6 @@ type Table interface {
 	// WithPrefix sets the table name prefix for subsequent queries.
 	// The result is a modified copy of the table; the original is unchanged.
 	// WithPrefix(pfx string) SomeTypeTable
-
-	// WithContext sets the context for subsequent queries.
-	// The result is a modified copy of the table; the original is unchanged.
-	//WithContext(ctx context.Context) SomeTypeTable {
 
 	// WithLogger sets the logger for subsequent queries. An alias for SetLogger.
 	// The result is a modified copy of the table; the original is unchanged.

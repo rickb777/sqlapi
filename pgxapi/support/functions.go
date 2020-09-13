@@ -1,6 +1,7 @@
 package support
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/pkg/errors"
@@ -18,12 +19,14 @@ func ReplaceTableName(tbl pgxapi.Table, query string) string {
 
 // QueryOneNullThing queries for one cell of one record. Normally, the holder will be sql.NullString or similar.
 // If required, the query can use "{TABLE}" in place of the table name.
-func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func QueryOneNullThing(ctx context.Context, tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
 	database := tbl.Database()
 
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return err
 	}
@@ -65,27 +68,31 @@ func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.Que
 // The args are for any placeholder parameters in the query.
 //
 // The caller must call rows.Close() on the result.
-func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func Query(ctx context.Context, tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().QueryContext(defaultCtx(ctx), q2, args...)
 	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
 //
 // The query is logged using whatever logger is configured. If an error arises, this too is logged.
-func Exec(tbl pgxapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func Exec(ctx context.Context, tbl pgxapi.Table, req require.Requirement, query string, args ...interface{}) (int64, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	n, err := doExec(tbl, q2, args...)
+	n, err := doExec(ctx, tbl, q2, args...)
 	return n, require.ChainErrorIfExecNotSatisfiedBy(err, req, n)
 }
 
-func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) {
+func doExec(ctx context.Context, tbl pgxapi.Table, query string, args ...interface{}) (int64, error) {
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(query, args...)
-	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
+	n, err := tbl.Execer().ExecContext(defaultCtx(ctx), query, args...)
 	if err != nil {
 		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 	}
@@ -93,9 +100,11 @@ func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) 
 }
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
-func UpdateFields(tbl pgxapi.Table, req require.Requirement, wh where.Expression, fields ...sql.NamedArg) (int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func UpdateFields(ctx context.Context, tbl pgxapi.Table, req require.Requirement, wh where.Expression, fields ...sql.NamedArg) (int64, error) {
 	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect().Quoter(), wh, fields...)
-	return Exec(tbl, req, query, args...)
+	return Exec(ctx, tbl, req, query, args...)
 }
 
 func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
@@ -109,7 +118,9 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 
 // DeleteByColumn deletes rows from the table, given some values and the name of the column they belong to.
 // The list of values can be arbitrarily long.
-func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v ...interface{}) (int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func DeleteByColumn(ctx context.Context, tbl pgxapi.Table, req require.Requirement, column string, v ...interface{}) (int64, error) {
 	const batch = 1000 // limited by Oracle DB
 	const qt = "DELETE FROM %s WHERE %s IN (%s)"
 	qName := tbl.Dialect().Quoter().Quote(tbl.Name().String())
@@ -137,7 +148,7 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 				args[i] = v[i]
 			}
 
-			n, err = doExec(tbl, query, args...)
+			n, err = doExec(ctx, tbl, query, args...)
 			count += n
 			if err != nil {
 				return count, err
@@ -155,7 +166,7 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 			args[i] = v[i]
 		}
 
-		n, err = doExec(tbl, query, args...)
+		n, err = doExec(ctx, tbl, query, args...)
 		count += n
 	}
 
@@ -163,13 +174,15 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 }
 
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
-func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func GetIntIntIndex(ctx context.Context, tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().QueryContext(defaultCtx(ctx), q2, args...)
 	if err != nil {
 		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
 	}
@@ -188,13 +201,15 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 }
 
 // GetStringIntIndex reads a string column and an integer column from a specified database table and returns an index built from them.
-func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func GetStringIntIndex(ctx context.Context, tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().QueryContext(defaultCtx(ctx), q2, args...)
 	if err != nil {
 		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
 	}
@@ -214,13 +229,15 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 }
 
 // GetIntStringIndex reads an integer column and a string column from a specified database table and returns an index built from them.
-func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func GetIntStringIndex(ctx context.Context, tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Database().Logger()
 	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().QueryContext(defaultCtx(ctx), q2, args...)
 	if err != nil {
 		return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", q2, args))
 	}
@@ -237,4 +254,11 @@ func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 		index[k] = v
 	}
 	return index, nil
+}
+
+func defaultCtx(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }

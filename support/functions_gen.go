@@ -1,6 +1,7 @@
 package support
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/rickb777/sqlapi"
@@ -12,9 +13,11 @@ import (
 // string
 
 // SliceStringList requests a columnar slice of strings from a specified column.
-func SliceStringList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceStringList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +43,11 @@ func doScanStringList(req require.Requirement, rows sqlapi.SqlRows, qLog func(er
 }
 
 // SliceStringPtrList requests a columnar slice of strings from a specified nullable column.
-func SliceStringPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceStringPtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]string, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +85,11 @@ func StringAsInterfaceSlice(values []string) []interface{} {
 // int
 
 // SliceIntList requests a columnar slice of ints from a specified column.
-func SliceIntList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceIntList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +115,11 @@ func doScanIntList(req require.Requirement, rows sqlapi.SqlRows, qLog func(error
 }
 
 // SliceIntPtrList requests a columnar slice of ints from a specified nullable column.
-func SliceIntPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceIntPtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +157,11 @@ func IntAsInterfaceSlice(values []int) []interface{} {
 // int64
 
 // SliceInt64List requests a columnar slice of int64s from a specified column.
-func SliceInt64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt64List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +187,11 @@ func doScanInt64List(req require.Requirement, rows sqlapi.SqlRows, qLog func(err
 }
 
 // SliceInt64PtrList requests a columnar slice of int64s from a specified nullable column.
-func SliceInt64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt64PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -216,9 +229,11 @@ func Int64AsInterfaceSlice(values []int64) []interface{} {
 // int32
 
 // SliceInt32List requests a columnar slice of int32s from a specified column.
-func SliceInt32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt32List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -244,9 +259,11 @@ func doScanInt32List(req require.Requirement, rows sqlapi.SqlRows, qLog func(err
 }
 
 // SliceInt32PtrList requests a columnar slice of int32s from a specified nullable column.
-func SliceInt32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt32PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,9 +301,11 @@ func Int32AsInterfaceSlice(values []int32) []interface{} {
 // int16
 
 // SliceInt16List requests a columnar slice of int16s from a specified column.
-func SliceInt16List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt16List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -312,9 +331,11 @@ func doScanInt16List(req require.Requirement, rows sqlapi.SqlRows, qLog func(err
 }
 
 // SliceInt16PtrList requests a columnar slice of int16s from a specified nullable column.
-func SliceInt16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt16PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -352,9 +373,11 @@ func Int16AsInterfaceSlice(values []int16) []interface{} {
 // int8
 
 // SliceInt8List requests a columnar slice of int8s from a specified column.
-func SliceInt8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt8List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -380,9 +403,11 @@ func doScanInt8List(req require.Requirement, rows sqlapi.SqlRows, qLog func(erro
 }
 
 // SliceInt8PtrList requests a columnar slice of int8s from a specified nullable column.
-func SliceInt8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceInt8PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]int8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -420,9 +445,11 @@ func Int8AsInterfaceSlice(values []int8) []interface{} {
 // uint
 
 // SliceUintList requests a columnar slice of uints from a specified column.
-func SliceUintList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUintList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -448,9 +475,11 @@ func doScanUintList(req require.Requirement, rows sqlapi.SqlRows, qLog func(erro
 }
 
 // SliceUintPtrList requests a columnar slice of uints from a specified nullable column.
-func SliceUintPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUintPtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -488,9 +517,11 @@ func UintAsInterfaceSlice(values []uint) []interface{} {
 // uint64
 
 // SliceUint64List requests a columnar slice of uint64s from a specified column.
-func SliceUint64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint64List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -516,9 +547,11 @@ func doScanUint64List(req require.Requirement, rows sqlapi.SqlRows, qLog func(er
 }
 
 // SliceUint64PtrList requests a columnar slice of uint64s from a specified nullable column.
-func SliceUint64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint64PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -556,9 +589,11 @@ func Uint64AsInterfaceSlice(values []uint64) []interface{} {
 // uint32
 
 // SliceUint32List requests a columnar slice of uint32s from a specified column.
-func SliceUint32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint32List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -584,9 +619,11 @@ func doScanUint32List(req require.Requirement, rows sqlapi.SqlRows, qLog func(er
 }
 
 // SliceUint32PtrList requests a columnar slice of uint32s from a specified nullable column.
-func SliceUint32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint32PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -624,9 +661,11 @@ func Uint32AsInterfaceSlice(values []uint32) []interface{} {
 // uint16
 
 // SliceUint16List requests a columnar slice of uint16s from a specified column.
-func SliceUint16List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint16List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -652,9 +691,11 @@ func doScanUint16List(req require.Requirement, rows sqlapi.SqlRows, qLog func(er
 }
 
 // SliceUint16PtrList requests a columnar slice of uint16s from a specified nullable column.
-func SliceUint16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint16PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint16, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -692,9 +733,11 @@ func Uint16AsInterfaceSlice(values []uint16) []interface{} {
 // uint8
 
 // SliceUint8List requests a columnar slice of uint8s from a specified column.
-func SliceUint8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint8List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -720,9 +763,11 @@ func doScanUint8List(req require.Requirement, rows sqlapi.SqlRows, qLog func(err
 }
 
 // SliceUint8PtrList requests a columnar slice of uint8s from a specified nullable column.
-func SliceUint8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceUint8PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]uint8, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -760,9 +805,11 @@ func Uint8AsInterfaceSlice(values []uint8) []interface{} {
 // float64
 
 // SliceFloat64List requests a columnar slice of float64s from a specified column.
-func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceFloat64List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -788,9 +835,11 @@ func doScanFloat64List(req require.Requirement, rows sqlapi.SqlRows, qLog func(e
 }
 
 // SliceFloat64PtrList requests a columnar slice of float64s from a specified nullable column.
-func SliceFloat64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceFloat64PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float64, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -828,9 +877,11 @@ func Float64AsInterfaceSlice(values []float64) []interface{} {
 // float32
 
 // SliceFloat32List requests a columnar slice of float32s from a specified column.
-func SliceFloat32List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceFloat32List(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -856,9 +907,11 @@ func doScanFloat32List(req require.Requirement, rows sqlapi.SqlRows, qLog func(e
 }
 
 // SliceFloat32PtrList requests a columnar slice of float32s from a specified nullable column.
-func SliceFloat32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func SliceFloat32PtrList(ctx context.Context, tbl sqlapi.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]float32, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -3,9 +3,11 @@
 // {{.Type}}
 
 // Slice{{.Type.U}}List requests a columnar slice of {{.Type}}s from a specified column.
-func Slice{{.Type.U}}List(tbl {{.SqlApi}}.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func Slice{{.Type.U}}List(ctx context.Context, tbl {{.SqlApi}}.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +33,11 @@ func doScan{{.Type.U}}List(req require.Requirement, rows {{.SqlApi}}.SqlRows, qL
 }
 
 // Slice{{.Type.U}}PtrList requests a columnar slice of {{.Type}}s from a specified nullable column.
-func Slice{{.Type.U}}PtrList(tbl {{.SqlApi}}.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
+//
+// If the context ctx is nil, it defaults to context.Background().
+func Slice{{.Type.U}}PtrList(ctx context.Context, tbl {{.SqlApi}}.Table, req require.Requirement, sqlname string, wh where.Expression, qc where.QueryConstraint) ([]{{.Type}}, error) {
 	query, args := sliceSql(tbl, sqlname, wh, qc)
-	rows, err := Query(tbl, query, args...)
+	rows, err := Query(ctx, tbl, query, args...)
 	if err != nil {
 		return nil, err
 	}
