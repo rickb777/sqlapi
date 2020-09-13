@@ -1,6 +1,8 @@
 package sqlapi
 
 import (
+	"context"
+
 	"github.com/rickb777/sqlapi/dialect"
 )
 
@@ -75,13 +77,13 @@ type TableCreator interface {
 	Table
 
 	// CreateTable creates the database table.
-	CreateTable(ifNotExists bool) (int64, error)
+	CreateTable(ctx context.Context, ifNotExists bool) (int64, error)
 
 	// DropTable drops the database table.
-	DropTable(ifExists bool) (int64, error)
+	DropTable(ctx context.Context, ifExists bool) (int64, error)
 
 	// Truncate empties the table
-	Truncate(force bool) (err error)
+	Truncate(ctx context.Context, force bool) (err error)
 }
 
 // TableWithIndexes is a table creator with create/delete methods for the indexes.
@@ -89,11 +91,11 @@ type TableWithIndexes interface {
 	TableCreator
 
 	// CreateIndexes creates the indexes for the database table.
-	CreateIndexes(ifNotExist bool) (err error)
+	CreateIndexes(ctx context.Context, ifNotExist bool) (err error)
 
 	// DropIndexes executes a query that drops all the indexes on the database table.
-	DropIndexes(ifExist bool) (err error)
+	DropIndexes(ctx context.Context, ifExist bool) (err error)
 
 	// CreateTableWithIndexes creates the database table and its indexes.
-	CreateTableWithIndexes(ifNotExist bool) (err error)
+	CreateTableWithIndexes(ctx context.Context, ifNotExist bool) (err error)
 }
