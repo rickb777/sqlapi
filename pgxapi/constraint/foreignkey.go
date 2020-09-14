@@ -1,7 +1,6 @@
 package constraint
 
 import (
-	"context"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rickb777/collection"
@@ -138,9 +137,7 @@ type Relationship struct {
 // IdsUnusedAsForeignKeys finds all the primary keys in the parent table that have no foreign key
 // in the dependent (child) table. The table tbl provides the database or transaction handle; either
 // the parent or the child table can be used for thi purpose.
-//
-// If the context ctx is nil, it defaults to context.Background().
-func (rel Relationship) IdsUnusedAsForeignKeys(ctx context.Context, tbl pgxapi.Table) (collection.Int64Set, error) {
+func (rel Relationship) IdsUnusedAsForeignKeys(tbl pgxapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, errors.Errorf("IdsUnusedAsForeignKeys requires the column names to be specified")
 	}
@@ -168,14 +165,12 @@ func (rel Relationship) IdsUnusedAsForeignKeys(ctx context.Context, tbl pgxapi.T
 		pfx, rel.Child.TableName,
 		rel.Parent.Column, rel.Child.Column,
 		rel.Child.Column)
-	return fetchIds(ctx, tbl, s)
+	return fetchIds(tbl, s)
 }
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
 // in the dependent (child) table.
-//
-// If the context ctx is nil, it defaults to context.Background().
-func (rel Relationship) IdsUsedAsForeignKeys(ctx context.Context, tbl pgxapi.Table) (collection.Int64Set, error) {
+func (rel Relationship) IdsUsedAsForeignKeys(tbl pgxapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, errors.Errorf("IdsUsedAsForeignKeys requires the column names to be specified")
 	}
@@ -189,11 +184,11 @@ func (rel Relationship) IdsUsedAsForeignKeys(ctx context.Context, tbl pgxapi.Tab
 		pfx, rel.Parent.TableName,
 		pfx, rel.Child.TableName,
 		rel.Parent.Column, rel.Child.Column)
-	return fetchIds(ctx, tbl, s)
+	return fetchIds(tbl, s)
 }
 
-func fetchIds(ctx context.Context, tbl pgxapi.Table, query string) (collection.Int64Set, error) {
-	rows, err := support.Query(ctx, tbl, query)
+func fetchIds(tbl pgxapi.Table, query string) (collection.Int64Set, error) {
+	rows, err := support.Query(tbl, query)
 	if err != nil {
 		return nil, tbl.Database().Logger().LogIfError(errors.Wrap(err, query))
 	}

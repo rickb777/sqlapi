@@ -1,6 +1,8 @@
 package support
 
 import (
+	"context"
+
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 )
@@ -20,6 +22,10 @@ func (tbl StubTable) Database() sqlapi.Database {
 
 func (tbl StubTable) Logger() sqlapi.Logger {
 	return tbl.database.Logger()
+}
+
+func (tbl StubTable) Ctx() context.Context {
+	return context.Background()
 }
 
 func (tbl StubTable) Dialect() dialect.Dialect {

@@ -32,6 +32,9 @@ type Table interface {
 	// (not included here because of package inter-dependencies)
 	//Constraints() constraint.Constraints
 
+	// Ctx gets the current request context.
+	Ctx() context.Context
+
 	// Dialect gets the database dialect.
 	Dialect() dialect.Dialect
 
@@ -44,6 +47,10 @@ type Table interface {
 	// WithPrefix sets the table name prefix for subsequent queries.
 	// The result is a modified copy of the table; the original is unchanged.
 	// WithPrefix(pfx string) SomeTypeTable
+
+	// WithContext sets the context for subsequent queries.
+	// The result is a modified copy of the table; the original is unchanged.
+	//WithContext(ctx context.Context) SomeTypeTable {
 
 	// WithLogger sets the logger for subsequent queries. An alias for SetLogger.
 	// The result is a modified copy of the table; the original is unchanged.
@@ -73,21 +80,17 @@ type Table interface {
 }
 
 // TableCreator is a table with create/delete/truncate methods.
-//
-// Many methods of this and the derived tables accept context.Context as their first parameter,
-// following standard practice. However, it is acceptable to pass nil if appropriate because
-// the default context.Background() will be substituted in this case.
 type TableCreator interface {
 	Table
 
 	// CreateTable creates the database table.
-	CreateTable(ctx context.Context, ifNotExists bool) (int64, error)
+	CreateTable(ifNotExists bool) (int64, error)
 
 	// DropTable drops the database table.
-	DropTable(ctx context.Context, ifExists bool) (int64, error)
+	DropTable(ifExists bool) (int64, error)
 
 	// Truncate empties the table
-	Truncate(ctx context.Context, force bool) (err error)
+	Truncate(force bool) (err error)
 }
 
 // TableWithIndexes is a table creator with create/delete methods for the indexes.
@@ -95,11 +98,11 @@ type TableWithIndexes interface {
 	TableCreator
 
 	// CreateIndexes creates the indexes for the database table.
-	CreateIndexes(ctx context.Context, ifNotExist bool) (err error)
+	CreateIndexes(ifNotExist bool) (err error)
 
 	// DropIndexes executes a query that drops all the indexes on the database table.
-	DropIndexes(ctx context.Context, ifExist bool) (err error)
+	DropIndexes(ifExist bool) (err error)
 
 	// CreateTableWithIndexes creates the database table and its indexes.
-	CreateTableWithIndexes(ctx context.Context, ifNotExist bool) (err error)
+	CreateTableWithIndexes(ifNotExist bool) (err error)
 }

@@ -6,7 +6,6 @@ cat <<PREAMBLE > functions_gen.go
 package support
 
 import (
-	"context"
 	"database/sql"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/require"

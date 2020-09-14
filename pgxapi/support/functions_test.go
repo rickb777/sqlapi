@@ -100,7 +100,7 @@ func TestQuery_happy(t *testing.T) {
 		database: d,
 	}
 
-	_, err := Query(nil, tbl, "SELECT foo FROM p.table WHERE x=?", 123)
+	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(lgr.logged).To(Equal([]string{"SELECT foo FROM p.table WHERE x=$1 [123] map[]"}))
@@ -121,7 +121,7 @@ func TestExec_happy(t *testing.T) {
 		database: d,
 	}
 
-	_, err := Exec(nil, tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
+	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(lgr.logged).To(Equal([]string{"DELETE FROM p.table WHERE x=$1 [123] map[]"}))
@@ -142,7 +142,7 @@ func TestUpdateFields(t *testing.T) {
 		database: d,
 	}
 
-	_, err := UpdateFields(nil, tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
+	_, err := UpdateFields(tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(lgr.logged).To(ConsistOf(`UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [1 2 bar] map[]`))
@@ -163,7 +163,7 @@ func TestDeleteByColumn(t *testing.T) {
 		database: d,
 	}
 
-	_, err := DeleteByColumn(nil, tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
+	_, err := DeleteByColumn(tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(lgr.logged).To(ConsistOf(`DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [1 2 3 4] map[]`))
@@ -187,7 +187,7 @@ func TestGetIntIntIndex_happy(t *testing.T) {
 		database: d,
 	}
 
-	m, err := GetIntIntIndex(nil, tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
+	m, err := GetIntIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]int64{2: 16, 3: 81}))
@@ -212,7 +212,7 @@ func TestGetStringIntIndex_happy(t *testing.T) {
 		database: d,
 	}
 
-	m, err := GetStringIntIndex(nil, tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
+	m, err := GetStringIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[string]int64{"two": 16, "three": 81}))
@@ -237,7 +237,7 @@ func TestGetIntStringIndex_happy(t *testing.T) {
 		database: d,
 	}
 
-	m, err := GetIntStringIndex(nil, tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
+	m, err := GetIntStringIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]string{2: "16", 3: "81"}))

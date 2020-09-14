@@ -119,12 +119,12 @@ func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 
 	fkc := persons.Constraints().FkConstraints()[0]
 
-	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(nil, persons)
+	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
 	g.Expect(m1.ToSlice()).To(ConsistOf(aid1, aid2))
 
-	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(nil, persons)
+	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
 	g.Expect(m2.ToSlice()).To(ConsistOf(aid3, aid4))

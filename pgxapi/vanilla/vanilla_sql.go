@@ -21,6 +21,7 @@ type RecordTable struct {
 	database    pgxapi.Database
 	db          pgxapi.Execer
 	constraints constraint.Constraints
+	ctx         context.Context
 	pk          string
 }
 
@@ -41,6 +42,7 @@ func NewRecordTable(name string, d pgxapi.Database) RecordTable {
 		database:    d,
 		db:          d.DB(),
 		constraints: constraints,
+		ctx:         context.Background(),
 		pk:          "id",
 	}
 }
@@ -56,6 +58,7 @@ func CopyTableAsRecordTable(origin pgxapi.Table) RecordTable {
 		database:    origin.Database(),
 		db:          origin.DB(),
 		constraints: nil,
+		ctx:         origin.Ctx(),
 		pk:          "id",
 	}
 }
@@ -71,6 +74,16 @@ func (tbl RecordTable) SetPkColumn(pk string) RecordTable {
 // The result is a modified copy of the table; the original is unchanged.
 func (tbl RecordTable) WithPrefix(pfx string) RecordTable {
 	tbl.name.Prefix = pfx
+	return tbl
+}
+
+// WithContext sets the context for subsequent queries via this table.
+// The result is a modified copy of the table; the original is unchanged.
+//
+// The shared context in the *Database is not altered by this method. So it
+// is possible to use different contexts for different (groups of) queries.
+func (tbl RecordTable) WithContext(ctx context.Context) RecordTable {
+	tbl.ctx = ctx
 	return tbl
 }
 
@@ -93,6 +106,11 @@ func (tbl RecordTable) WithConstraint(cc ...constraint.Constraint) RecordTable {
 // Constraints returns the table's constraints.
 func (tbl RecordTable) Constraints() constraint.Constraints {
 	return tbl.constraints
+}
+
+// Ctx gets the current request context.
+func (tbl RecordTable) Ctx() context.Context {
+	return tbl.ctx
 }
 
 // Dialect gets the database dialect.
@@ -166,8 +184,8 @@ const RecordDataColumnNames = ""
 // The caller must call rows.Close() on the result.
 //
 // Wrap the result in *pgxapi.Rows if you need to access its data as a map.
-func (tbl RecordTable) Query(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
-	return support.Query(ctx, tbl, query, args...)
+func (tbl RecordTable) Query(query string, args ...interface{}) (pgxapi.SqlRows, error) {
+	return support.Query(tbl, query, args...)
 }
 
 //--------------------------------------------------------------------------------
@@ -179,8 +197,8 @@ func (tbl RecordTable) Query(ctx context.Context, query string, args ...interfac
 // Note that this applies ReplaceTableName to the query string.
 //
 // The args are for any placeholder parameters in the query.
-func (tbl RecordTable) QueryOneNullString(ctx context.Context, req require.Requirement, query string, args ...interface{}) (result sql.NullString, err error) {
-	err = support.QueryOneNullThing(ctx, tbl, req, &result, query, args...)
+func (tbl RecordTable) QueryOneNullString(req require.Requirement, query string, args ...interface{}) (result sql.NullString, err error) {
+	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
 	return result, err
 }
 
@@ -191,8 +209,8 @@ func (tbl RecordTable) QueryOneNullString(ctx context.Context, req require.Requi
 // Note that this applies ReplaceTableName to the query string.
 //
 // The args are for any placeholder parameters in the query.
-func (tbl RecordTable) QueryOneNullInt64(ctx context.Context, req require.Requirement, query string, args ...interface{}) (result sql.NullInt64, err error) {
-	err = support.QueryOneNullThing(ctx, tbl, req, &result, query, args...)
+func (tbl RecordTable) QueryOneNullInt64(req require.Requirement, query string, args ...interface{}) (result sql.NullInt64, err error) {
+	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
 	return result, err
 }
 
@@ -203,7 +221,7 @@ func (tbl RecordTable) QueryOneNullInt64(ctx context.Context, req require.Requir
 // Note that this applies ReplaceTableName to the query string.
 //
 // The args are for any placeholder parameters in the query.
-func (tbl RecordTable) QueryOneNullFloat64(ctx context.Context, req require.Requirement, query string, args ...interface{}) (result sql.NullFloat64, err error) {
-	err = support.QueryOneNullThing(ctx, tbl, req, &result, query, args...)
+func (tbl RecordTable) QueryOneNullFloat64(req require.Requirement, query string, args ...interface{}) (result sql.NullFloat64, err error) {
+	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
 	return result, err
 }

@@ -1,6 +1,7 @@
 package support
 
 import (
+	"context"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 )
@@ -20,6 +21,10 @@ func (tbl StubTable) Database() pgxapi.Database {
 
 func (tbl StubTable) Logger() pgxapi.Logger {
 	return tbl.database.Logger()
+}
+
+func (tbl StubTable) Ctx() context.Context {
+	return context.Background()
 }
 
 func (tbl StubTable) Dialect() dialect.Dialect {
