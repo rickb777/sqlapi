@@ -94,7 +94,7 @@ type SqlDB interface {
 
 	// SingleConn takes exclusive use of a connection for use by the supplied function.
 	// The connection will be automatically released after the function has terminated.
-	SingleConn(ctx context.Context, fn func(conn *pgx.Conn) error) error
+	SingleConn(ctx context.Context, fn func(ex Execer) error) error
 
 	// Close closes the database connection.
 	Close()

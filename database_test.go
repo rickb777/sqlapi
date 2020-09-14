@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -29,7 +28,8 @@ import (
 // GO_DSN     - the database DSN
 // GO_VERBOSE - true for query logging
 
-var lock = sync.Mutex{}
+var gdb *sql.DB
+var gdi dialect.Dialect
 
 func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -73,7 +73,6 @@ func TestListTables(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	list, err := d.ListTables(nil)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -89,7 +88,6 @@ func TestQueryRowContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	_, aid2, _, _ := insertFixtures(t, d)
 
@@ -106,7 +104,6 @@ func TestQueryContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	_, aid2, _, _ := insertFixtures(t, d)
 
@@ -123,19 +120,47 @@ func TestQueryContext(t *testing.T) {
 	g.Expect(rows.Next()).NotTo(BeTrue())
 }
 
+func TestSingleConnQueryContext(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := newDatabase(t)
+
+	_, aid2, _, _ := insertFixtures(t, d)
+
+	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
+	e2 := d.DB().SingleConn(nil, func(ex sqlapi.Execer) error {
+		rows, err := ex.QueryContext(context.Background(), q, aid2)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(rows.Next()).To(BeTrue())
+
+		var xlines string
+		err = rows.Scan(&xlines)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(xlines).To(Equal("2 Nutmeg Lane"))
+
+		g.Expect(rows.Next()).NotTo(BeTrue())
+		return err
+	})
+	g.Expect(e2).NotTo(HaveOccurred())
+}
+
 func TestTransactCommitUsingInsert(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	ctx := context.Background()
 	insertFixtures(t, d)
 
+	q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
 	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
-		_, e2 := tx.InsertContext(ctx, "id", q, "5 Pantagon Vale", "FX1 5EE")
-		return e2
+		for i := 1; i <= 10; i++ {
+			_, e2 := tx.InsertContext(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
+			if e2 != nil {
+				return e2
+			}
+		}
+		return nil
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -144,20 +169,19 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	var count int
 	err = row.Scan(&count)
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(count).To(Equal(5))
+	g.Expect(count).To(Equal(14))
 }
 
 func TestTransactCommitUsingExec(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
+	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
 	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
 		_, e2 := tx.ExecContext(ctx, q, aid2, aid3)
 		return e2
 	})
@@ -175,13 +199,12 @@ func TestTransactRollback(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	d := newDatabase(t)
-	defer cleanup(d.DB())
 
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
+	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
 	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
 		tx.ExecContext(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
@@ -198,7 +221,16 @@ func TestTransactRollback(t *testing.T) {
 
 //-------------------------------------------------------------------------------------------------
 
-func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
+func TestMain(m *testing.M) {
+	gdb, gdi = connect()
+	code := m.Run()
+	cleanup(gdb)
+	os.Exit(code)
+}
+
+//-------------------------------------------------------------------------------------------------
+
+func connect() (*sql.DB, dialect.Dialect) {
 	dbDriver, ok := os.LookupEnv("GO_DRIVER")
 	if !ok {
 		dbDriver = "sqlite3"
@@ -215,7 +247,7 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 		case "none":
 			di = di.WithQuoter(quote.NoQuoter)
 		default:
-			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
+			log.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
 		}
 	}
 
@@ -226,14 +258,12 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 
 	db, err := sql.Open(dbDriver, dsn)
 	if err != nil {
-		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
+		log.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
 	}
-
-	lock.Lock()
 
 	err = db.Ping()
 	if err != nil {
-		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+		log.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
 	}
 
 	fmt.Printf("Successfully connected to %s.\n", dbDriver)
@@ -241,23 +271,18 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 }
 
 func newDatabase(t *testing.T) sqlapi.Database {
-	db, di := connect(t)
-
 	var lgr *log.Logger
 	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
 	if ok && strings.ToLower(goVerbose) == "true" {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
+	return sqlapi.NewDatabase(sqlapi.WrapDB(gdb, gdi), gdi, lgr, nil)
 }
 
-func cleanup(db sqlapi.Execer) {
+func cleanup(db io.Closer) {
 	if db != nil {
-		if c, ok := db.(io.Closer); ok {
-			c.Close()
-		}
-		lock.Unlock()
+		db.Close()
 		os.Remove("test.db")
 	}
 }

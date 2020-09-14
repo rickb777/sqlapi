@@ -110,6 +110,30 @@ func TestQueryContext(t *testing.T) {
 	g.Expect(rows.Next()).NotTo(BeTrue())
 }
 
+func TestSingleConnQueryContext(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := newDatabase(t)
+
+	_, aid2, _, _ := insertFixtures(t, d)
+
+	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
+	e2 := d.DB().SingleConn(nil, func(ex Execer) error {
+		rows, err := ex.QueryContext(context.Background(), q, aid2)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(rows.Next()).To(BeTrue())
+
+		var xlines string
+		err = rows.Scan(&xlines)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(xlines).To(Equal("2 Nutmeg Lane"))
+
+		g.Expect(rows.Next()).NotTo(BeTrue())
+		return err
+	})
+	g.Expect(e2).NotTo(HaveOccurred())
+}
+
 func TestTransactCommitUsingInsert(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -194,19 +218,13 @@ func newDatabase(t *testing.T) Database {
 	return d
 }
 
-//func cleanup(db SqlDB) {
-//	//if db != nil {
-//	//	db.Close()
-//	//	lock.Unlock()
-//	//	db = nil
-//	//}
-//}
-
 type simpleLogger struct{}
 
 func (l simpleLogger) Log(args ...interface{}) {
 	log.Println(args...)
 }
+
+//-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
 	// first connection attempt: environment config for local DB

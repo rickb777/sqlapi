@@ -139,9 +139,9 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 	return fn(tx)
 }
 
-func (sh *shim) SingleConn(_ context.Context, fn func(conn *pgx.Conn) error) error {
+func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) error {
 	cp := sh.ex.(*pgx.ConnPool)
-	conn, err := cp.Acquire()
+	conn, err := cp.AcquireEx(defaultCtx(ctx))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -153,7 +153,11 @@ func (sh *shim) SingleConn(_ context.Context, fn func(conn *pgx.Conn) error) err
 		cp.Release(conn)
 	}()
 
-	return fn(conn)
+	ex := &shim{
+		ex:  conn,
+		lgr: sh.lgr,
+	}
+	return fn(ex)
 }
 
 func logPanicData(p interface{}, lgr pgx.Logger) error {

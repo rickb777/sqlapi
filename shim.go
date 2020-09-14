@@ -131,9 +131,10 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 	return fn(tx)
 }
 
-func (sh *shim) SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) error {
+func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err error) {
 	cp := sh.ex.(*sql.DB)
-	conn, err := cp.Conn(ctx)
+	var conn *sql.Conn
+	conn, err = cp.Conn(defaultCtx(ctx))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -142,10 +143,17 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(conn *sql.Conn) error) e
 		if p := recover(); p != nil {
 			err = logPanicData(p)
 		}
-		conn.Close()
+		e2 := conn.Close()
+		if err == nil {
+			err = e2
+		} // otherwise e2 is ignored
 	}()
 
-	return fn(conn)
+	ex := &shim{
+		ex: conn,
+		di: sh.di,
+	}
+	return fn(ex)
 }
 
 func logPanicData(p interface{}) error {
