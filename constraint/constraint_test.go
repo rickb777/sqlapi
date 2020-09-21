@@ -84,7 +84,7 @@ func newDatabase(t *testing.T) sqlapi.Database {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.NewDatabase(sqlapi.WrapDB(db, di), di, lgr, nil)
+	return sqlapi.NewDatabase(sqlapi.WrapDB(db, sqlapi.NewLogger(lgr), di), di, lgr, nil)
 }
 
 func cleanup(db sqlapi.Execer) {

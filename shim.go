@@ -12,8 +12,8 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 )
 
-func WrapDB(ex *sql.DB, di dialect.Dialect) SqlDB {
-	return &shim{ex: ex, di: di, isTx: false}
+func WrapDB(ex *sql.DB, lgr Logger, di dialect.Dialect) SqlDB {
+	return &shim{ex: ex, di: di, lgr: lgr, isTx: false}
 }
 
 type basicExecer interface {
@@ -31,6 +31,7 @@ var _ basicExecer = new(sql.Tx)
 type shim struct {
 	ex   basicExecer
 	di   dialect.Dialect
+	lgr  Logger
 	isTx bool
 }
 
@@ -92,6 +93,14 @@ func (sh *shim) IsTx() bool {
 	return sh.isTx
 }
 
+func (sh *shim) Logger() Logger {
+	return sh.lgr
+}
+
+func (sh *shim) Dialect() dialect.Dialect {
+	return sh.di
+}
+
 //-------------------------------------------------------------------------------------------------
 // sql.DB specific methods
 
@@ -100,7 +109,7 @@ func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return &shim{ex: tx, di: sh.di, isTx: true}, nil
+	return &shim{ex: tx, di: sh.di, lgr: sh.lgr, isTx: true}, nil
 }
 
 // Transact takes a function and executes it within a database transaction.
@@ -118,7 +127,7 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 	defer func() {
 		if p := recover(); p != nil {
 			_ = tx.rollback()
-			err = logPanicData(p)
+			err = logPanicData(p, sh.lgr)
 
 		} else if err != nil {
 			_ = tx.rollback()
@@ -141,7 +150,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 
 	defer func() {
 		if p := recover(); p != nil {
-			err = logPanicData(p)
+			err = logPanicData(p, sh.lgr)
 		}
 		e2 := conn.Close()
 		if err == nil {
@@ -150,20 +159,26 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	}()
 
 	ex := &shim{
-		ex: conn,
-		di: sh.di,
+		ex:  conn,
+		lgr: sh.lgr,
+		di:  sh.di,
 	}
 	return fn(ex)
 }
 
-func logPanicData(p interface{}) error {
+func logPanicData(p interface{}, lgr Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = errors.WithStack(e)
 	} else {
 		p = errors.Errorf("%+v", p)
 	}
-	log.Printf("panic recovered: %+v", p)
+	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
+	if lgr != nil {
+		lgr.Log(fmt.Sprintf("panic recovered: %+v", p), nil)
+	} else {
+		log.Printf("panic recovered: %+v", p)
+	}
 	return p.(error)
 }
 

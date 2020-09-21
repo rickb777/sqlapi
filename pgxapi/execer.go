@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx"
+	"github.com/rickb777/sqlapi/dialect"
 )
 
 type Getter interface {
@@ -72,7 +73,13 @@ type Execer interface {
 	PrepareContext(ctx context.Context, name, sql string) (*pgx.PreparedStatement, error)
 
 	IsTx() bool
+
+	// Logger gets the trace logger. Note that you can use this to rotate the output writer
+	// via its SetOutput method. Also, it can even disable it completely (via ioutil.Discard).
 	Logger() Logger
+
+	// Dialect gets the database dialect.
+	Dialect() dialect.Dialect
 }
 
 //-------------------------------------------------------------------------------------------------

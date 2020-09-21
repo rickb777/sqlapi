@@ -100,6 +100,10 @@ func (sh *shim) Logger() Logger {
 	return sh.lgr
 }
 
+func (sh *shim) Dialect() dialect.Dialect {
+	return dialect.Postgres
+}
+
 //-------------------------------------------------------------------------------------------------
 // ConnPool-specific methods
 
@@ -139,9 +143,10 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 	return fn(tx)
 }
 
-func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) error {
+func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err error) {
 	cp := sh.ex.(*pgx.ConnPool)
-	conn, err := cp.AcquireEx(defaultCtx(ctx))
+	var conn *pgx.Conn
+	conn, err = cp.AcquireEx(defaultCtx(ctx))
 	if err != nil {
 		return errors.WithStack(err)
 	}

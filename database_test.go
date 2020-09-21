@@ -277,7 +277,7 @@ func newDatabase(t *testing.T) sqlapi.Database {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.NewDatabase(sqlapi.WrapDB(gdb, gdi), gdi, lgr, nil)
+	return sqlapi.NewDatabase(sqlapi.WrapDB(gdb, sqlapi.NewLogger(lgr), gdi), gdi, lgr, nil)
 }
 
 func cleanup(db io.Closer) {

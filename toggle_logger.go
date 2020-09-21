@@ -10,10 +10,15 @@ import (
 
 type StdLog interface {
 	Printf(format string, v ...interface{})
-	SetOutput(w io.Writer)
+}
+
+// outable interface for loggers that allow setting the output writer
+type outable interface {
+	SetOutput(out io.Writer)
 }
 
 var _ StdLog = new(log.Logger)
+var _ outable = new(log.Logger)
 
 type toggleLogger struct {
 	lgr     StdLog
@@ -63,7 +68,9 @@ func (lgr *toggleLogger) LogError(err error) error {
 
 func (lgr *toggleLogger) SetOutput(w io.Writer) {
 	if lgr.lgr != nil {
-		lgr.lgr.SetOutput(w)
+		if o, ok := lgr.lgr.(outable); ok {
+			o.SetOutput(w)
+		}
 	}
 }
 

@@ -89,7 +89,7 @@ func xTestSliceSql(t *testing.T) {
 func TestQuery_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := &StubDatabase{execer: stubExecer{}, stdLog: &stubLogger{}}
+	d := &StubDatabase{execer: StubExecer{}, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
 			Prefix: "p.",
@@ -108,7 +108,7 @@ func TestQuery_happy(t *testing.T) {
 func TestExec_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{stubResult: 2}
+	e := StubExecer{StubResult: 2}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
@@ -128,7 +128,7 @@ func TestExec_happy(t *testing.T) {
 func TestUpdateFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{stubResult: 2}
+	e := StubExecer{StubResult: 2}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
@@ -148,7 +148,7 @@ func TestUpdateFields(t *testing.T) {
 func TestDeleteByColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{stubResult: 2}
+	e := StubExecer{StubResult: 2}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
 	tbl := StubTable{
 		name: sqlapi.TableName{
@@ -168,7 +168,7 @@ func TestDeleteByColumn(t *testing.T) {
 func TestGetIntIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{rows: &StubRows{
+	e := StubExecer{Rows: &StubRows{
 		Rows: []StubRow{{int64(2), int64(16)}, {int64(3), int64(81)}},
 	}}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
@@ -191,7 +191,7 @@ func TestGetIntIntIndex_happy(t *testing.T) {
 func TestGetStringIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{rows: &StubRows{
+	e := StubExecer{Rows: &StubRows{
 		Rows: []StubRow{{"two", int64(16)}, {"three", int64(81)}},
 	}}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}
@@ -214,7 +214,7 @@ func TestGetStringIntIndex_happy(t *testing.T) {
 func TestGetIntStringIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	e := stubExecer{rows: &StubRows{
+	e := StubExecer{Rows: &StubRows{
 		Rows: []StubRow{{int64(2), "16"}, {int64(3), "81"}},
 	}}
 	d := &StubDatabase{execer: e, stdLog: &stubLogger{}}

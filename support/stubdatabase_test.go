@@ -1,7 +1,6 @@
 package support
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"regexp"
@@ -12,7 +11,7 @@ import (
 )
 
 type StubDatabase struct {
-	execer stubExecer
+	execer StubExecer
 	stdLog *stubLogger
 }
 
@@ -47,34 +46,3 @@ func (r *stubLogger) Printf(format string, v ...interface{}) {
 }
 
 func (r *stubLogger) SetOutput(w io.Writer) {}
-
-//-------------------------------------------------------------------------------------------------
-
-type stubExecer struct {
-	stubResult int64
-	rows       sqlapi.SqlRows
-}
-
-func (e stubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
-	return e.rows, nil
-}
-
-func (e stubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	return e.stubResult, nil
-}
-
-func (e stubExecer) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
-	return e.stubResult, nil
-}
-
-func (stubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
-	return nil, nil
-}
-
-func (stubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
-	return nil
-}
-
-func (stubExecer) IsTx() bool {
-	panic("implement me")
-}

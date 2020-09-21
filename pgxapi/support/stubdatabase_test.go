@@ -100,3 +100,7 @@ func (e stubExecer) IsTx() bool {
 func (e stubExecer) Logger() pgxapi.Logger {
 	return pgxapi.NewLogger(e.pgxLog)
 }
+
+func (e stubExecer) Dialect() dialect.Dialect {
+	return dialect.Postgres
+}

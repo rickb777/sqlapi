@@ -3,7 +3,10 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"io"
 	"time"
+
+	"github.com/rickb777/sqlapi/dialect"
 )
 
 type Getter interface {
@@ -30,6 +33,7 @@ type Logger interface {
 	LogIfError(err error) error
 	LogError(err error) error
 	TraceLogging(on bool)
+	SetOutput(out io.Writer)
 }
 
 // Execer is a precis of *sql.DB and *sql.Tx (see database/sql).
@@ -56,6 +60,13 @@ type Execer interface {
 	PrepareContext(ctx context.Context, name, sql string) (SqlStmt, error)
 
 	IsTx() bool
+
+	// Logger gets the trace logger. Note that you can use this to rotate the output writer
+	// via its SetOutput method. Also, it can even disable it completely (via ioutil.Discard).
+	Logger() Logger
+
+	// Dialect gets the database dialect.
+	Dialect() dialect.Dialect
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -67,6 +78,9 @@ type SqlDB interface {
 	// Transact handles a transaction according to some function. If the function completes
 	// without error, the transaction will be committed automatically. If there is an error
 	// or a panic, the transaction will be rolled back automatically.
+	//
+	// The function fn should avoid using the original SqlDB; this is easily achieved by
+	// using a named function instead of an anonymous closure.
 	Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(SqlTx) error) error
 
 	// PingContext tests connectivity to the database server.
