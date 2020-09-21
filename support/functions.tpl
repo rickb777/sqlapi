@@ -10,7 +10,7 @@ func Slice{{.Type.U}}List(tbl {{.SqlApi}}.Table, req require.Requirement, sqlnam
 		return nil, err
 	}
 	defer rows.Close()
-	return doScan{{.Type.U}}List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScan{{.Type.U}}List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScan{{.Type.U}}List processes result rows to extract a list of {{.Type}}s.
@@ -38,7 +38,7 @@ func Slice{{.Type.U}}PtrList(tbl {{.SqlApi}}.Table, req require.Requirement, sql
 		return nil, err
 	}
 	defer rows.Close()
-	return doScan{{.Type.U}}PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScan{{.Type.U}}PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScan{{.Type.U}}PtrList processes result rows to extract a list of {{.Type}}s.

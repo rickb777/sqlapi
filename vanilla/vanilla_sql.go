@@ -19,11 +19,12 @@ import (
 // specify the name of the schema, in which case it should have a trailing '.'.
 type RecordTable struct {
 	name        sqlapi.TableName
-	database    sqlapi.Database
 	db          sqlapi.Execer
 	constraints constraint.Constraints
 	ctx         context.Context
 	pk          string
+	lgr         sqlapi.Logger
+	di          dialect.Dialect
 }
 
 // Type conformance checks
@@ -40,11 +41,12 @@ func NewRecordTable(name string, d sqlapi.Database) RecordTable {
 	var constraints constraint.Constraints
 	return RecordTable{
 		name:        sqlapi.TableName{Name: name},
-		database:    d,
 		db:          d.DB(),
 		constraints: constraints,
 		ctx:         context.Background(),
 		pk:          "id",
+		lgr:         d.Logger(),
+		di:          d.Dialect(),
 	}
 }
 
@@ -56,11 +58,12 @@ func NewRecordTable(name string, d sqlapi.Database) RecordTable {
 func CopyTableAsRecordTable(origin sqlapi.Table) RecordTable {
 	return RecordTable{
 		name:        origin.Name(),
-		database:    origin.Database(),
 		db:          origin.DB(),
 		constraints: nil,
 		ctx:         origin.Ctx(),
 		pk:          "id",
+		lgr:         origin.Logger(),
+		di:          origin.Dialect(),
 	}
 }
 
@@ -88,14 +91,9 @@ func (tbl RecordTable) WithContext(ctx context.Context) RecordTable {
 	return tbl
 }
 
-// Database gets the shared database information.
-func (tbl RecordTable) Database() sqlapi.Database {
-	return tbl.database
-}
-
 // Logger gets the trace logger.
 func (tbl RecordTable) Logger() sqlapi.Logger {
-	return tbl.database.Logger()
+	return tbl.lgr
 }
 
 // WithConstraint returns a modified Table with added data consistency constraints.
@@ -116,7 +114,7 @@ func (tbl RecordTable) Ctx() context.Context {
 
 // Dialect gets the database dialect.
 func (tbl RecordTable) Dialect() dialect.Dialect {
-	return tbl.database.Dialect()
+	return tbl.di
 }
 
 // Name gets the table name.

@@ -74,7 +74,7 @@ func TestListTables(t *testing.T) {
 
 	d := newDatabase(t)
 
-	list, err := d.ListTables(nil)
+	list, err := sqlapi.ListTables(d.DB(), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")

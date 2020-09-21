@@ -20,7 +20,6 @@ type Database interface {
 	Dialect() dialect.Dialect
 	Logger() Logger
 	Wrapper() interface{}
-	ListTables(re *regexp.Regexp) (collection.StringList, error)
 }
 
 // database wraps a *sql.DB with a dialect and (optionally) a logger.
@@ -81,10 +80,10 @@ func (database *database) Wrapper() interface{} {
 
 // ListTables gets all the table names in the database/schema.
 // The regular expression supplies a filter: only names that match are returned.
-// If the regular expression is nil, all tables names are returned.
-func (database *database) ListTables(re *regexp.Regexp) (collection.StringList, error) {
+// If the regular expression is nil, all table names are returned.
+func ListTables(ex Execer, re *regexp.Regexp) (collection.StringList, error) {
 	ss := make(collection.StringList, 0)
-	rows, err := database.db.QueryContext(context.Background(), database.dialect.ShowTables())
+	rows, err := ex.QueryContext(context.Background(), ex.Dialect().ShowTables())
 	if err != nil {
 		return nil, err
 	}

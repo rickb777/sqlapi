@@ -21,7 +21,6 @@ func ReplaceTableName(tbl pgxapi.Table, query string) string {
 func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
-	database := tbl.Database()
 
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
@@ -33,7 +32,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return database.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -43,7 +42,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		}
 	}
 
-	return database.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -67,7 +66,7 @@ func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.Que
 // The caller must call rows.Close() on the result.
 func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
@@ -83,7 +82,7 @@ func Exec(tbl pgxapi.Table, req require.Requirement, query string, args ...inter
 }
 
 func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) {
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(query, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
 	if err != nil {
@@ -167,7 +166,7 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	if err != nil {
@@ -192,7 +191,7 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	if err != nil {
@@ -218,7 +217,7 @@ func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	if err != nil {

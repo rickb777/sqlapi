@@ -19,7 +19,7 @@ func SliceStringList(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanStringList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanStringList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanStringList processes result rows to extract a list of strings.
@@ -47,7 +47,7 @@ func SliceStringPtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanStringPtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanStringPtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanStringPtrList processes result rows to extract a list of strings.
@@ -87,7 +87,7 @@ func SliceIntList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanIntList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanIntList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanIntList processes result rows to extract a list of ints.
@@ -115,7 +115,7 @@ func SliceIntPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanIntPtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanIntPtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanIntPtrList processes result rows to extract a list of ints.
@@ -155,7 +155,7 @@ func SliceInt64List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt64List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt64List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt64List processes result rows to extract a list of int64s.
@@ -183,7 +183,7 @@ func SliceInt64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt64PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt64PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt64PtrList processes result rows to extract a list of int64s.
@@ -223,7 +223,7 @@ func SliceInt32List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt32List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt32List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt32List processes result rows to extract a list of int32s.
@@ -251,7 +251,7 @@ func SliceInt32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt32PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt32PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt32PtrList processes result rows to extract a list of int32s.
@@ -291,7 +291,7 @@ func SliceInt16List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt16List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt16List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt16List processes result rows to extract a list of int16s.
@@ -319,7 +319,7 @@ func SliceInt16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt16PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt16PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt16PtrList processes result rows to extract a list of int16s.
@@ -359,7 +359,7 @@ func SliceInt8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt8List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt8List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt8List processes result rows to extract a list of int8s.
@@ -387,7 +387,7 @@ func SliceInt8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string,
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanInt8PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanInt8PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanInt8PtrList processes result rows to extract a list of int8s.
@@ -427,7 +427,7 @@ func SliceUintList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUintList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUintList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUintList processes result rows to extract a list of uints.
@@ -455,7 +455,7 @@ func SliceUintPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string,
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUintPtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUintPtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUintPtrList processes result rows to extract a list of uints.
@@ -495,7 +495,7 @@ func SliceUint64List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint64List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint64List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint64List processes result rows to extract a list of uint64s.
@@ -523,7 +523,7 @@ func SliceUint64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint64PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint64PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint64PtrList processes result rows to extract a list of uint64s.
@@ -563,7 +563,7 @@ func SliceUint32List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint32List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint32List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint32List processes result rows to extract a list of uint32s.
@@ -591,7 +591,7 @@ func SliceUint32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint32PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint32PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint32PtrList processes result rows to extract a list of uint32s.
@@ -631,7 +631,7 @@ func SliceUint16List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint16List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint16List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint16List processes result rows to extract a list of uint16s.
@@ -659,7 +659,7 @@ func SliceUint16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint16PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint16PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint16PtrList processes result rows to extract a list of uint16s.
@@ -699,7 +699,7 @@ func SliceUint8List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint8List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint8List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint8List processes result rows to extract a list of uint8s.
@@ -727,7 +727,7 @@ func SliceUint8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanUint8PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanUint8PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanUint8PtrList processes result rows to extract a list of uint8s.
@@ -767,7 +767,7 @@ func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanFloat64List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanFloat64List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanFloat64List processes result rows to extract a list of float64s.
@@ -795,7 +795,7 @@ func SliceFloat64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname stri
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanFloat64PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanFloat64PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanFloat64PtrList processes result rows to extract a list of float64s.
@@ -835,7 +835,7 @@ func SliceFloat32List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanFloat32List(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanFloat32List(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanFloat32List processes result rows to extract a list of float32s.
@@ -863,7 +863,7 @@ func SliceFloat32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname stri
 		return nil, err
 	}
 	defer rows.Close()
-	return doScanFloat32PtrList(req, rows, tbl.Database().Logger().LogIfError)
+	return doScanFloat32PtrList(req, rows, tbl.Logger().LogIfError)
 }
 
 // doScanFloat32PtrList processes result rows to extract a list of float32s.

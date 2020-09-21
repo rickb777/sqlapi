@@ -22,7 +22,6 @@ func ReplaceTableName(tbl sqlapi.Table, query string) string {
 func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
-	database := tbl.Database()
 
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
@@ -34,7 +33,7 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return database.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -44,7 +43,7 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 		}
 	}
 
-	return database.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -68,7 +67,7 @@ func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.Que
 // The caller must call rows.Close() on the result.
 func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
 	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
@@ -84,7 +83,7 @@ func Exec(tbl sqlapi.Table, req require.Requirement, query string, args ...inter
 }
 
 func doExec(tbl sqlapi.Table, query string, args ...interface{}) (int64, error) {
-	lgr := tbl.Database().Logger()
+	lgr := tbl.Logger()
 	lgr.LogQuery(query, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
 	if err != nil {
@@ -178,7 +177,7 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Database().Logger()
+			lgr := tbl.Logger()
 			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
@@ -202,7 +201,7 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Database().Logger()
+			lgr := tbl.Logger()
 			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
@@ -226,7 +225,7 @@ func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Database().Logger()
+			lgr := tbl.Logger()
 			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
