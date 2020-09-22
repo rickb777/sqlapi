@@ -10,6 +10,8 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 )
 
+// WrapDB wraps a *pgx.ConnPool as SqlDB.
+// The logger is optional and can be nil.
 func WrapDB(pool *pgx.ConnPool, lgr pgx.Logger) SqlDB {
 	if lgr == nil {
 		return &shim{ex: pool, isTx: false}
@@ -47,26 +49,29 @@ func (sh *shim) QueryContext(ctx context.Context, query string, args ...interfac
 	return sh.QueryExRaw(ctx, qr, nil, args...)
 }
 
+func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	return sh.QueryRowExRaw(ctx, qr, nil, args...)
+}
+
 func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (SqlRows, error) {
-	rows, err := sh.ex.QueryEx(defaultCtx(ctx), query, options, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	rows, err := sh.ex.QueryEx(defaultCtx(ctx), qr, options, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s %v", query, args)
 	}
 	return rows, nil
 }
 
-func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	return sh.QueryRowExRaw(ctx, qr, nil, args...)
-}
-
 func (sh *shim) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) SqlRow {
-	return sh.ex.QueryRowEx(defaultCtx(ctx), query, options, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	return sh.ex.QueryRowEx(defaultCtx(ctx), qr, options, args...)
 }
 
 func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
-	row := sh.ex.QueryRowEx(defaultCtx(ctx), q2, nil, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(q2, nil)
+	row := sh.ex.QueryRowEx(defaultCtx(ctx), qr, nil, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
@@ -76,7 +81,8 @@ func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...int
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	tag, err := sh.ex.ExecEx(defaultCtx(ctx), query, nil, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	tag, err := sh.ex.ExecEx(defaultCtx(ctx), qr, nil, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -84,7 +90,8 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 }
 
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
-	ps, err := sh.ex.PrepareEx(defaultCtx(ctx), name, query, nil)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	ps, err := sh.ex.PrepareEx(defaultCtx(ctx), name, qr, nil)
 	return ps, errors.Wrapf(err, "%s %s", name, query)
 }
 

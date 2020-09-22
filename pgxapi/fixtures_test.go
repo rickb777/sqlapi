@@ -10,28 +10,28 @@ import (
 	"github.com/onsi/gomega"
 )
 
-func insertFixtures(t *testing.T, d Database) (aid1, aid2, aid3, aid4 int64) {
+func insertFixtures(t *testing.T, e Execer) (aid1, aid2, aid3, aid4 int64) {
 	g := gomega.NewGomegaWithT(t)
 
-	for _, s := range createTablesSql(d.Dialect()) {
-		_, err := d.DB().ExecContext(context.Background(), s)
+	for _, s := range createTablesSql(e.Dialect()) {
+		_, err := e.ExecContext(context.Background(), s)
 		g.Expect(err).To(gomega.BeNil())
 	}
 
-	aid1 = insertOne(g, d, address1)
-	aid2 = insertOne(g, d, address2)
-	aid3 = insertOne(g, d, address3)
-	aid4 = insertOne(g, d, address4)
+	aid1 = insertOne(g, e, address1)
+	aid2 = insertOne(g, e, address2)
+	aid3 = insertOne(g, e, address3)
+	aid4 = insertOne(g, e, address4)
 
-	insertOne(g, d, fmt.Sprintf(person1a, aid1))
-	insertOne(g, d, fmt.Sprintf(person1b, aid1))
-	insertOne(g, d, fmt.Sprintf(person2a, aid2))
+	insertOne(g, e, fmt.Sprintf(person1a, aid1))
+	insertOne(g, e, fmt.Sprintf(person1b, aid1))
+	insertOne(g, e, fmt.Sprintf(person2a, aid2))
 
 	return aid1, aid2, aid3, aid4
 }
 
-func insertOne(g *gomega.GomegaWithT, d Database, query string) int64 {
-	id, err := d.DB().InsertContext(context.Background(), "id", query)
+func insertOne(g *gomega.GomegaWithT, e Execer, query string) int64 {
+	id, err := e.InsertContext(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 )
 
+// WrapDB wraps a *sql.DB as SqlDB
 func WrapDB(ex *sql.DB, lgr Logger, di dialect.Dialect) SqlDB {
 	return &shim{ex: ex, di: di, lgr: lgr, isTx: false}
 }
@@ -41,11 +42,13 @@ var _ SqlTx = new(shim)
 //-------------------------------------------------------------------------------------------------
 
 func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	return sh.ex.QueryContext(defaultCtx(ctx), query, args...)
+	qr := sh.di.ReplacePlaceholders(query, nil)
+	return sh.ex.QueryContext(defaultCtx(ctx), qr, args...)
 }
 
 func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
-	return sh.ex.QueryRowContext(defaultCtx(ctx), query, args...)
+	qr := sh.di.ReplacePlaceholders(query, nil)
+	return sh.ex.QueryRowContext(defaultCtx(ctx), qr, args...)
 }
 
 func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
@@ -66,7 +69,8 @@ func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...in
 
 func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
-	row := sh.ex.QueryRowContext(defaultCtx(ctx), q2, args...)
+	qr := sh.di.ReplacePlaceholders(q2, nil)
+	row := sh.ex.QueryRowContext(defaultCtx(ctx), qr, args...)
 	var id int64
 	err := row.Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
@@ -76,7 +80,8 @@ func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, arg
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	res, err := sh.ex.ExecContext(defaultCtx(ctx), query, args...)
+	qr := sh.di.ReplacePlaceholders(query, nil)
+	res, err := sh.ex.ExecContext(defaultCtx(ctx), qr, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "%s %v", query, args)
 	}
@@ -85,7 +90,8 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 }
 
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (SqlStmt, error) {
-	ps, err := sh.ex.PrepareContext(defaultCtx(ctx), query)
+	qr := sh.di.ReplacePlaceholders(query, nil)
+	ps, err := sh.ex.PrepareContext(defaultCtx(ctx), qr)
 	return ps, errors.Wrapf(err, "%s %s", name, query)
 }
 

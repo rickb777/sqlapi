@@ -6,62 +6,9 @@ import (
 	"regexp"
 
 	"github.com/rickb777/collection"
-	"github.com/rickb777/sqlapi/dialect"
 )
 
 type DBStats = sql.DBStats
-
-// Database typically wraps a *pgx.ConnPool with a dialect and (optionally) a logger.
-// It's safe for concurrent use by multiple goroutines.
-// See NewDatabase.
-type Database interface {
-	DB() SqlDB
-	Dialect() dialect.Dialect
-	Logger() Logger
-	Wrapper() interface{}
-}
-
-// database wraps a *sql.DB with a dialect and (optionally) a logger.
-// It's safe for concurrent use by multiple goroutines.
-type database struct {
-	db      SqlDB
-	dialect dialect.Dialect
-	wrapper interface{}
-}
-
-// NewDatabase creates a new database handler, which wraps the core *sql.DB along with
-// the appropriate dialect.
-//
-// The wrapper holds some associated data your application needs for this database, if any.
-// Otherwise this should be nil. As with the logger, it cannot be changed after construction.
-func NewDatabase(db SqlDB, dialect dialect.Dialect, wrapper interface{}) Database {
-	return &database{
-		db:      db,
-		dialect: dialect,
-		wrapper: wrapper,
-	}
-}
-
-// DB gets the Execer, which is a *sql.DB (except during testing using mocks).
-func (database *database) DB() SqlDB {
-	return database.db
-}
-
-// Dialect gets the current SQL dialect. This choice is determined when the database is
-// constructed and doesn't subsequently change.
-func (database *database) Dialect() dialect.Dialect {
-	return database.dialect
-}
-
-// Logger gets the trace logger.
-func (database *database) Logger() Logger {
-	return database.db.Logger()
-}
-
-// Wrapper gets whatever structure is present, as needed.
-func (database *database) Wrapper() interface{} {
-	return database.wrapper
-}
 
 //-------------------------------------------------------------------------------------------------
 

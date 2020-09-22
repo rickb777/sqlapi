@@ -177,8 +177,7 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Logger()
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}
@@ -201,8 +200,7 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Logger()
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}
@@ -225,8 +223,7 @@ func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			lgr := tbl.Logger()
-			return nil, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
 		}
 		index[k] = v
 	}

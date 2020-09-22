@@ -43,10 +43,6 @@ func (lgr *toggleLogger) LogT(level pgx.LogLevel, msg string, startTime *time.Ti
 	}
 }
 
-func (lgr *toggleLogger) LogQuery(query string, args ...interface{}) {
-	// no-op: pgx handles this
-}
-
 // LogIfError writes error info to the logger, if both the logger and the error are non-nil.
 // It returns the error.
 func (lgr *toggleLogger) LogIfError(err error) error {
@@ -74,52 +70,6 @@ func (lgr *toggleLogger) loggingEnabled() bool {
 	return atomic.LoadInt32(&lgr.enabled) != 0
 }
 
-//// LogQuery writes query info to the logger, if it is not nil.
-//func (database *database) LogQuery(query string, args ...interface{}) {
-//	if database.loggingEnabled() {
-//		query = strings.TrimSpace(query)
-//		if len(args) > 0 {
-//			ss := make([]interface{}, len(args))
-//			for i, v := range args {
-//				ss[i] = derefArg(v)
-//			}
-//			database.logger.Printf("%s %v\n", query, ss)
-//		} else {
-//			database.logger.Println(query)
-//		}
-//	}
-//}
-
-//func derefArg(arg interface{}) interface{} {
-//	switch v := arg.(type) {
-//	case *int:
-//		return *v
-//	case *int8:
-//		return *v
-//	case *int16:
-//		return *v
-//	case *int32:
-//		return *v
-//	case *int64:
-//		return *v
-//	case *uint:
-//		return *v
-//	case *uint8:
-//		return *v
-//	case *uint16:
-//		return *v
-//	case *uint32:
-//		return *v
-//	case *uint64:
-//		return *v
-//	case *float32:
-//		return *v
-//	case *float64:
-//		return *v
-//	case *bool:
-//		return *v
-//	case *string:
-//		return *v
-//	}
-//	return arg
-//}
+func (lgr *toggleLogger) LogQuery(query string, args ...interface{}) {
+	// no-op: pgx handles this
+}

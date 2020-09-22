@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test sqlapi" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+    <module name="sqlapi" />
+    <working_directory value="$PROJECT_DIR$" />
+    <framework value="gotest" />
+    <kind value="DIRECTORY" />
+    <package value="github.com/rickb777/sqlapi" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

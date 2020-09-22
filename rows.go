@@ -14,10 +14,20 @@ type SqlRow interface {
 // SqlRows is a precis of *sql.Rows.
 type SqlRows interface {
 	SqlRow
+
+	// Next prepares the next row for reading. It returns true if there is another
+	// row and false if no more rows are available. It automatically closes rows
+	// when all rows are read.
 	Next() bool
+
 	Columns() ([]string, error)
+
 	ColumnTypes() ([]*sql.ColumnType, error)
+
+	// Close closes the rows, making the connection ready for use again. It is safe
+	// to call Close after rows is already closed.
 	Close() error
+
 	Err() error
 }
 

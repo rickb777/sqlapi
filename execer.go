@@ -9,6 +9,18 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 )
 
+// Logger provides the specialised logging operations within this API.
+type Logger interface {
+	Log(format string, v ...interface{})
+	LogT(msg string, startTime *time.Time, data ...interface{})
+	LogQuery(query string, args ...interface{})
+	LogIfError(err error) error
+	LogError(err error) error
+	TraceLogging(on bool)
+	SetOutput(out io.Writer)
+}
+
+// Getter provides the core methods for reading information from databases.
 type Getter interface {
 	// QueryContext executes a query that returns rows, typically a SELECT.
 	// The arguments are for any placeholder parameters in the query.
@@ -24,16 +36,6 @@ type Getter interface {
 	//
 	// Placeholders in the SQL are automatically replaced with numbered placeholders.
 	QueryRowContext(ctx context.Context, query string, arguments ...interface{}) SqlRow
-}
-
-type Logger interface {
-	Log(format string, v ...interface{})
-	LogT(msg string, startTime *time.Time, data ...interface{})
-	LogQuery(query string, args ...interface{})
-	LogIfError(err error) error
-	LogError(err error) error
-	TraceLogging(on bool)
-	SetOutput(out io.Writer)
 }
 
 // Execer is a precis of *sql.DB and *sql.Tx (see database/sql).

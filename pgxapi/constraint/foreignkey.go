@@ -2,6 +2,7 @@ package constraint
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi/pgxapi"

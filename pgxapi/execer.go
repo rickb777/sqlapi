@@ -9,6 +9,17 @@ import (
 	"github.com/rickb777/sqlapi/dialect"
 )
 
+// Logger provides the specialised logging operations within this API.
+type Logger interface {
+	pgx.Logger
+	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
+	LogQuery(query string, args ...interface{})
+	LogIfError(err error) error
+	LogError(err error) error
+	TraceLogging(on bool)
+}
+
+// Getter provides the core methods for reading information from databases.
 type Getter interface {
 	// QueryContext executes a query that returns rows, typically a SELECT.
 	// The arguments are for any placeholder parameters in the query.
@@ -34,18 +45,10 @@ type Getter interface {
 	QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, arguments ...interface{}) SqlRow
 }
 
+// Batcher provides additional methods for Postgresql batch operations.
 type Batcher interface {
 	// BeginBatch exposes the pgx batch operations.
 	BeginBatch() *pgx.Batch
-}
-
-type Logger interface {
-	pgx.Logger
-	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
-	LogQuery(query string, args ...interface{})
-	LogIfError(err error) error
-	LogError(err error) error
-	TraceLogging(on bool)
 }
 
 // Execer is a precis of *pgx.ConnPool and *pgx.Tx.
@@ -91,6 +94,9 @@ type SqlDB interface {
 	// Transact handles a transaction according to some function. If the function completes
 	// without error, the transaction will be committed automatically. If there is an error
 	// or a panic, the transaction will be rolled back automatically.
+	//
+	// The function fn should avoid using the original SqlDB; this is easily achieved by
+	// using a named function instead of an anonymous closure.
 	Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) error
 
 	// PingContext tests connectivity to the database server.

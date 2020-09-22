@@ -34,14 +34,14 @@ var _ sqlapi.Table = &RecordTable{}
 // NewRecordTable returns a new table instance.
 // If a blank table name is supplied, the default name "records" will be used instead.
 // The request context is initialised with the background.
-func NewRecordTable(name string, d sqlapi.Database) RecordTable {
+func NewRecordTable(name string, d sqlapi.SqlDB) RecordTable {
 	if name == "" {
 		name = "records"
 	}
 	var constraints constraint.Constraints
 	return RecordTable{
 		name:        sqlapi.TableName{Name: name},
-		db:          d.DB(),
+		db:          d,
 		constraints: constraints,
 		ctx:         context.Background(),
 		pk:          "id",

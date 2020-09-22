@@ -36,14 +36,13 @@ func TestLoggingOnOff(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
+	tl := sqlapi.NewLogger(logger)
 
-	d := sqlapi.NewDatabase(nil, dialect.Sqlite, logger, nil)
-	lgr := d.Logger()
-	lgr.LogQuery("one")
-	lgr.TraceLogging(false)
-	lgr.LogQuery("two")
-	lgr.TraceLogging(true)
-	lgr.LogQuery("three")
+	tl.LogQuery("one")
+	tl.TraceLogging(false)
+	tl.LogQuery("two")
+	tl.TraceLogging(true)
+	tl.LogQuery("three")
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.one\nX.three\n"))
@@ -54,16 +53,15 @@ func TestLoggingError(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	logger := log.New(buf, "X.", 0)
+	tl := sqlapi.NewLogger(logger)
 
-	d := sqlapi.NewDatabase(nil, dialect.Sqlite, logger, nil)
-	lgr := d.Logger()
-	lgr.LogError(fmt.Errorf("one"))
-	lgr.TraceLogging(false)
-	lgr.LogError(fmt.Errorf("two"))
-	lgr.TraceLogging(true)
-	lgr.LogError(fmt.Errorf("three"))
-	lgr.LogIfError(nil)
-	lgr.LogIfError(fmt.Errorf("four"))
+	tl.LogError(fmt.Errorf("one"))
+	tl.TraceLogging(false)
+	tl.LogError(fmt.Errorf("two"))
+	tl.TraceLogging(true)
+	tl.LogError(fmt.Errorf("three"))
+	tl.LogIfError(nil)
+	tl.LogIfError(fmt.Errorf("four"))
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error: one\nX.Error: three\nX.Error: four\n"))
@@ -74,7 +72,7 @@ func TestListTables(t *testing.T) {
 
 	d := newDatabase(t)
 
-	list, err := sqlapi.ListTables(d.DB(), nil)
+	list, err := sqlapi.ListTables(d, nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")
@@ -92,7 +90,7 @@ func TestQueryRowContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	row := d.DB().QueryRowContext(context.Background(), q, aid2)
+	row := d.QueryRowContext(context.Background(), q, aid2)
 
 	var xlines string
 	err := row.Scan(&xlines)
@@ -108,7 +106,7 @@ func TestQueryContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	rows, err := d.DB().QueryContext(context.Background(), q, aid2)
+	rows, err := d.QueryContext(context.Background(), q, aid2)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(rows.Next()).To(BeTrue())
 
@@ -128,7 +126,7 @@ func TestSingleConnQueryContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	e2 := d.DB().SingleConn(nil, func(ex sqlapi.Execer) error {
+	e2 := d.SingleConn(nil, func(ex sqlapi.Execer) error {
 		rows, err := ex.QueryContext(context.Background(), q, aid2)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(rows.Next()).To(BeTrue())
@@ -153,7 +151,7 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
-	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := d.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
 		for i := 1; i <= 10; i++ {
 			_, e2 := tx.InsertContext(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
 			if e2 != nil {
@@ -164,7 +162,7 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -181,13 +179,13 @@ func TestTransactCommitUsingExec(t *testing.T) {
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := d.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
 		_, e2 := tx.ExecContext(ctx, q, aid2, aid3)
 		return e2
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -204,14 +202,14 @@ func TestTransactRollback(t *testing.T) {
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := d.DB().Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := d.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
 		tx.ExecContext(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(Equal("Bang"))
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -270,14 +268,14 @@ func connect() (*sql.DB, dialect.Dialect) {
 	return db, di
 }
 
-func newDatabase(t *testing.T) sqlapi.Database {
+func newDatabase(t *testing.T) sqlapi.SqlDB {
 	var lgr *log.Logger
 	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
 	if ok && strings.ToLower(goVerbose) == "true" {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.NewDatabase(sqlapi.WrapDB(gdb, sqlapi.NewLogger(lgr), gdi), gdi, lgr, nil)
+	return sqlapi.WrapDB(gdb, sqlapi.NewLogger(lgr), gdi)
 }
 
 func cleanup(db io.Closer) {

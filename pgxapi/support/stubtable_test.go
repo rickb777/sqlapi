@@ -7,20 +7,17 @@ import (
 )
 
 type StubTable struct {
-	name     pgxapi.TableName
-	dialect  dialect.Dialect
-	database *StubDatabase
+	name    pgxapi.TableName
+	dialect dialect.Dialect
+	execer  StubExecer
+	logger  pgxapi.Logger
 }
 
 // Type conformance checks
 var _ pgxapi.Table = &StubTable{}
 
-func (tbl StubTable) Database() pgxapi.Database {
-	return tbl.database
-}
-
 func (tbl StubTable) Logger() pgxapi.Logger {
-	return tbl.database.Logger()
+	return tbl.logger
 }
 
 func (tbl StubTable) Ctx() context.Context {
@@ -40,7 +37,7 @@ func (tbl StubTable) DB() pgxapi.SqlDB {
 }
 
 func (tbl StubTable) Execer() pgxapi.Execer {
-	return tbl.database.execer
+	return tbl.execer
 }
 
 func (tbl StubTable) Tx() pgxapi.SqlTx {

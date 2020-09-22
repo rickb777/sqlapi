@@ -75,16 +75,16 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 	return db, di
 }
 
-func newDatabase(t *testing.T) sqlapi.Database {
+func newDatabase(t *testing.T) sqlapi.SqlDB {
 	db, di := connect(t)
 
-	var lgr *log.Logger
+	var lgr sqlapi.StdLog = &stubLogger{}
 	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
 	if ok && strings.ToLower(goVerbose) == "true" {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.NewDatabase(sqlapi.WrapDB(db, sqlapi.NewLogger(lgr), di), di, lgr, nil)
+	return sqlapi.WrapDB(db, sqlapi.NewLogger(lgr), di)
 }
 
 func cleanup(db sqlapi.Execer) {
@@ -100,7 +100,7 @@ func cleanup(db sqlapi.Execer) {
 func TestCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	cc0 := constraint.CheckConstraint{
 		Expression: "role < 3",
@@ -115,7 +115,7 @@ func TestCheckConstraint(t *testing.T) {
 func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -132,7 +132,7 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -149,7 +149,7 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 func TestIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	aid1, aid2, aid3, aid4 := insertFixtures(t, d)
 
@@ -198,4 +198,14 @@ func TestFkConstraintOfField(t *testing.T) {
 		Update: "restrict",
 		Delete: "cascade",
 	}))
+}
+
+//-------------------------------------------------------------------------------------------------
+
+type stubLogger struct {
+	Logged []string
+}
+
+func (r *stubLogger) Printf(format string, v ...interface{}) {
+	r.Logged = append(r.Logged, fmt.Sprintf(format, v...))
 }

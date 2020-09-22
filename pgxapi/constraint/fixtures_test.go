@@ -9,11 +9,11 @@ import (
 	"github.com/rickb777/sqlapi/pgxapi"
 )
 
-func insertFixtures(t *testing.T, d pgxapi.Database) (aid1, aid2, aid3, aid4 int64) {
+func insertFixtures(t *testing.T, d pgxapi.Execer) (aid1, aid2, aid3, aid4 int64) {
 	g := gomega.NewGomegaWithT(t)
 
 	for _, s := range createTablesPostgresql {
-		_, err := d.DB().ExecContext(context.Background(), s)
+		_, err := d.ExecContext(context.Background(), s)
 		g.Expect(err).To(gomega.BeNil())
 	}
 
@@ -29,8 +29,8 @@ func insertFixtures(t *testing.T, d pgxapi.Database) (aid1, aid2, aid3, aid4 int
 	return aid1, aid2, aid3, aid4
 }
 
-func insertOne(g *gomega.GomegaWithT, d pgxapi.Database, query string) int64 {
-	id, err := d.DB().InsertContext(context.Background(), "id", query)
+func insertOne(g *gomega.GomegaWithT, d pgxapi.Execer, query string) int64 {
+	id, err := d.InsertContext(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }

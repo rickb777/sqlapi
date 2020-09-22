@@ -19,7 +19,6 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/log/testingadapter"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 )
 
@@ -31,15 +30,16 @@ func TestLoggingOnOff(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
-	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
+	tl := NewLogger(logger)
 
-	d := NewDatabase(sh, dialect.Sqlite, nil)
-	lgr := d.Logger()
-	lgr.LogError(errors.New("one"))
-	lgr.LogError(errors.New("two"))
+	tl.Log(pgx.LogLevelInfo, "one", nil)
+	tl.TraceLogging(false)
+	tl.Log(pgx.LogLevelInfo, "two", nil)
+	tl.TraceLogging(true)
+	tl.Log(pgx.LogLevelInfo, "three", nil)
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:two]\n"))
+	g.Expect(s).To(Equal("X.one []\nX.three []\n"))
 }
 
 func TestLoggingError(t *testing.T) {
@@ -47,16 +47,18 @@ func TestLoggingError(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
-	sh := &shim{lgr: &toggleLogger{lgr: logger, enabled: 1}}
+	tl := &toggleLogger{lgr: logger, enabled: 1}
 
-	d := NewDatabase(sh, dialect.Sqlite, nil)
-	lgr := d.Logger()
-	lgr.LogIfError(nil)
-	lgr.LogIfError(fmt.Errorf("four"))
-	lgr.LogIfError(nil)
+	tl.LogError(fmt.Errorf("one"))
+	tl.TraceLogging(false)
+	tl.LogError(fmt.Errorf("two"))
+	tl.TraceLogging(true)
+	tl.LogError(fmt.Errorf("three"))
+	tl.LogIfError(nil)
+	tl.LogIfError(fmt.Errorf("four"))
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.Error [error:four]\n"))
+	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:three]\nX.Error [error:four]\n"))
 }
 
 func TestListTables(t *testing.T) {
@@ -64,7 +66,7 @@ func TestListTables(t *testing.T) {
 
 	d := newDatabase(t)
 
-	list, err := ListTables(d.DB(), nil)
+	list, err := ListTables(d, nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")
@@ -82,7 +84,7 @@ func TestQueryRowContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	row := d.DB().QueryRowContext(context.Background(), q, aid2)
+	row := d.QueryRowContext(context.Background(), q, aid2)
 
 	var xlines string
 	err := row.Scan(&xlines)
@@ -98,7 +100,7 @@ func TestQueryContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	rows, err := d.DB().QueryContext(context.Background(), q, aid2)
+	rows, err := d.QueryContext(context.Background(), q, aid2)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(rows.Next()).To(BeTrue())
 
@@ -118,7 +120,7 @@ func TestSingleConnQueryContext(t *testing.T) {
 	_, aid2, _, _ := insertFixtures(t, d)
 
 	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	e2 := d.DB().SingleConn(nil, func(ex Execer) error {
+	e2 := d.SingleConn(nil, func(ex Execer) error {
 		rows, err := ex.QueryContext(context.Background(), q, aid2)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(rows.Next()).To(BeTrue())
@@ -142,19 +144,24 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	ctx := context.Background()
 	insertFixtures(t, d)
 
-	err := d.DB().Transact(ctx, nil, func(tx SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
-		_, e2 := tx.InsertContext(ctx, "id", q, "5 Pantagon Vale", "FX1 5EE")
-		return e2
+	q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
+	err := d.Transact(ctx, nil, func(tx SqlTx) error {
+		for i := 1; i <= 10; i++ {
+			_, e2 := tx.InsertContext(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
+			if e2 != nil {
+				return e2
+			}
+		}
+		return nil
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(count).To(Equal(5))
+	g.Expect(count).To(Equal(14))
 }
 
 func TestTransactCommitUsingExec(t *testing.T) {
@@ -165,14 +172,14 @@ func TestTransactCommitUsingExec(t *testing.T) {
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
-	err := d.DB().Transact(ctx, nil, func(tx SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	err := d.Transact(ctx, nil, func(tx SqlTx) error {
 		_, e2 := tx.ExecContext(ctx, q, aid2, aid3)
 		return e2
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -188,15 +195,15 @@ func TestTransactRollback(t *testing.T) {
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, d)
 
-	err := d.DB().Transact(ctx, nil, func(tx SqlTx) error {
-		q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	err := d.Transact(ctx, nil, func(tx SqlTx) error {
 		tx.ExecContext(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(Equal("Bang"))
 
-	row := d.DB().QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -206,16 +213,8 @@ func TestTransactRollback(t *testing.T) {
 
 //-------------------------------------------------------------------------------------------------
 
-func newDatabase(t *testing.T) Database {
-	if db == nil {
-		return nil
-	}
-
-	d := NewDatabase(db, dialect.Postgres, nil)
-	if !testing.Verbose() {
-		d.Logger().TraceLogging(false)
-	}
-	return d
+func newDatabase(t *testing.T) SqlDB {
+	return db
 }
 
 type simpleLogger struct{}

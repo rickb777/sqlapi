@@ -4,7 +4,6 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/log/testingadapter"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/pgxapi/constraint"
 	"github.com/rickb777/sqlapi/pgxapi/vanilla"
@@ -32,17 +31,9 @@ func connect(t *testing.T) pgxapi.SqlDB {
 	return db
 }
 
-func newDatabase(t *testing.T) pgxapi.Database {
+func newDatabase(t *testing.T) pgxapi.SqlDB {
 	db := connect(t)
-	if db == nil {
-		return nil
-	}
-
-	d := pgxapi.NewDatabase(db, dialect.Postgres, nil)
-	if !testing.Verbose() {
-		d.Logger().TraceLogging(false)
-	}
-	return d
+	return db
 }
 
 func cleanup(db pgxapi.SqlDB) {
@@ -56,7 +47,7 @@ func cleanup(db pgxapi.SqlDB) {
 func TestPgxCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	cc0 := constraint.CheckConstraint{
 		Expression: "role < 3",
@@ -71,7 +62,7 @@ func TestPgxCheckConstraint(t *testing.T) {
 func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -88,7 +79,7 @@ func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
@@ -105,7 +96,7 @@ func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T)
 func TestPgxIdsUsedAsForeignKeys(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
-	defer cleanup(d.DB())
+	defer cleanup(d)
 
 	aid1, aid2, aid3, aid4 := insertFixtures(t, d)
 

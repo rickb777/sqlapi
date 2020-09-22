@@ -2,23 +2,10 @@ package sqlapi
 
 import (
 	"io"
-	"log"
 	"strings"
 	"sync/atomic"
 	"time"
 )
-
-type StdLog interface {
-	Printf(format string, v ...interface{})
-}
-
-// outable interface for loggers that allow setting the output writer
-type outable interface {
-	SetOutput(out io.Writer)
-}
-
-var _ StdLog = new(log.Logger)
-var _ outable = new(log.Logger)
 
 type toggleLogger struct {
 	lgr     StdLog
@@ -66,14 +53,6 @@ func (lgr *toggleLogger) LogError(err error) error {
 	return err
 }
 
-func (lgr *toggleLogger) SetOutput(w io.Writer) {
-	if lgr.lgr != nil {
-		if o, ok := lgr.lgr.(outable); ok {
-			o.SetOutput(w)
-		}
-	}
-}
-
 func (lgr *toggleLogger) TraceLogging(on bool) {
 	if on && lgr.lgr != nil {
 		atomic.StoreInt32(&lgr.enabled, 1)
@@ -98,6 +77,14 @@ func (lgr *toggleLogger) LogQuery(query string, args ...interface{}) {
 			lgr.lgr.Printf("%s %v\n", query, ss)
 		} else {
 			lgr.lgr.Printf("%s\n", query)
+		}
+	}
+}
+
+func (lgr *toggleLogger) SetOutput(w io.Writer) {
+	if lgr.lgr != nil {
+		if o, ok := lgr.lgr.(outable); ok {
+			o.SetOutput(w)
 		}
 	}
 }
