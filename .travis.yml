@@ -17,6 +17,7 @@ services:
 
 before_install:
   - mysql -e 'CREATE DATABASE test;'
+  - psql -c 'CREATE DATABASE test;' -U postgres
 
 install:
   - go install github.com/mattn/goveralls
