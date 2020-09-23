@@ -217,6 +217,15 @@ func TestTransactRollback(t *testing.T) {
 	g.Expect(count).To(Equal(4))
 }
 
+func TestUserItemWrapper(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d1 := newDatabase(t)
+	d2 := d1.With("hello")
+	g.Expect(d1.UserItem()).To(BeNil())
+	g.Expect(d2.UserItem().(string)).To(Equal("hello"))
+}
+
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
@@ -275,7 +284,7 @@ func newDatabase(t *testing.T) sqlapi.SqlDB {
 		lgr = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
-	return sqlapi.WrapDB(gdb, sqlapi.NewLogger(lgr), gdi)
+	return sqlapi.WrapDB(gdb, gdi, sqlapi.NewLogger(lgr))
 }
 
 func cleanup(db io.Closer) {

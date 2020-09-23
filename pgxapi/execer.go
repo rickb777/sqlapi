@@ -111,6 +111,12 @@ type SqlDB interface {
 
 	// Close closes the database connection.
 	Close()
+
+	// With returns a modified SqlDB with a user-supplied item.
+	With(wrapped interface{}) SqlDB
+
+	// UserItem gets a user-supplied item associated with this DB.
+	UserItem() interface{}
 }
 
 // SqlTx is a precis of *pgx.Tx

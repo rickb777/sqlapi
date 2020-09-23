@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/rickb777/sqlapi/support/test"
+
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/stdlib"
 	_ "github.com/lib/pq"
@@ -29,73 +31,6 @@ import (
 // GO_QUOTER  - the identifier quoter (ansi, mysql, none)
 // GO_DSN     - the database DSN
 // GO_VERBOSE - true for query logging
-
-// lock is used to force the tests against a real DB to run sequentially.
-var lock = sync.Mutex{}
-
-func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
-	dbDriver, ok := os.LookupEnv("GO_DRIVER")
-	if !ok {
-		dbDriver = "sqlite3"
-	}
-
-	di := dialect.PickDialect(dbDriver)
-	quoter, ok := os.LookupEnv("GO_QUOTER")
-	if ok {
-		switch strings.ToLower(quoter) {
-		case "ansi":
-			di = di.WithQuoter(quote.AnsiQuoter)
-		case "mysql":
-			di = di.WithQuoter(quote.MySqlQuoter)
-		case "none":
-			di = di.WithQuoter(quote.NoQuoter)
-		default:
-			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
-		}
-	}
-
-	dsn, ok := os.LookupEnv("GO_DSN")
-	if !ok {
-		dsn = "file::memory:?mode=memory&cache=shared"
-	}
-
-	db, err := sql.Open(dbDriver, dsn)
-	if err != nil {
-		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
-	}
-
-	lock.Lock()
-
-	err = db.Ping()
-	if err != nil {
-		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
-	}
-
-	fmt.Printf("Successfully connected to %s.\n", dbDriver)
-	return db, di
-}
-
-func newDatabase(t *testing.T) sqlapi.SqlDB {
-	db, di := connect(t)
-
-	var lgr sqlapi.StdLog = &stubLogger{}
-	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
-	if ok && strings.ToLower(goVerbose) == "true" {
-		lgr = log.New(os.Stdout, "", log.LstdFlags)
-	}
-
-	return sqlapi.WrapDB(db, sqlapi.NewLogger(lgr), di)
-}
-
-func cleanup(db sqlapi.Execer) {
-	if db != nil {
-		if c, ok := db.(io.Closer); ok {
-			c.Close()
-		}
-		lock.Unlock()
-		os.Remove("test.db")
-	}
-}
 
 func TestCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -202,10 +137,69 @@ func TestFkConstraintOfField(t *testing.T) {
 
 //-------------------------------------------------------------------------------------------------
 
-type stubLogger struct {
-	Logged []string
+// lock is used to force the tests against a real DB to run sequentially.
+var lock = sync.Mutex{}
+
+func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
+	dbDriver, ok := os.LookupEnv("GO_DRIVER")
+	if !ok {
+		dbDriver = "sqlite3"
+	}
+
+	di := dialect.PickDialect(dbDriver)
+	quoter, ok := os.LookupEnv("GO_QUOTER")
+	if ok {
+		switch strings.ToLower(quoter) {
+		case "ansi":
+			di = di.WithQuoter(quote.AnsiQuoter)
+		case "mysql":
+			di = di.WithQuoter(quote.MySqlQuoter)
+		case "none":
+			di = di.WithQuoter(quote.NoQuoter)
+		default:
+			t.Fatalf("Warning: unrecognised quoter %q.\n", quoter)
+		}
+	}
+
+	dsn, ok := os.LookupEnv("GO_DSN")
+	if !ok {
+		dsn = "file::memory:?mode=memory&cache=shared"
+	}
+
+	db, err := sql.Open(dbDriver, dsn)
+	if err != nil {
+		t.Fatalf("Error: Unable to connect to %s (%v); test is only partially complete.\n\n", dbDriver, err)
+	}
+
+	lock.Lock()
+
+	err = db.Ping()
+	if err != nil {
+		t.Fatalf("Error: Unable to ping %s (%v); test is only partially complete.\n\n", dbDriver, err)
+	}
+
+	fmt.Printf("Successfully connected to %s.\n", dbDriver)
+	return db, di
 }
 
-func (r *stubLogger) Printf(format string, v ...interface{}) {
-	r.Logged = append(r.Logged, fmt.Sprintf(format, v...))
+func newDatabase(t *testing.T) sqlapi.SqlDB {
+	db, di := connect(t)
+
+	var lgr sqlapi.StdLog = &test.StubLogger{}
+	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
+	if ok && strings.ToLower(goVerbose) == "true" {
+		lgr = log.New(os.Stdout, "", log.LstdFlags)
+	}
+
+	return sqlapi.WrapDB(db, di, sqlapi.NewLogger(lgr))
+}
+
+func cleanup(db sqlapi.Execer) {
+	if db != nil {
+		if c, ok := db.(io.Closer); ok {
+			c.Close()
+		}
+		lock.Unlock()
+		os.Remove("test.db")
+	}
 }

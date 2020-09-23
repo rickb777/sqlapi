@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -22,8 +21,7 @@ import (
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 )
 
-var lock = sync.Mutex{}
-var db SqlDB
+var gdb SqlDB
 
 func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -211,10 +209,19 @@ func TestTransactRollback(t *testing.T) {
 	g.Expect(count).To(Equal(4))
 }
 
+func TestUserItemWrapper(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d1 := newDatabase(t)
+	d2 := d1.With("hello")
+	g.Expect(d1.UserItem()).To(BeNil())
+	g.Expect(d2.UserItem().(string)).To(Equal("hello"))
+}
+
 //-------------------------------------------------------------------------------------------------
 
 func newDatabase(t *testing.T) SqlDB {
-	return db
+	return gdb
 }
 
 type simpleLogger struct{}
@@ -246,7 +253,7 @@ func testUsingLocalDB(m *testing.M) {
 
 	pgxdb, err := pgx.NewConnPool(poolConfig)
 	if err == nil {
-		db = WrapDB(pgxdb, lgr, nil)
+		gdb = WrapDB(pgxdb, lgr, nil)
 		os.Exit(m.Run())
 	}
 
@@ -274,7 +281,7 @@ func testUsingTravisCiDB(m *testing.M) {
 
 	pgxdb, err := pgx.NewConnPool(poolConfig)
 	if err == nil {
-		db = WrapDB(pgxdb, lgr, nil)
+		gdb = WrapDB(pgxdb, lgr, nil)
 		os.Exit(m.Run())
 	}
 
@@ -325,11 +332,11 @@ func testUsingDockertest(m *testing.M) {
 	pool.MaxWait = 10 * time.Second
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	if err = pool.Retry(func() error {
-		db, err = Connect(poolConfig, nil)
+		gdb, err = Connect(poolConfig, nil)
 		if err != nil {
 			return err
 		}
-		return db.PingContext(context.Background())
+		return gdb.PingContext(context.Background())
 	}); err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}

@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/rickb777/where/quote"
-
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/where/quote"
 )
 
 // WrapDB wraps a *pgx.ConnPool as SqlDB.
@@ -38,10 +37,11 @@ var _ basicExecer = new(pgx.Tx)
 //-------------------------------------------------------------------------------------------------
 
 type shim struct {
-	ex   basicExecer
-	di   dialect.Dialect
-	lgr  Logger
-	isTx bool
+	ex      basicExecer
+	di      dialect.Dialect
+	lgr     Logger
+	isTx    bool
+	wrapped interface{}
 }
 
 var _ SqlDB = new(shim)
@@ -116,6 +116,16 @@ func (sh *shim) Dialect() dialect.Dialect {
 	return sh.di
 }
 
+func (sh *shim) With(userItem interface{}) SqlDB {
+	cp := *sh
+	cp.wrapped = userItem
+	return &cp
+}
+
+func (sh *shim) UserItem() interface{} {
+	return sh.wrapped
+}
+
 //-------------------------------------------------------------------------------------------------
 // ConnPool-specific methods
 
@@ -124,13 +134,18 @@ func (sh *shim) beginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return &shim{ex: tx, lgr: sh.lgr, isTx: true}, err
+	cp := *sh
+	cp.ex = tx
+	cp.isTx = true
+	return &cp, nil
 }
 
 // Transact takes a function and executes it within a database transaction.
 func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) (err error) {
-	if tx, isTx := sh.ex.(SqlTx); isTx {
-		return fn(tx) // nested transactions are inlined
+	if sh.isTx {
+		if tx, isTx := sh.ex.(SqlTx); isTx {
+			return fn(tx) // nested transactions are inlined
+		}
 	}
 
 	var tx SqlTx
@@ -171,8 +186,10 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	}()
 
 	ex := &shim{
-		ex:  conn,
-		lgr: sh.lgr,
+		ex:      conn,
+		lgr:     sh.lgr,
+		isTx:    false,
+		wrapped: sh.wrapped,
 	}
 	return fn(ex)
 }

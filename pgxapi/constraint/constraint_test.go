@@ -18,32 +18,6 @@ import (
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
 
-var lock = sync.Mutex{}
-
-func connect(t *testing.T) pgxapi.SqlDB {
-	lgr := testingadapter.NewLogger(t)
-	db, err := pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
-	if err != nil {
-		t.Log(err)
-		t.Skip()
-	}
-	lock.Lock()
-	return db
-}
-
-func newDatabase(t *testing.T) pgxapi.SqlDB {
-	db := connect(t)
-	return db
-}
-
-func cleanup(db pgxapi.SqlDB) {
-	if db != nil {
-		db.Close()
-		lock.Unlock()
-		db = nil
-	}
-}
-
 func TestPgxCheckConstraint(t *testing.T) {
 	g := NewGomegaWithT(t)
 	d := newDatabase(t)
@@ -145,4 +119,33 @@ func TestPgxFkConstraintOfField(t *testing.T) {
 		Update: "restrict",
 		Delete: "cascade",
 	}))
+}
+
+//-------------------------------------------------------------------------------------------------
+
+// lock is used to force the tests against a real DB to run sequentially.
+var lock = sync.Mutex{}
+
+func connect(t *testing.T) pgxapi.SqlDB {
+	lgr := testingadapter.NewLogger(t)
+	db, err := pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
+	if err != nil {
+		t.Log(err)
+		t.Skip()
+	}
+	lock.Lock()
+	return db
+}
+
+func newDatabase(t *testing.T) pgxapi.SqlDB {
+	db := connect(t)
+	return db
+}
+
+func cleanup(db pgxapi.SqlDB) {
+	if db != nil {
+		db.Close()
+		lock.Unlock()
+		db = nil
+	}
 }
