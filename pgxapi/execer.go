@@ -113,11 +113,11 @@ type SqlDB interface {
 	Close()
 }
 
-// SqlTx is a precis of *pgx.Tx except that the commit and rollback methods are unexported.
+// SqlTx is a precis of *pgx.Tx
 type SqlTx interface {
 	Execer
-	commit() error
-	rollback() error
+	Commit() error
+	Rollback() error
 }
 
 // SqlStmt is a precis of *sql.Stmt

@@ -5,18 +5,22 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/rickb777/where/quote"
+
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
 )
 
 // WrapDB wraps a *pgx.ConnPool as SqlDB.
-// The logger is optional and can be nil.
-func WrapDB(pool *pgx.ConnPool, lgr pgx.Logger) SqlDB {
-	if lgr == nil {
-		return &shim{ex: pool, isTx: false}
+// The logger is optional and can be nil, which disables logging.
+// The quoter is optional and can be nil, defaulting to no quotes.
+func WrapDB(pool *pgx.ConnPool, lgr pgx.Logger, quoter quote.Quoter) SqlDB {
+	if quoter == nil {
+		quoter = quote.NoQuoter
 	}
-	return &shim{ex: pool, lgr: &toggleLogger{lgr: lgr, enabled: 1}, isTx: false}
+	di := dialect.Postgres.WithQuoter(quoter)
+	return &shim{ex: pool, di: di, lgr: NewLogger(lgr), isTx: false}
 }
 
 type basicExecer interface {
@@ -35,7 +39,8 @@ var _ basicExecer = new(pgx.Tx)
 
 type shim struct {
 	ex   basicExecer
-	lgr  *toggleLogger
+	di   dialect.Dialect
+	lgr  Logger
 	isTx bool
 }
 
@@ -108,7 +113,7 @@ func (sh *shim) Logger() Logger {
 }
 
 func (sh *shim) Dialect() dialect.Dialect {
-	return dialect.Postgres
+	return sh.di
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -136,14 +141,14 @@ func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			_ = tx.rollback()
+			_ = tx.Rollback()
 			err = logPanicData(p, sh.lgr)
 
 		} else if err != nil {
-			_ = tx.rollback()
+			_ = tx.Rollback()
 
 		} else {
-			err = tx.commit()
+			err = tx.Commit()
 		}
 	}()
 
@@ -209,11 +214,11 @@ func (sh *shim) Stats() DBStats {
 //-------------------------------------------------------------------------------------------------
 // TX-specific methods
 
-func (sh *shim) commit() error {
+func (sh *shim) Commit() error {
 	return sh.ex.(*pgx.Tx).Commit()
 }
 
-func (sh *shim) rollback() error {
+func (sh *shim) Rollback() error {
 	return sh.ex.(*pgx.Tx).Rollback()
 }
 

@@ -1,6 +1,7 @@
 package pgxapi
 
 import (
+	"reflect"
 	"sync/atomic"
 	"time"
 
@@ -14,6 +15,11 @@ type toggleLogger struct {
 
 func NewLogger(lgr pgx.Logger) Logger {
 	if lgr == nil {
+		return &toggleLogger{}
+	}
+	// because StdLog is an interface, it might be not nil yet hold a nil pointer
+	value := reflect.ValueOf(lgr)
+	if value.Kind() == reflect.Ptr && value.IsNil() {
 		return &toggleLogger{}
 	}
 	return &toggleLogger{lgr: lgr, enabled: 1}

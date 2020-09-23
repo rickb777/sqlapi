@@ -1,4 +1,4 @@
-package support
+package test
 
 import (
 	"database/sql"
@@ -7,8 +7,10 @@ import (
 	"github.com/rickb777/sqlapi"
 )
 
+// StubRow provides a non-functioning pgxapi.SqlRow for testing purposes.
 type StubRow []interface{}
 
+// StubRow provides a non-functioning pgxapi.SqlRows for testing purposes.
 type StubRows struct {
 	I     int
 	Rows  []StubRow
@@ -23,10 +25,21 @@ func (r *StubRows) Next() bool {
 	return r.I < len(r.Rows)
 }
 
+func setValue(dest, v interface{}) {
+	vv := reflect.ValueOf(v)
+	reflect.ValueOf(dest).Elem().Set(vv)
+}
+
+func (r StubRow) Scan(dest ...interface{}) error {
+	for i, v := range r {
+		setValue(dest[i], v)
+	}
+	return nil
+}
+
 func (r *StubRows) Scan(dest ...interface{}) error {
 	for i, v := range r.Rows[r.I] {
-		vv := reflect.ValueOf(v)
-		reflect.ValueOf(dest[i]).Elem().Set(vv)
+		setValue(dest[i], v)
 	}
 	r.I++
 	return nil

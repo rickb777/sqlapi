@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/rickb777/sqlapi/support/test"
+
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
@@ -68,15 +70,14 @@ func TestSliceSql(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		stdLog := &stubLogger{}
-		tbl := StubTable{
-			name: sqlapi.TableName{
+		stdLog := &test.StubLogger{}
+		ex := &test.StubExecer{Di: c.dialect, Lgr: sqlapi.NewLogger(stdLog)}
+		tbl := sqlapi.CoreTable{
+			Nm: sqlapi.TableName{
 				Prefix: "p.",
 				Name:   "table",
 			},
-			dialect: c.dialect,
-			execer:  StubExecer{},
-			logger:  sqlapi.NewLogger(stdLog),
+			Ex: ex,
 		}
 		wh := where.Eq("room", 101).And(where.Eq("fun", true))
 
@@ -90,161 +91,148 @@ func TestSliceSql(t *testing.T) {
 func TestQuery_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Di: dialect.Postgres, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  StubExecer{Lgr: logger},
-		logger:  logger,
+		Ex: ex,
 	}
 
 	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.logged).To(ConsistOf(`SELECT foo FROM p.table WHERE x=$1 [123]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT foo FROM p.table WHERE x=$1 [123]` + "\n"))
 }
 
 func TestExec_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{StubResult: 2, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.logged).To(ConsistOf(`DELETE FROM p.table WHERE x=$1 [123]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`DELETE FROM p.table WHERE x=$1 [123]` + "\n"))
 }
 
 func TestUpdateFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{StubResult: 2, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	_, err := UpdateFields(tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.logged).To(ConsistOf(`UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [1 2 bar]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [1 2 bar]` + "\n"))
 }
 
 func TestDeleteByColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{StubResult: 2, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	_, err := DeleteByColumn(tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.logged).To(ConsistOf(`DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [1 2 3 4]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [1 2 3 4]` + "\n"))
 }
 
 func TestGetIntIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{Rows: &StubRows{
-		Rows: []StubRow{{int64(2), int64(16)}, {int64(3), int64(81)}},
-	}, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Rows: &test.StubRows{
+		Rows: []test.StubRow{{int64(2), int64(16)}, {int64(3), int64(81)}},
+	}, Di: dialect.Postgres, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	m, err := GetIntIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]int64{2: 16, 3: 81}))
-	g.Expect(stdLog.logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
 }
 
 func TestGetStringIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{Rows: &StubRows{
-		Rows: []StubRow{{"two", int64(16)}, {"three", int64(81)}},
-	}, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Rows: &test.StubRows{
+		Rows: []test.StubRow{{"two", int64(16)}, {"three", int64(81)}},
+	}, Di: dialect.Postgres, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	m, err := GetStringIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[string]int64{"two": 16, "three": 81}))
-	g.Expect(stdLog.logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
 }
 
 func TestGetIntStringIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	stdLog := &stubLogger{}
+	stdLog := &test.StubLogger{}
 	logger := sqlapi.NewLogger(stdLog)
-	e := StubExecer{Rows: &StubRows{
-		Rows: []StubRow{{int64(2), "16"}, {int64(3), "81"}},
-	}, Lgr: logger}
-	tbl := StubTable{
-		name: sqlapi.TableName{
+	ex := &test.StubExecer{Rows: &test.StubRows{
+		Rows: []test.StubRow{{int64(2), "16"}, {int64(3), "81"}},
+	}, Di: dialect.Postgres, Lgr: logger}
+	tbl := sqlapi.CoreTable{
+		Nm: sqlapi.TableName{
 			Prefix: "p.",
 			Name:   "table",
 		},
-		dialect: dialect.Postgres,
-		execer:  e,
-		logger:  logger,
+		Ex: ex,
 	}
 
 	m, err := GetIntStringIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]string{2: "16", 3: "81"}))
-	g.Expect(stdLog.logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
+	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [bar]` + "\n"))
 }

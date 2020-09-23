@@ -103,3 +103,44 @@ type TableWithIndexes interface {
 	// CreateTableWithIndexes creates the database table and its indexes.
 	CreateTableWithIndexes(ifNotExist bool) (err error)
 }
+
+//-------------------------------------------------------------------------------------------------
+
+// CoreTable implements a Table.
+type CoreTable struct {
+	Nm TableName
+	Ex Execer
+}
+
+func (tbl CoreTable) Name() TableName {
+	return tbl.Nm
+}
+
+func (tbl CoreTable) Execer() Execer {
+	return tbl.Ex
+}
+
+func (tbl CoreTable) DB() SqlDB {
+	return tbl.Ex.(SqlDB)
+}
+
+func (tbl CoreTable) Tx() SqlTx {
+	return tbl.Ex.(SqlTx)
+}
+
+func (tbl CoreTable) IsTx() bool {
+	_, ok := tbl.Ex.(SqlTx)
+	return ok
+}
+
+func (tbl CoreTable) Dialect() dialect.Dialect {
+	return tbl.Ex.Dialect()
+}
+
+func (tbl CoreTable) Logger() Logger {
+	return tbl.Ex.Logger()
+}
+
+func (tbl CoreTable) Ctx() context.Context {
+	return context.Background()
+}

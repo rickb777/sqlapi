@@ -28,12 +28,15 @@ func MustConnectEnv(lgr pgx.Logger, logLevel pgx.LogLevel) SqlDB {
 // ConnectEnv connects to the PostgreSQL server using environment variables:
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
-// Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
+// Also available are PGQUOTE, DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
+// Use PGQUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
+// is none).
 func ConnectEnv(lgr pgx.Logger, logLevel pgx.LogLevel) (SqlDB, error) {
 	poolConfig := ParseEnvConfig()
 	poolConfig.Logger = lgr
 	poolConfig.LogLevel = logLevel
-	return Connect(poolConfig)
+	quoter := quote.PickQuoter(os.Getenv("PGQUOTE"))
+	return Connect(poolConfig, quoter)
 }
 
 // ParseEnvConfig creates connection pool config information based on environment variables:
@@ -68,11 +71,12 @@ func setDefaultEnvValues() {
 	requireEnv("DB_MAX_CONNECTIONS", "100")
 	requireEnv("DB_CONNECT_DELAY", "1ms")   // doesn't attempt connection until after this delay
 	requireEnv("DB_CONNECT_TIMEOUT", "10s") // app aborts after this time; 0 is infinite
+	requireEnv("PGQUOTE", "none")
 }
 
 // MustConnect is as per Connect but with a fatal termination on error.
-func MustConnect(config pgx.ConnPoolConfig) SqlDB {
-	db, err := Connect(config)
+func MustConnect(config pgx.ConnPoolConfig, quoter quote.Quoter) SqlDB {
+	db, err := Connect(config, quoter)
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
@@ -81,10 +85,7 @@ func MustConnect(config pgx.ConnPoolConfig) SqlDB {
 }
 
 // Connect opens a database connection and pings the server.
-func Connect(config pgx.ConnPoolConfig) (SqlDB, error) {
-	// set default behaviour to be unquoted identifiers (instead of ANSI SQL quote marks)
-	quote.DefaultQuoter = quote.NoQuoter
-
+func Connect(config pgx.ConnPoolConfig, quoter quote.Quoter) (SqlDB, error) {
 	config.Logger.Log(pgx.LogLevelInfo, "DB connection",
 		map[string]interface{}{"host": config.Host, "port": config.Port, "user": config.User, "database": config.Database},
 	)
@@ -100,7 +101,7 @@ func Connect(config pgx.ConnPoolConfig) (SqlDB, error) {
 		return nil, errors.Wrap(err, "Unable to communicate with to the database.\n")
 	}
 
-	return WrapDB(pool, config.Logger), nil
+	return WrapDB(pool, config.Logger, quoter), nil
 }
 
 //-------------------------------------------------------------------------------------------------

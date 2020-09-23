@@ -132,14 +132,14 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			_ = tx.rollback()
+			_ = tx.Rollback()
 			err = logPanicData(p, sh.lgr)
 
 		} else if err != nil {
-			_ = tx.rollback()
+			_ = tx.Rollback()
 
 		} else {
-			err = tx.commit()
+			err = tx.Commit()
 		}
 	}()
 
@@ -203,11 +203,11 @@ func (sh *shim) Stats() sql.DBStats {
 //-------------------------------------------------------------------------------------------------
 // TX-specific methods
 
-func (sh *shim) commit() error {
+func (sh *shim) Commit() error {
 	return sh.ex.(*sql.Tx).Commit()
 }
 
-func (sh *shim) rollback() error {
+func (sh *shim) Rollback() error {
 	return sh.ex.(*sql.Tx).Rollback()
 }
 

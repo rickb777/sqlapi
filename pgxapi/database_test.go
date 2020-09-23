@@ -246,7 +246,7 @@ func testUsingLocalDB(m *testing.M) {
 
 	pgxdb, err := pgx.NewConnPool(poolConfig)
 	if err == nil {
-		db = WrapDB(pgxdb, lgr)
+		db = WrapDB(pgxdb, lgr, nil)
 		os.Exit(m.Run())
 	}
 
@@ -274,7 +274,7 @@ func testUsingTravisCiDB(m *testing.M) {
 
 	pgxdb, err := pgx.NewConnPool(poolConfig)
 	if err == nil {
-		db = WrapDB(pgxdb, lgr)
+		db = WrapDB(pgxdb, lgr, nil)
 		os.Exit(m.Run())
 	}
 
@@ -325,7 +325,7 @@ func testUsingDockertest(m *testing.M) {
 	pool.MaxWait = 10 * time.Second
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	if err = pool.Retry(func() error {
-		db, err = Connect(poolConfig)
+		db, err = Connect(poolConfig, nil)
 		if err != nil {
 			return err
 		}
