@@ -17,6 +17,7 @@ type StubExecer struct {
 	Err  error
 	Lgr  pgxapi.Logger
 	Q    quote.Quoter
+	User interface{}
 }
 
 var _ pgxapi.Execer = &StubExecer{}
@@ -99,6 +100,15 @@ func (e StubExecer) SingleConn(_ context.Context, fn func(ex pgxapi.Execer) erro
 }
 
 func (e StubExecer) Close() {}
+
+func (e StubExecer) With(userItem interface{}) pgxapi.SqlDB {
+	e.User = userItem
+	return e
+}
+
+func (e StubExecer) UserItem() interface{} {
+	return e.User
+}
 
 //-------------------------------------------------------------------------------------------------
 

@@ -16,6 +16,7 @@ type StubExecer struct {
 	Err  error
 	Lgr  sqlapi.Logger
 	Di   dialect.Dialect
+	User interface{}
 }
 
 var _ sqlapi.Execer = &StubExecer{}
@@ -78,6 +79,15 @@ func (e StubExecer) SingleConn(_ context.Context, fn func(ex sqlapi.Execer) erro
 
 func (e StubExecer) Close() error {
 	return e.Err
+}
+
+func (e StubExecer) With(userItem interface{}) sqlapi.SqlDB {
+	e.User = userItem
+	return e
+}
+
+func (e StubExecer) UserItem() interface{} {
+	return e.User
 }
 
 //-------------------------------------------------------------------------------------------------
