@@ -3,6 +3,8 @@ package pgxapi
 import (
 	"bytes"
 	"context"
+	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -11,13 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
-	"github.com/pkg/errors"
-
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/log/testingadapter"
 	. "github.com/onsi/gomega"
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
+	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 )
 
@@ -30,14 +31,15 @@ func TestLoggingOnOff(t *testing.T) {
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	tl := NewLogger(logger)
 
-	tl.Log(pgx.LogLevelInfo, "one", nil)
-	tl.TraceLogging(false)
+	tl.LogQuery("one") // silently dropped
 	tl.Log(pgx.LogLevelInfo, "two", nil)
-	tl.TraceLogging(true)
+	tl.TraceLogging(false)
 	tl.Log(pgx.LogLevelInfo, "three", nil)
+	tl.TraceLogging(true)
+	tl.Log(pgx.LogLevelInfo, "four", nil)
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.one []\nX.three []\n"))
+	g.Expect(s).To(Equal("X.two []\nX.four []\n"))
 }
 
 func TestLoggingError(t *testing.T) {
@@ -45,7 +47,7 @@ func TestLoggingError(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
-	tl := &toggleLogger{lgr: logger, enabled: 1}
+	tl := sqlapi.NewLogger(logger)
 
 	tl.LogError(fmt.Errorf("one"))
 	tl.TraceLogging(false)
@@ -227,12 +229,15 @@ func newDatabase(t *testing.T) SqlDB {
 type simpleLogger struct{}
 
 func (l simpleLogger) Log(args ...interface{}) {
-	log.Println(args...)
+	if testing.Verbose() {
+		log.Println(args...)
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
+	flag.Parse()
 	// first connection attempt: environment config for local DB
 	testUsingLocalDB(m)
 

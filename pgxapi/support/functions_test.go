@@ -61,7 +61,8 @@ func TestSliceSql(t *testing.T) {
 
 	for _, c := range cases {
 		stdLog := &test.StubLogger{}
-		ex := test.StubExecer{Lgr: pgxapi.NewLogger(stdLog), Q: c.dialect.Quoter()}
+		lgr := pgxapi.NewLogger(stdLog)
+		ex := &test.StubExecer{Lgr: lgr, Q: c.dialect.Quoter()}
 		tbl := pgxapi.CoreTable{
 			Nm: pgxapi.TableName{
 				Prefix: "p.",
@@ -82,7 +83,8 @@ func TestQuery_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	ex := test.StubExecer{Lgr: pgxapi.NewLogger(stdLog)}
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{Lgr: lgr}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -94,15 +96,15 @@ func TestQuery_happy(t *testing.T) {
 	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT foo FROM p.table WHERE x=$1 map[0:123]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT foo FROM p.table WHERE x=$1 [$1=123]`))
 }
 
 func TestExec_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{N: 2, Lgr: logger}
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{N: 2, Lgr: lgr}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -114,15 +116,15 @@ func TestExec_happy(t *testing.T) {
 	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`DELETE FROM p.table WHERE x=$1 map[0:123]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  DELETE FROM p.table WHERE x=$1 [$1=123]`))
 }
 
 func TestUpdateFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{N: 2, Lgr: logger}
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{N: 2, Lgr: lgr, Q: quote.AnsiQuoter}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -134,15 +136,15 @@ func TestUpdateFields(t *testing.T) {
 	_, err := UpdateFields(tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`UPDATE p.table SET c1=$1, c2=$2 WHERE foo=$3 map[0:1 1:2 2:bar]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [$1=1, $2=2, $3=bar]`))
 }
 
 func TestDeleteByColumn(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{N: 2, Lgr: logger}
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{N: 2, Lgr: lgr, Q: quote.AnsiQuoter}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -154,17 +156,17 @@ func TestDeleteByColumn(t *testing.T) {
 	_, err := DeleteByColumn(tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
 
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`DELETE FROM p.table WHERE foo IN ($1,$2,$3,$4) map[0:1 1:2 2:3 3:4]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [$1=1, $2=2, $3=3, $4=4]`))
 }
 
 func TestGetIntIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{Rows: &test.StubRows{
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{int64(2), int64(16)}, {int64(3), int64(81)}},
-	}, Lgr: logger}
+	}, Lgr: lgr, Q: quote.AnsiQuoter}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -177,17 +179,17 @@ func TestGetIntIntIndex_happy(t *testing.T) {
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]int64{2: 16, 3: 81}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=? map[0:bar]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
 }
 
 func TestGetStringIntIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{Rows: &test.StubRows{
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{"two", int64(16)}, {"three", int64(81)}},
-	}, Lgr: logger}
+	}, Lgr: lgr, Q: quote.AnsiQuoter}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -200,17 +202,17 @@ func TestGetStringIntIndex_happy(t *testing.T) {
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[string]int64{"two": 16, "three": 81}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=? map[0:bar]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
 }
 
 func TestGetIntStringIndex_happy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	stdLog := &test.StubLogger{}
-	logger := pgxapi.NewLogger(stdLog)
-	ex := test.StubExecer{Rows: &test.StubRows{
+	lgr := pgxapi.NewLogger(stdLog)
+	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{int64(2), "16"}, {int64(3), "81"}},
-	}, Lgr: logger}
+	}, Lgr: lgr, Q: quote.AnsiQuoter}
 	tbl := pgxapi.CoreTable{
 		Nm: pgxapi.TableName{
 			Prefix: "p.",
@@ -223,5 +225,5 @@ func TestGetIntStringIndex_happy(t *testing.T) {
 
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(m).To(Equal(map[int64]string{2: "16", 3: "81"}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=? map[0:bar]`))
+	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
 }

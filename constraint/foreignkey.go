@@ -3,7 +3,6 @@ package constraint
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/rickb777/collection"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
@@ -140,7 +139,7 @@ type Relationship struct {
 // the parent or the child table can be used for thi purpose.
 func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
-		return nil, errors.Errorf("IdsUnusedAsForeignKeys requires the column names to be specified")
+		return nil, fmt.Errorf("%s: IdsUnusedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
 
 	// TODO benchmark two candidates and choose the better
@@ -173,7 +172,7 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (collection.Int
 // in the dependent (child) table.
 func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
-		return nil, errors.Errorf("IdsUsedAsForeignKeys requires the column names to be specified")
+		return nil, fmt.Errorf("%s: IdsUsedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
 
 	pfx := tbl.Name().Prefix
@@ -191,7 +190,7 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (collection.Int64
 func fetchIds(tbl sqlapi.Table, query string) (collection.Int64Set, error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
-		return nil, tbl.Logger().LogIfError(errors.Wrap(err, query))
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 

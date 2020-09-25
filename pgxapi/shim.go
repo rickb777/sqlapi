@@ -2,11 +2,11 @@ package pgxapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/jackc/pgx"
-	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/where/quote"
 )
@@ -50,8 +50,7 @@ var _ SqlTx = new(shim)
 //-------------------------------------------------------------------------------------------------
 
 func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	return sh.QueryExRaw(ctx, qr, nil, args...)
+	return sh.QueryExRaw(ctx, query, nil, args...)
 }
 
 func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
@@ -63,7 +62,7 @@ func (sh *shim) QueryExRaw(ctx context.Context, query string, options *pgx.Query
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
 	rows, err := sh.ex.QueryEx(defaultCtx(ctx), qr, options, args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s %v", query, args)
+		return nil, wrap(err, query, args)
 	}
 	return rows, nil
 }
@@ -79,17 +78,17 @@ func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...int
 	row := sh.ex.QueryRowEx(defaultCtx(ctx), qr, nil, args...)
 	var id int64
 	err := row.Scan(&id)
-	if err != nil && err != pgx.ErrNoRows {
-		return 0, errors.Wrapf(err, "%s %v", query, args)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return 0, wrap(err, query, args)
 	}
-	return id, errors.Wrapf(err, "%s %v", query, args)
+	return id, nil
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
 	tag, err := sh.ex.ExecEx(defaultCtx(ctx), qr, nil, args...)
 	if err != nil {
-		return 0, errors.Wrapf(err, "%s %v", query, args)
+		return 0, wrap(err, query, args)
 	}
 	return tag.RowsAffected(), nil
 }
@@ -97,7 +96,7 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
 	ps, err := sh.ex.PrepareEx(defaultCtx(ctx), name, qr, nil)
-	return ps, errors.Wrapf(err, "%s %s", name, query)
+	return ps, wrap(err, query, name)
 }
 
 func (sh *shim) BeginBatch() *pgx.Batch {
@@ -132,7 +131,7 @@ func (sh *shim) UserItem() interface{} {
 func (sh *shim) beginTx(ctx context.Context, opts *pgx.TxOptions) (SqlTx, error) {
 	tx, err := sh.ex.(*pgx.ConnPool).BeginEx(defaultCtx(ctx), opts)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	cp := *sh
 	cp.ex = tx
@@ -175,7 +174,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	var conn *pgx.Conn
 	conn, err = cp.AcquireEx(defaultCtx(ctx))
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	defer func() {
@@ -197,9 +196,9 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 func logPanicData(p interface{}, lgr pgx.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
-		p = errors.WithStack(e)
+		p = e
 	} else {
-		p = errors.Errorf("%+v", p)
+		p = fmt.Errorf("%+v", p)
 	}
 	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 	if lgr != nil {
@@ -215,13 +214,10 @@ func (sh *shim) Close() {
 }
 
 func (sh *shim) PingContext(ctx context.Context) error {
-	cp := sh.ex.(*pgx.ConnPool)
-	conn, err := cp.Acquire()
-	if err != nil {
-		return err
-	}
-	defer cp.Release(conn)
-	return conn.Ping(defaultCtx(ctx))
+	ctx = defaultCtx(ctx)
+	return sh.SingleConn(ctx, func(ex Execer) error {
+		return ex.(*shim).ex.(*pgx.Conn).Ping(ctx)
+	})
 }
 
 func (sh *shim) Stats() DBStats {
@@ -244,4 +240,11 @@ func defaultCtx(ctx context.Context) context.Context {
 		return context.Background()
 	}
 	return ctx
+}
+
+func wrap(err error, query string, args ...interface{}) error {
+	if err != nil {
+		return fmt.Errorf("%w %s %v", err, query, args)
+	}
+	return nil
 }

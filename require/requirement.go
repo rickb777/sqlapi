@@ -6,8 +6,6 @@ package require
 
 import (
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 // Requirement set an expectation on the outcome of a query.
@@ -32,7 +30,7 @@ func ErrorIfQueryNotSatisfiedBy(r Requirement, actual int64) error {
 	if r == nil {
 		return nil
 	}
-	return errors.WithStack(r.errorIfNotSatisfiedBy(actual, "fetch", "got"))
+	return r.errorIfNotSatisfiedBy(actual, "fetch", "got")
 }
 
 // ChainErrorIfExecNotSatisfiedBy matches a requirement against the actual result size for
@@ -51,7 +49,7 @@ func ErrorIfExecNotSatisfiedBy(r Requirement, actual int64) error {
 	if r == nil {
 		return nil
 	}
-	return errors.WithStack(r.errorIfNotSatisfiedBy(actual, "change", "changed"))
+	return r.errorIfNotSatisfiedBy(actual, "change", "changed")
 }
 
 //-------------------------------------------------------------------------------------------------

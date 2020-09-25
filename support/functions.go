@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
@@ -70,7 +69,7 @@ func Query(tbl sqlapi.Table, query string, args ...interface{}) (sqlapi.SqlRows,
 	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
+	return rows, lgr.LogIfError(err)
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -87,7 +86,7 @@ func doExec(tbl sqlapi.Table, query string, args ...interface{}) (int64, error) 
 	lgr.LogQuery(query, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
 	if err != nil {
-		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+		return 0, lgr.LogError(err)
 	}
 	return n, err
 }
@@ -168,7 +167,7 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -177,7 +176,7 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}
@@ -190,7 +189,7 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -200,7 +199,7 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}
@@ -213,7 +212,7 @@ func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -223,7 +222,7 @@ func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}

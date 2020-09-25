@@ -1,6 +1,7 @@
 package pgxapi
 
 import (
+	"fmt"
 	"reflect"
 	"sync/atomic"
 	"time"
@@ -31,7 +32,7 @@ func (lgr *toggleLogger) Log(level pgx.LogLevel, msg string, data map[string]int
 	}
 }
 
-// Log emits a log event, supporting an elapsed-time calculation and providing an easier
+// LogT emits a log event, supporting an elapsed-time calculation and providing an easier
 // way to supply data parameters as name,value pairs.
 func (lgr *toggleLogger) LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{}) {
 	if lgr.loggingEnabled() {
@@ -65,6 +66,16 @@ func (lgr *toggleLogger) LogError(err error) error {
 }
 
 func (lgr *toggleLogger) TraceLogging(on bool) {
+	if lgr.lgr == nil {
+		return
+	}
+
+	// because pgx.Logger is an interface, it might be not nil yet hold a nil pointer
+	value := reflect.ValueOf(lgr.lgr)
+	if value.Kind() == reflect.Ptr && value.IsNil() {
+		return
+	}
+
 	if on {
 		atomic.StoreInt32(&lgr.enabled, 1)
 	} else {
@@ -76,6 +87,27 @@ func (lgr *toggleLogger) loggingEnabled() bool {
 	return atomic.LoadInt32(&lgr.enabled) != 0
 }
 
-func (lgr *toggleLogger) LogQuery(query string, args ...interface{}) {
+func (lgr *toggleLogger) LogQueryWithError(err error, query string, args ...interface{}) {
+	if err != nil {
+		m := make(map[string]interface{})
+		for i, v := range args {
+			k := fmt.Sprintf("$%d", i+1)
+			m[k] = derefArg(v)
+		}
+		m["error"] = err
+		lgr.Log(pgx.LogLevelError, query, m)
+	}
+	// else no-op: pgx handles this
+}
+
+func (lgr *toggleLogger) LogQuery(_ string, _ ...interface{}) {
 	// no-op: pgx handles this
+}
+
+func derefArg(arg interface{}) interface{} {
+	value := reflect.ValueOf(arg)
+	if value.Kind() == reflect.Ptr {
+		return value.Elem()
+	}
+	return arg
 }

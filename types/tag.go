@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -148,7 +148,7 @@ func (tag *Tag) validate() error {
 	}
 
 	if buf.Len() > 0 {
-		return errors.Errorf(buf.String())
+		return errors.New(buf.String())
 	}
 	return nil
 }
@@ -182,7 +182,7 @@ func ParseTag(raw string) (*Tag, error) {
 	// unmarshals the Yaml formatted string into the Tag structure.
 	var err = yaml.Unmarshal([]byte(yamlValue), tag)
 	if err != nil {
-		return tag, errors.Wrapf(err, "parse tag YAML %q", raw)
+		return tag, fmt.Errorf("%w parse tag YAML %q", err, raw)
 	}
 
 	normalize(tag)
@@ -216,19 +216,19 @@ func ReadTagsFile(file string) (Tags, error) {
 
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, errors.Wrapf(err, "opening tags file %s", file)
+		return nil, fmt.Errorf("%w opening tags file %s", err, file)
 	}
 
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading tags file %s", file)
+		return nil, fmt.Errorf("%w reading tags file %s", err, file)
 	}
 
 	tags := make(Tags)
 
 	err = yaml.Unmarshal(b, tags)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing YAML tags file %s", file)
+		return nil, fmt.Errorf("%w parsing YAML tags file %s", err, file)
 	}
 
 	//DevInfo("tags from %s\n%s\n", file, tags)

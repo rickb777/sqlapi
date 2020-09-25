@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -185,12 +184,7 @@ func connect(t *testing.T) (*sql.DB, dialect.Dialect) {
 func newDatabase(t *testing.T) sqlapi.SqlDB {
 	db, di := connect(t)
 
-	var lgr sqlapi.StdLog = &test.StubLogger{}
-	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
-	if ok && strings.ToLower(goVerbose) == "true" {
-		lgr = log.New(os.Stdout, "", log.LstdFlags)
-	}
-
+	lgr := &test.StubLogger{}
 	return sqlapi.WrapDB(db, di, sqlapi.NewLogger(lgr))
 }
 

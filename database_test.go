@@ -13,12 +13,15 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/log/testingadapter"
 	_ "github.com/jackc/pgx/stdlib"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 	"github.com/rickb777/where/quote"
 )
 
@@ -35,24 +38,25 @@ func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	buf := &bytes.Buffer{}
-	logger := log.New(buf, "X.", 0)
+	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	tl := sqlapi.NewLogger(logger)
 
 	tl.LogQuery("one")
+	tl.Log(pgx.LogLevelInfo, "two", nil)
 	tl.TraceLogging(false)
-	tl.LogQuery("two")
-	tl.TraceLogging(true)
 	tl.LogQuery("three")
+	tl.TraceLogging(true)
+	tl.LogQuery("four")
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.one\nX.three\n"))
+	g.Expect(s).To(Equal("X.one []\nX.two []\nX.four []\n"))
 }
 
 func TestLoggingError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	buf := &bytes.Buffer{}
-	logger := log.New(buf, "X.", 0)
+	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	tl := sqlapi.NewLogger(logger)
 
 	tl.LogError(fmt.Errorf("one"))
@@ -64,7 +68,7 @@ func TestLoggingError(t *testing.T) {
 	tl.LogIfError(fmt.Errorf("four"))
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.Error: one\nX.Error: three\nX.Error: four\n"))
+	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:three]\nX.Error [error:four]\n"))
 }
 
 func TestListTables(t *testing.T) {
@@ -278,13 +282,16 @@ func connect() (*sql.DB, dialect.Dialect) {
 }
 
 func newDatabase(t *testing.T) sqlapi.SqlDB {
-	var lgr *log.Logger
-	goVerbose, ok := os.LookupEnv("GO_VERBOSE")
-	if ok && strings.ToLower(goVerbose) == "true" {
-		lgr = log.New(os.Stdout, "", log.LstdFlags)
-	}
-
+	lgr := testingadapter.NewLogger(simpleLogger{})
 	return sqlapi.WrapDB(gdb, gdi, sqlapi.NewLogger(lgr))
+}
+
+type simpleLogger struct{}
+
+func (l simpleLogger) Log(args ...interface{}) {
+	if testing.Verbose() {
+		log.Println(args...)
+	}
 }
 
 func cleanup(db io.Closer) {

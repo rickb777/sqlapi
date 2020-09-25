@@ -6,13 +6,15 @@ import (
 	"io"
 	"time"
 
+	"github.com/jackc/pgx"
+
 	"github.com/rickb777/sqlapi/dialect"
 )
 
 // Logger provides the specialised logging operations within this API.
 type Logger interface {
-	Log(format string, v ...interface{})
-	LogT(msg string, startTime *time.Time, data ...interface{})
+	pgx.Logger
+	LogT(level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
 	LogQuery(query string, args ...interface{})
 	LogIfError(err error) error
 	LogError(err error) error

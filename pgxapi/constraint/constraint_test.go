@@ -2,10 +2,10 @@ package constraint_test
 
 import (
 	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/log/testingadapter"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/pgxapi/constraint"
+	"github.com/rickb777/sqlapi/pgxapi/support/test"
 	"github.com/rickb777/sqlapi/pgxapi/vanilla"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
@@ -127,7 +127,7 @@ func TestPgxFkConstraintOfField(t *testing.T) {
 var lock = sync.Mutex{}
 
 func connect(t *testing.T) pgxapi.SqlDB {
-	lgr := testingadapter.NewLogger(t)
+	lgr := &test.StubLogger{}
 	db, err := pgxapi.ConnectEnv(lgr, pgx.LogLevelInfo)
 	if err != nil {
 		t.Log(err)

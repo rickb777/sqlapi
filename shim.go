@@ -3,12 +3,11 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/jackc/pgx"
-
-	"github.com/pkg/errors"
 	"github.com/rickb777/sqlapi/dialect"
 )
 
@@ -63,10 +62,10 @@ func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...int
 func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	res, err := sh.ex.ExecContext(defaultCtx(ctx), query, args...)
 	if err != nil {
-		return 0, errors.Wrapf(err, "%s %v", query, args)
+		return 0, wrap(err, query, args)
 	}
 	id, err := res.LastInsertId()
-	return id, errors.Wrapf(err, "%s %v", query, args)
+	return id, wrap(err, query, args)
 }
 
 func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
@@ -75,26 +74,26 @@ func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, arg
 	row := sh.ex.QueryRowContext(defaultCtx(ctx), qr, args...)
 	var id int64
 	err := row.Scan(&id)
-	if err != nil && err != pgx.ErrNoRows {
-		return 0, errors.Wrapf(err, "%s %v", query, args)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return 0, wrap(err, query, args)
 	}
-	return id, errors.Wrapf(err, "%s %v", query, args)
+	return id, nil
 }
 
 func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	qr := sh.di.ReplacePlaceholders(query, nil)
 	res, err := sh.ex.ExecContext(defaultCtx(ctx), qr, args...)
 	if err != nil {
-		return 0, errors.Wrapf(err, "%s %v", query, args)
+		return 0, wrap(err, query, args)
 	}
 	n, err := res.RowsAffected()
-	return n, errors.Wrapf(err, "%s %v", query, args)
+	return n, wrap(err, query, args)
 }
 
 func (sh *shim) PrepareContext(ctx context.Context, name, query string) (SqlStmt, error) {
 	qr := sh.di.ReplacePlaceholders(query, nil)
 	ps, err := sh.ex.PrepareContext(defaultCtx(ctx), qr)
-	return ps, errors.Wrapf(err, "%s %s", name, query)
+	return ps, wrap(err, query, nil)
 }
 
 func (sh *shim) IsTx() bool {
@@ -125,7 +124,7 @@ func (sh *shim) UserItem() interface{} {
 func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
 	tx, err := sh.ex.(*sql.DB).BeginTx(defaultCtx(ctx), opts)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	cp := *sh
 	cp.ex = tx
@@ -168,7 +167,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	var conn *sql.Conn
 	conn, err = cp.Conn(defaultCtx(ctx))
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	defer func() {
@@ -191,16 +190,16 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	return fn(ex)
 }
 
-func logPanicData(p interface{}, lgr Logger) error {
+func logPanicData(p interface{}, lgr pgx.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
-		p = errors.WithStack(e)
+		p = e
 	} else {
-		p = errors.Errorf("%+v", p)
+		p = fmt.Errorf("%+v", p)
 	}
 	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 	if lgr != nil {
-		lgr.Log(fmt.Sprintf("panic recovered: %+v", p), nil)
+		lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
 	} else {
 		log.Printf("panic recovered: %+v", p)
 	}
@@ -235,4 +234,11 @@ func defaultCtx(ctx context.Context) context.Context {
 		return context.Background()
 	}
 	return ctx
+}
+
+func wrap(err error, query string, args ...interface{}) error {
+	if err != nil {
+		return fmt.Errorf("%w %s %v", err, query, args)
+	}
+	return nil
 }

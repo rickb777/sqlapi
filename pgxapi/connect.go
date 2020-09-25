@@ -2,6 +2,7 @@ package pgxapi
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/jackc/pgx"
-	"github.com/pkg/errors"
 	"github.com/rickb777/where/quote"
 )
 
@@ -92,13 +92,13 @@ func Connect(config pgx.ConnPoolConfig, quoter quote.Quoter) (SqlDB, error) {
 
 	pool, err := createConnectionPool(config.Logger, config)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to connect to the database.\n")
+		return nil, fmt.Errorf("%w - unable to connect to the database.", err)
 	}
 
 	// ping the connection using an empty statement
 	_, err = pool.ExecEx(context.Background(), ";", nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to communicate with to the database.\n")
+		return nil, fmt.Errorf("%w - unable to communicate with to the database.", err)
 	}
 
 	return WrapDB(pool, config.Logger, quoter), nil

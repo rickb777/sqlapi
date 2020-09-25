@@ -2,11 +2,11 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/where/quote"
-	"strconv"
 )
 
 // StubExecer provides a non-functioning Execer for testing purposes.
@@ -123,7 +123,7 @@ func (e StubExecer) Rollback() error {
 func argMap(args ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 	for i, a := range args {
-		m[strconv.Itoa(i)] = a
+		m[fmt.Sprintf("$%d", i+1)] = a
 	}
 	return m
 }

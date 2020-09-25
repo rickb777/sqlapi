@@ -3,7 +3,7 @@ package support
 import (
 	"database/sql"
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
@@ -69,7 +69,7 @@ func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows,
 	lgr := tbl.Logger()
 	lgr.LogQuery(q2, args...)
 	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, lgr.LogIfError(errors.Wrapf(err, "%s %+v", q2, args))
+	return rows, lgr.LogIfError(err)
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -86,7 +86,7 @@ func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) 
 	lgr.LogQuery(query, args...)
 	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
 	if err != nil {
-		return 0, lgr.LogError(errors.Wrapf(err, "%s %+v", query, args))
+		return 0, lgr.LogError(err)
 	}
 	return n, err
 }
@@ -165,9 +165,10 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), query, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -176,7 +177,7 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}
@@ -187,9 +188,10 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), query, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -199,7 +201,7 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}
@@ -210,9 +212,10 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), query, args...)
+	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+		return nil, tbl.Logger().LogError(err)
 	}
 	defer rows.Close()
 
@@ -222,7 +225,7 @@ func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(errors.Wrapf(err, "%s %+v", query, args))
+			return nil, tbl.Logger().LogError(err)
 		}
 		index[k] = v
 	}
