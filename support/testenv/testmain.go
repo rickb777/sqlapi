@@ -21,17 +21,6 @@ func SetEnvironmentForLocalPostgres() {
 	mustSetEnv("PGPASSWORD", "TestPasswd.9.9.9")
 }
 
-func SetEnvironmentForTravisCiDB() {
-	log.Println("Attempting to connect to local postgres (TravisCI)")
-	mustSetEnv("DB_DRIVER", "pgx")
-	mustSetEnv("DB_DIALECT", "postgres")
-	mustSetEnv("PGHOST", "localhost")
-	mustSetEnv("PGPORT", "5432")
-	mustSetEnv("PGDATABASE", "postgres")
-	mustSetEnv("PGUSER", "postgres")
-	mustSetEnv("PGPASSWORD", "")
-}
-
 func SetUpDockerDbForTest(m *testing.M, repo string, runTestSetup func()) {
 	log.Printf("Attempting to connect to docker %s\n", repo)
 	mustSetEnv("DB_DRIVER", "pgx")

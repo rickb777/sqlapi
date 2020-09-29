@@ -239,11 +239,7 @@ func TestMain(m *testing.M) {
 	testenv.SetEnvironmentForLocalPostgres()
 	testUsingLocalDB(m, lvl)
 
-	// second connection attempt: connect to DB provided by TravisCI
-	testenv.SetEnvironmentForTravisCiDB()
-	testUsingLocalDB(m, lvl)
-
-	// third connection attempt: start up dockerised DB and use it
+	// second connection attempt: start up dockerised DB and use it
 	testUsingDockertest(m, lvl)
 }
 
