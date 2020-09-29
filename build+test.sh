@@ -56,7 +56,7 @@ v shadow ./...
 
 v go install ./...
 
-v ./test.sh sqlite
+v ./test.sh -v sqlite
 
 ### Build Phase 2 ###
 export PGDATABASE='test'

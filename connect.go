@@ -48,6 +48,12 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (Sql
 		di = di.WithQuoter(quoter)
 	}
 
+	lgr.Log(ctx, logLevel, "Connecting to DB", map[string]interface{}{
+		"url":     dbUrl,
+		"driver":  driver,
+		"dialect": di,
+		"quote":   quoter,
+	})
 	logger := NewLogger(lgr)
 	return Connect(ctx, driver, dbUrl, di, logger)
 }
