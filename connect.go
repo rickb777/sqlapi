@@ -27,7 +27,7 @@ func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) 
 }
 
 // ConnectEnv connects to the database server using environment variables:
-// DB_URL, DB_DRIVER, DB_DIALECT and DB_QUOTE.
+// DB_URL, DB_DRIVER and DB_QUOTE.
 // Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 // Use DB_QUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
 // is none).
@@ -38,7 +38,7 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (Sql
 		driver = "sqlite3"
 	}
 
-	di := dialect.PickDialect(os.Getenv("DB_DIALECT"))
+	di := dialect.PickDialect(driver)
 	if di == nil {
 		di = dialect.Sqlite
 	}
