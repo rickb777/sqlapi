@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/rickb777/sqlapi/dialect"
-
 	"github.com/onsi/gomega"
+	"github.com/rickb777/sqlapi/dialect"
 )
 
 func insertFixtures(t *testing.T, e Execer) (aid1, aid2, aid3, aid4 int64) {

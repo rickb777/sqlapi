@@ -15,7 +15,7 @@ cd "$(dirname $0)"
 
 PATH=$HOME/go/bin:$PATH
 
-unset GOPATH GO_DRIVER GO_DSN GO_QUOTER
+unset GOPATH DB_DRIVER GO_DSN PGQUOTE
 export PGHOST=localhost
 
 #
@@ -57,42 +57,42 @@ for db in $DBS; do
     mysql)
       echo "MySQL...."
       go clean -testcache ||:
-      GO_DRIVER=mysql GO_DSN=$DBUSER:$DBPASS@/test go test $V $PACKAGES
+      DB_DRIVER=mysql DB_URL=$DBUSER:$DBPASS@/test go test $V $PACKAGES
       ;;
 
     postgres)
       echo "PostgreSQL (no quotes)...."
       go clean -testcache ||:
-      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test $V $PACKAGES
+      DB_DRIVER=postgres DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=none go test $V $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
       go clean -testcache ||:
-      GO_DRIVER=postgres GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test $V $PACKAGES
+      DB_DRIVER=postgres DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=ansi go test $V $PACKAGES
       ;;
 
     pgx)
       echo "PGX (no quotes)...."
       go clean -testcache ||:
-      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=none go test $V $PACKAGES
+      DB_DRIVER=pgx DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=none go test $V $PACKAGES
       echo
       echo "PGX (ANSI)...."
       go clean -testcache ||:
-      GO_DRIVER=pgx GO_DSN="postgres://$DBUSER:$DBPASS@/test" GO_QUOTER=ansi go test $V $PACKAGES
+      DB_DRIVER=pgx DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=ansi go test $V $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
       go clean -testcache ||:
-      GO_QUOTER=ansi go test $V ./pgxapi/...
+      PGQUOTE=ansi go test $V ./pgxapi/...
       ;;
 
     sqlite)
-      unset GO_DRIVER GO_DSN
+      unset DB_DRIVER DB_URL
       echo "SQLite3 (no quotes)..."
       go clean -testcache ||:
-      GO_QUOTER=none go test $V $PACKAGES
+      DB_QUOTE=none go test $V $PACKAGES
       echo
       echo "SQLite3 (ANSI)..."
       go clean -testcache ||:
-      GO_QUOTER=ansi go test $V $PACKAGES
+      DB_QUOTE=ansi go test $V $PACKAGES
       ;;
 
     *)

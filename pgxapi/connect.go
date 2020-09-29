@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -48,6 +49,9 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (Sql
 // Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 func ParseEnvConfig() *pgxpool.Config {
 	dbUrl := os.Getenv("DATABASE_URL")
+	if !strings.HasPrefix("postgres://", dbUrl) {
+		dbUrl = "postgres://" + dbUrl
+	}
 	// conveniently, if dbUrl is blank, ParseConfig checks the 'standard' environment variables
 	// including PGHOST, PGPORT, PGDATABASE, PGUSER, etc
 	// (https://pkg.go.dev/github.com/jackc/pgconn#ParseConfig)

@@ -11,14 +11,16 @@ import (
 )
 
 func SetEnvironmentForLocalPostgres() {
-	log.Println("Attempting to connect to local postgres")
-	mustSetEnv("DB_DRIVER", "pgx")
-	mustSetEnv("DB_DIALECT", "postgres")
-	mustSetEnv("PGHOST", "localhost")
-	mustSetEnv("PGPORT", "5432")
-	mustSetEnv("PGDATABASE", "test")
-	mustSetEnv("PGUSER", "testuser")
-	mustSetEnv("PGPASSWORD", "TestPasswd.9.9.9")
+	if os.Getenv("DB_DRIVER") != "" {
+		log.Println("Attempting to connect to local postgres")
+		mustSetEnv("DB_DRIVER", "pgx")
+		mustSetEnv("DB_DIALECT", "postgres")
+		mustSetEnv("PGHOST", "localhost")
+		mustSetEnv("PGPORT", "5432")
+		mustSetEnv("PGDATABASE", "test")
+		mustSetEnv("PGUSER", "testuser")
+		mustSetEnv("PGPASSWORD", "TestPasswd.9.9.9")
+	}
 }
 
 func SetUpDockerDbForTest(m *testing.M, repo string, runTestSetup func()) {

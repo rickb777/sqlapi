@@ -106,7 +106,7 @@ func TestQueryContext(t *testing.T) {
 	g.Expect(rows.Next()).NotTo(BeTrue())
 }
 
-func TestSingleConnQueryContext(t *testing.T) {
+func TestSingleConnQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	ctx := context.Background()
@@ -235,8 +235,6 @@ func TestMain(m *testing.M) {
 }
 
 func testUsingLocalDB(m *testing.M, lvl pgx.LogLevel) {
-	log.Println("Attempting to connect to local postgresql")
-
 	lgr := testingadapter.NewLogger(simpleLogger{})
 	var err error
 	gdb, err = ConnectEnv(context.Background(), lgr, lvl)

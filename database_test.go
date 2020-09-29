@@ -1,4 +1,4 @@
-package sqlapi_test
+package sqlapi
 
 import (
 	"bytes"
@@ -19,18 +19,11 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 	"github.com/rickb777/sqlapi/support/testenv"
 )
 
-// Environment:
-// GO_DRIVER  - the driver (sqlite3, mysql, postgres, pgx)
-// GO_QUOTER  - the identifier quoter (ansi, mysql, none)
-// GO_DSN     - the database DSN
-// GO_VERBOSE - true for query logging
-
-var gdb sqlapi.SqlDB
+var gdb SqlDB
 
 func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -38,7 +31,7 @@ func TestLoggingOnOff(t *testing.T) {
 	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
-	tl := sqlapi.NewLogger(logger)
+	tl := NewLogger(logger)
 
 	tl.LogQuery(ctx, "one")
 	tl.Log(ctx, pgx.LogLevelInfo, "two", nil)
@@ -57,7 +50,7 @@ func TestLoggingError(t *testing.T) {
 	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
-	tl := sqlapi.NewLogger(logger)
+	tl := NewLogger(logger)
 
 	tl.LogError(ctx, fmt.Errorf("one"))
 	tl.TraceLogging(false)
@@ -74,7 +67,7 @@ func TestLoggingError(t *testing.T) {
 func TestListTables(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	list, err := sqlapi.ListTables(gdb, nil)
+	list, err := ListTables(gdb, nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")
@@ -119,11 +112,12 @@ func TestQueryContext(t *testing.T) {
 func TestSingleConnQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	ctx := context.Background()
 	_, aid2, _, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	e2 := gdb.SingleConn(nil, func(ex sqlapi.Execer) error {
-		rows, err := ex.Query(context.Background(), q, aid2)
+	e2 := gdb.SingleConn(ctx, func(ex Execer) error {
+		rows, err := ex.Query(ctx, q, aid2)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(rows.Next()).To(BeTrue())
 
@@ -145,7 +139,7 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
-	err := gdb.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
 		for i := 1; i <= 10; i++ {
 			_, e2 := tx.Insert(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
 			if e2 != nil {
@@ -171,7 +165,7 @@ func TestTransactCommitUsingExec(t *testing.T) {
 	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := gdb.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
 		_, e2 := tx.Exec(ctx, q, aid2, aid3)
 		return e2
 	})
@@ -192,7 +186,7 @@ func TestTransactRollback(t *testing.T) {
 	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := gdb.Transact(ctx, nil, func(tx sqlapi.SqlTx) error {
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
 		tx.Exec(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
@@ -246,8 +240,9 @@ func TestMain(m *testing.M) {
 func testUsingLocalDB(m *testing.M, lvl pgx.LogLevel) {
 	lgr := testingadapter.NewLogger(simpleLogger{})
 	var err error
-	gdb, err = sqlapi.ConnectEnv(context.Background(), lgr, lvl)
+	gdb, err = ConnectEnv(context.Background(), lgr, lvl)
 	if err == nil {
+		log.Printf("Test using local DB\n")
 		os.Exit(m.Run())
 	}
 
@@ -261,7 +256,7 @@ func testUsingDockertest(m *testing.M, lvl pgx.LogLevel) {
 	testenv.SetUpDockerDbForTest(m, "postgres", func() {
 		var err error
 		lgr := testingadapter.NewLogger(simpleLogger{})
-		gdb, err = sqlapi.ConnectEnv(context.Background(), lgr, lvl)
+		gdb, err = ConnectEnv(context.Background(), lgr, lvl)
 		if err != nil {
 			log.Fatalf("Could not connect to DB in docker+postgres: %s", err)
 		}

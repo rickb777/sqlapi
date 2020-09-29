@@ -21,10 +21,6 @@ import (
 	"testing"
 )
 
-// Environment:
-// PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
-// PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
-
 var gdb pgxapi.SqlDB
 
 func TestPgxCheckConstraint(t *testing.T) {
@@ -156,8 +152,6 @@ func TestMain(m *testing.M) {
 }
 
 func testUsingLocalDB(m *testing.M, lvl pgx.LogLevel) {
-	log.Println("Attempting to connect to local postgresql")
-
 	lgr := testingadapter.NewLogger(simpleLogger{})
 	var err error
 	gdb, err = pgxapi.ConnectEnv(context.Background(), lgr, lvl)

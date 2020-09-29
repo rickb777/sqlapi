@@ -26,12 +26,6 @@ import (
 	"github.com/rickb777/where/quote"
 )
 
-// Environment:
-// GO_DRIVER  - the driver (sqlite3, mysql, postgres, pgx)
-// GO_QUOTER  - the identifier quoter (ansi, mysql, none)
-// GO_DSN     - the database DSN
-// GO_VERBOSE - true for query logging
-
 var gdb sqlapi.SqlDB
 
 func TestCheckConstraint(t *testing.T) {

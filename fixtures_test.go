@@ -1,4 +1,4 @@
-package sqlapi_test
+package sqlapi
 
 import (
 	"context"
@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 )
 
-func insertFixtures(t *testing.T, e sqlapi.Execer) (aid1, aid2, aid3, aid4 int64) {
+func insertFixtures(t *testing.T, e Execer) (aid1, aid2, aid3, aid4 int64) {
 	g := gomega.NewGomegaWithT(t)
 
 	for _, s := range createTablesSql(e.Dialect()) {
@@ -30,7 +29,7 @@ func insertFixtures(t *testing.T, e sqlapi.Execer) (aid1, aid2, aid3, aid4 int64
 	return aid1, aid2, aid3, aid4
 }
 
-func insertOne(g *gomega.GomegaWithT, e sqlapi.Execer, query string) int64 {
+func insertOne(g *gomega.GomegaWithT, e Execer, query string) int64 {
 	id, err := e.Insert(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
