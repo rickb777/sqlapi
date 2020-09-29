@@ -11,15 +11,13 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/log/testingadapter"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/log/testingadapter"
 	. "github.com/onsi/gomega"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
+	"github.com/rickb777/sqlapi/support/testenv"
 )
 
 var gdb SqlDB
@@ -27,16 +25,17 @@ var gdb SqlDB
 func TestLoggingOnOff(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	tl := NewLogger(logger)
 
-	tl.LogQuery("one") // silently dropped
-	tl.Log(pgx.LogLevelInfo, "two", nil)
+	tl.LogQuery(ctx, "one") // silently dropped
+	tl.Log(ctx, pgx.LogLevelInfo, "two", nil)
 	tl.TraceLogging(false)
-	tl.Log(pgx.LogLevelInfo, "three", nil)
+	tl.Log(ctx, pgx.LogLevelInfo, "three", nil)
 	tl.TraceLogging(true)
-	tl.Log(pgx.LogLevelInfo, "four", nil)
+	tl.Log(ctx, pgx.LogLevelInfo, "four", nil)
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.two []\nX.four []\n"))
@@ -45,17 +44,18 @@ func TestLoggingOnOff(t *testing.T) {
 func TestLoggingError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
 	tl := sqlapi.NewLogger(logger)
 
-	tl.LogError(fmt.Errorf("one"))
+	tl.LogError(ctx, fmt.Errorf("one"))
 	tl.TraceLogging(false)
-	tl.LogError(fmt.Errorf("two"))
+	tl.LogError(ctx, fmt.Errorf("two"))
 	tl.TraceLogging(true)
-	tl.LogError(fmt.Errorf("three"))
-	tl.LogIfError(nil)
-	tl.LogIfError(fmt.Errorf("four"))
+	tl.LogError(ctx, fmt.Errorf("three"))
+	tl.LogIfError(ctx, nil)
+	tl.LogIfError(ctx, fmt.Errorf("four"))
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:three]\nX.Error [error:four]\n"))
@@ -64,9 +64,7 @@ func TestLoggingError(t *testing.T) {
 func TestListTables(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
-
-	list, err := ListTables(d, nil)
+	list, err := ListTables(gdb, nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(list.Filter(func(s string) bool {
 		return strings.HasPrefix(s, "sql_")
@@ -79,12 +77,10 @@ func TestListTables(t *testing.T) {
 func TestQueryRowContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
+	_, aid2, _, _ := insertFixtures(t, gdb)
 
-	_, aid2, _, _ := insertFixtures(t, d)
-
-	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	row := d.QueryRowContext(context.Background(), q, aid2)
+	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
+	row := gdb.QueryRow(context.Background(), q, aid2)
 
 	var xlines string
 	err := row.Scan(&xlines)
@@ -95,12 +91,10 @@ func TestQueryRowContext(t *testing.T) {
 func TestQueryContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
+	_, aid2, _, _ := insertFixtures(t, gdb)
 
-	_, aid2, _, _ := insertFixtures(t, d)
-
-	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	rows, err := d.QueryContext(context.Background(), q, aid2)
+	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
+	rows, err := gdb.Query(context.Background(), q, aid2)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(rows.Next()).To(BeTrue())
 
@@ -115,13 +109,12 @@ func TestQueryContext(t *testing.T) {
 func TestSingleConnQueryContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
+	ctx := context.Background()
+	_, aid2, _, _ := insertFixtures(t, gdb)
 
-	_, aid2, _, _ := insertFixtures(t, d)
-
-	q := d.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
-	e2 := d.SingleConn(nil, func(ex Execer) error {
-		rows, err := ex.QueryContext(context.Background(), q, aid2)
+	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
+	e2 := gdb.SingleConn(ctx, func(ex Execer) error {
+		rows, err := ex.Query(ctx, q, aid2)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(rows.Next()).To(BeTrue())
 
@@ -139,15 +132,13 @@ func TestSingleConnQueryContext(t *testing.T) {
 func TestTransactCommitUsingInsert(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
-
 	ctx := context.Background()
-	insertFixtures(t, d)
+	insertFixtures(t, gdb)
 
-	q := d.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
-	err := d.Transact(ctx, nil, func(tx SqlTx) error {
+	q := gdb.Dialect().ReplacePlaceholders("INSERT INTO pfx_addresses (xlines, postcode) VALUES (?, ?)", nil)
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
 		for i := 1; i <= 10; i++ {
-			_, e2 := tx.InsertContext(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
+			_, e2 := tx.Insert(ctx, "id", q, fmt.Sprintf("%d Pantagon Vale", i), "FX1 5EE")
 			if e2 != nil {
 				return e2
 			}
@@ -156,7 +147,7 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -167,19 +158,17 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 func TestTransactCommitUsingExec(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
-
 	ctx := context.Background()
-	_, aid2, aid3, _ := insertFixtures(t, d)
+	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
-	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := d.Transact(ctx, nil, func(tx SqlTx) error {
-		_, e2 := tx.ExecContext(ctx, q, aid2, aid3)
+	q := gdb.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
+		_, e2 := tx.Exec(ctx, q, aid2, aid3)
 		return e2
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 
-	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -190,20 +179,18 @@ func TestTransactCommitUsingExec(t *testing.T) {
 func TestTransactRollback(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d := newDatabase(t)
-
 	ctx := context.Background()
-	_, aid2, aid3, _ := insertFixtures(t, d)
+	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
-	q := d.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
-	err := d.Transact(ctx, nil, func(tx SqlTx) error {
-		tx.ExecContext(ctx, q, aid2, aid3)
+	q := gdb.Dialect().ReplacePlaceholders("delete from pfx_addresses where id in(?,?)", nil)
+	err := gdb.Transact(ctx, nil, func(tx SqlTx) error {
+		tx.Exec(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(Equal("Bang"))
 
-	row := d.QueryRowContext(ctx, "select count(1) from pfx_addresses")
+	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
@@ -214,17 +201,12 @@ func TestTransactRollback(t *testing.T) {
 func TestUserItemWrapper(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	d1 := newDatabase(t)
-	d2 := d1.With("hello")
-	g.Expect(d1.UserItem()).To(BeNil())
+	d2 := gdb.With("hello")
+	g.Expect(gdb.UserItem()).To(BeNil())
 	g.Expect(d2.UserItem().(string)).To(Equal("hello"))
 }
 
 //-------------------------------------------------------------------------------------------------
-
-func newDatabase(t *testing.T) SqlDB {
-	return gdb
-}
 
 type simpleLogger struct{}
 
@@ -238,27 +220,31 @@ func (l simpleLogger) Log(args ...interface{}) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+
+	var lvl pgx.LogLevel = pgx.LogLevelWarn
+	if testing.Verbose() {
+		lvl = pgx.LogLevelInfo
+	}
+
 	// first connection attempt: environment config for local DB
-	testUsingLocalDB(m)
+	testenv.SetEnvironmentForLocalPostgres()
+	testUsingLocalDB(m, lvl)
 
 	// second connection attempt: connect to DB provided by TravisCI
-	testUsingTravisCiDB(m)
+	testenv.SetEnvironmentForTravisCiDB()
+	testUsingLocalDB(m, lvl)
 
 	// third connection attempt: start up dockerised DB and use it
-	testUsingDockertest(m)
+	testUsingDockertest(m, lvl)
 }
 
-func testUsingLocalDB(m *testing.M) {
+func testUsingLocalDB(m *testing.M, lvl pgx.LogLevel) {
 	log.Println("Attempting to connect to local postgresql")
 
 	lgr := testingadapter.NewLogger(simpleLogger{})
-	poolConfig := ParseEnvConfig()
-	poolConfig.Logger = lgr
-	poolConfig.LogLevel = pgx.LogLevelInfo
-
-	pgxdb, err := pgx.NewConnPool(poolConfig)
+	var err error
+	gdb, err = ConnectEnv(context.Background(), lgr, lvl)
 	if err == nil {
-		gdb = WrapDB(pgxdb, lgr, nil)
 		os.Exit(m.Run())
 	}
 
@@ -268,90 +254,13 @@ func testUsingLocalDB(m *testing.M) {
 	}
 }
 
-func testUsingTravisCiDB(m *testing.M) {
-	log.Println("Attempting to connect to local postgresql (TravisCI)")
-
-	lgr := testingadapter.NewLogger(simpleLogger{})
-	poolConfig := pgx.ConnPoolConfig{
-		ConnConfig: pgx.ConnConfig{
-			Host:     "localhost",
-			Port:     5432,
-			Database: "postgres",
-			User:     "postgres",
-			Password: "",
-			Logger:   lgr,
-			LogLevel: pgx.LogLevelInfo,
-		},
-	}
-
-	pgxdb, err := pgx.NewConnPool(poolConfig)
-	if err == nil {
-		gdb = WrapDB(pgxdb, lgr, nil)
-		os.Exit(m.Run())
-	}
-
-	var connErr *net.OpError
-	if !errors.As(err, &connErr) {
-		log.Fatalf("Cannot connect: %s", err)
-	}
-}
-
-func testUsingDockertest(m *testing.M) {
-	log.Println("Attempting to connect to docker postgresql")
-
-	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	// pulls an image, creates a container based on it and runs it
-	opts := &dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "12-alpine",
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			"5432/tcp": {{HostPort: "15432/tcp"}},
-		},
-		Env: []string{"PGPASSWORD=x", "POSTGRES_PASSWORD=x"},
-	}
-	resource, err := pool.RunWithOptions(opts)
-	if err != nil {
-		log.Fatalf("Could not start resource: %s", err)
-	}
-
-	// docker always takes some time to start
-	time.Sleep(1950 * time.Millisecond)
-
-	poolConfig := pgx.ConnPoolConfig{
-		ConnConfig: pgx.ConnConfig{
-			Host:     "localhost",
-			Port:     15432,
-			Database: "postgres",
-			User:     "postgres",
-			Password: "x",
-			Logger:   testingadapter.NewLogger(simpleLogger{}),
-			LogLevel: pgx.LogLevelInfo,
-		},
-	}
-
-	pool.MaxWait = 10 * time.Second
-	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
-	if err = pool.Retry(func() error {
-		gdb, err = Connect(poolConfig, nil)
+func testUsingDockertest(m *testing.M, lvl pgx.LogLevel) {
+	testenv.SetUpDockerDbForTest(m, "postgres", func() {
+		var err error
+		lgr := testingadapter.NewLogger(simpleLogger{})
+		gdb, err = ConnectEnv(context.Background(), lgr, lvl)
 		if err != nil {
-			return err
+			log.Fatalf("Could not connect to DB in docker+postgres: %s", err)
 		}
-		return gdb.PingContext(context.Background())
-	}); err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	code := m.Run()
-
-	// You can't defer this because os.Exit doesn't care for defer
-	if err = pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-
-	os.Exit(code)
+	})
 }

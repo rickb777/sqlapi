@@ -10,14 +10,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	"github.com/cenkalti/backoff/v3"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/where/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
-func MustConnectEnv(lgr pgx.Logger, logLevel pgx.LogLevel) SqlDB {
-	db, err := ConnectEnv(lgr, logLevel)
+func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) SqlDB {
+	db, err := ConnectEnv(ctx, lgr, logLevel)
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
@@ -31,52 +34,34 @@ func MustConnectEnv(lgr pgx.Logger, logLevel pgx.LogLevel) SqlDB {
 // Also available are PGQUOTE, DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 // Use PGQUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
 // is none).
-func ConnectEnv(lgr pgx.Logger, logLevel pgx.LogLevel) (SqlDB, error) {
+func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (SqlDB, error) {
 	poolConfig := ParseEnvConfig()
-	poolConfig.Logger = lgr
-	poolConfig.LogLevel = logLevel
+	poolConfig.ConnConfig.Logger = lgr
+	poolConfig.ConnConfig.LogLevel = logLevel
 	quoter := quote.PickQuoter(os.Getenv("PGQUOTE"))
-	return Connect(poolConfig, quoter)
+	return Connect(ctx, poolConfig, quoter)
 }
 
 // ParseEnvConfig creates connection pool config information based on environment variables:
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
 // Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
-func ParseEnvConfig() pgx.ConnPoolConfig {
-	setDefaultEnvValues()
-	config, err := pgx.ParseEnvLibpq()
+func ParseEnvConfig() *pgxpool.Config {
+	dbUrl := os.Getenv("DATABASE_URL")
+	// conveniently, if dbUrl is blank, ParseConfig checks the 'standard' environment variables
+	// including PGHOST, PGPORT, PGDATABASE, PGUSER, etc
+	// (https://pkg.go.dev/github.com/jackc/pgconn#ParseConfig)
+	config, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
 		log.Fatalf("Unable to parse environment: %v\n", err)
 	}
 
-	maxConnections, _ := strconv.Atoi(os.Getenv("DB_MAX_CONNECTIONS"))
-	// if maxConnections == 0, dbx later changes this to its default (5)
-
-	poolConfig := pgx.ConnPoolConfig{
-		ConnConfig:     config,
-		MaxConnections: maxConnections,
-		AcquireTimeout: osGetEnvDuration("PGCONNECT_TIMEOUT", time.Second),
-	}
-	return poolConfig
-}
-
-func setDefaultEnvValues() {
-	requireEnv("PGHOST", "localhost")
-	requireEnv("PGPORT", "5432")
-	requireEnv("PGDATABASE", "postgres")
-	requireEnv("PGUSER", "postgres")
-	requireEnv("PGPASSWORD", "psql")
-	requireEnv("PGSSLMODE", "prefer")
-	requireEnv("DB_MAX_CONNECTIONS", "100")
-	requireEnv("DB_CONNECT_DELAY", "1ms")   // doesn't attempt connection until after this delay
-	requireEnv("DB_CONNECT_TIMEOUT", "10s") // app aborts after this time; 0 is infinite
-	requireEnv("PGQUOTE", "none")
+	return config
 }
 
 // MustConnect is as per Connect but with a fatal termination on error.
-func MustConnect(config pgx.ConnPoolConfig, quoter quote.Quoter) SqlDB {
-	db, err := Connect(config, quoter)
+func MustConnect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter) SqlDB {
+	db, err := Connect(ctx, config, quoter)
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
@@ -85,23 +70,27 @@ func MustConnect(config pgx.ConnPoolConfig, quoter quote.Quoter) SqlDB {
 }
 
 // Connect opens a database connection and pings the server.
-func Connect(config pgx.ConnPoolConfig, quoter quote.Quoter) (SqlDB, error) {
-	config.Logger.Log(pgx.LogLevelInfo, "DB connection",
-		map[string]interface{}{"host": config.Host, "port": config.Port, "user": config.User, "database": config.Database},
+func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter) (SqlDB, error) {
+	config.ConnConfig.Logger.Log(ctx, pgx.LogLevelInfo, "DB connection",
+		map[string]interface{}{
+			"host":     config.ConnConfig.Host,
+			"port":     config.ConnConfig.Port,
+			"user":     config.ConnConfig.User,
+			"database": config.ConnConfig.Database},
 	)
 
-	pool, err := createConnectionPool(config.Logger, config)
+	pool, err := createConnectionPool(ctx, config.ConnConfig.Logger, config)
 	if err != nil {
 		return nil, fmt.Errorf("%w - unable to connect to the database.", err)
 	}
 
 	// ping the connection using an empty statement
-	_, err = pool.ExecEx(context.Background(), ";", nil)
+	_, err = pool.Exec(ctx, ";")
 	if err != nil {
 		return nil, fmt.Errorf("%w - unable to communicate with to the database.", err)
 	}
 
-	return WrapDB(pool, config.Logger, quoter), nil
+	return WrapDB(pool, config.ConnConfig.Logger, quoter), nil
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -112,27 +101,27 @@ const (
 	psqlCannotConnectNow = "57P03"
 )
 
-func createConnectionPool(lgr pgx.Logger, config pgx.ConnPoolConfig) (*pgx.ConnPool, error) {
+func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.Config) (*pgxpool.Pool, error) {
 	backOff := backoff.NewExponentialBackOff()
-	backOff.MaxElapsedTime = osGetEnvDuration("DB_CONNECT_TIMEOUT", 0)
+	backOff.MaxElapsedTime = osGetenvDuration("DB_CONNECT_TIMEOUT", 0)
 
-	var pool *pgx.ConnPool
+	var pool *pgxpool.Pool
 	var err error
 
-	dbConnectDelay := osGetEnvDuration("DB_CONNECT_DELAY", 0)
+	dbConnectDelay := osGetenvDuration("DB_CONNECT_DELAY", 0)
 	if dbConnectDelay > 0 {
-		lgr.Log(pgx.LogLevelInfo, "Waiting to connect to Postgres.", nil)
+		lgr.Log(ctx, pgx.LogLevelInfo, "Waiting to connect to Postgres.", nil)
 		time.Sleep(dbConnectDelay)
 	}
 
-	lgr.Log(pgx.LogLevelInfo, "Connecting to Postgres.", nil)
+	lgr.Log(ctx, pgx.LogLevelInfo, "Connecting to Postgres.", nil)
 
 	// Construct a connection pool, retry until a connection pool can be established
 	err = backoff.RetryNotify(
 		func() error {
-			pool, err = pgx.NewConnPool(config)
+			pool, err = pgxpool.ConnectConfig(ctx, config)
 			if err != nil {
-				e1, ok := err.(pgx.PgError)
+				e1, ok := err.(*pgconn.PgError)
 				if ok && e1.Code == psqlCannotConnectNow {
 					// Retry connection on this specific error
 					return e1
@@ -148,7 +137,7 @@ func createConnectionPool(lgr pgx.Logger, config pgx.ConnPoolConfig) (*pgx.ConnP
 			return nil
 		},
 		backOff,
-		func(err error, next time.Duration) { notify(lgr, err, next) },
+		func(err error, next time.Duration) { notify(ctx, lgr, err, next) },
 	)
 
 	if err != nil {
@@ -161,12 +150,12 @@ func createConnectionPool(lgr pgx.Logger, config pgx.ConnPoolConfig) (*pgx.ConnP
 		}
 	}()
 
-	lgr.Log(pgx.LogLevelInfo, "Connected to Postgres successfully.", nil)
+	lgr.Log(ctx, pgx.LogLevelInfo, "Connected to Postgres successfully.", nil)
 	return pool, nil
 }
 
-func notify(lgr pgx.Logger, err error, next time.Duration) {
-	lgr.Log(pgx.LogLevelWarn, "Failed to create Postgres connection pool",
+func notify(ctx context.Context, lgr pgx.Logger, err error, next time.Duration) {
+	lgr.Log(ctx, pgx.LogLevelWarn, "Failed to create Postgres connection pool",
 		map[string]interface{}{
 			"error":    err,
 			"retry_in": next.Truncate(time.Millisecond),
@@ -183,7 +172,7 @@ func requireEnv(name, defaultValue string) {
 	}
 }
 
-func osGetEnvDuration(name string, deflt time.Duration) time.Duration {
+func osGetenvDuration(name string, deflt time.Duration) time.Duration {
 	duration := os.Getenv(name)
 	d, err := time.ParseDuration(duration)
 	if err == nil {

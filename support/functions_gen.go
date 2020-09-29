@@ -26,13 +26,13 @@ func SliceStringList(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceStringPtrList requests a columnar slice of strings from a specified nullable column.
@@ -50,13 +50,13 @@ func SliceStringPtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, string(v.String))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // StringAsInterfaceSlice adapts a slice of string to []interface{}.
@@ -86,13 +86,13 @@ func SliceIntList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceIntPtrList requests a columnar slice of ints from a specified nullable column.
@@ -110,13 +110,13 @@ func SliceIntPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, int(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // IntAsInterfaceSlice adapts a slice of int to []interface{}.
@@ -146,13 +146,13 @@ func SliceInt64List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceInt64PtrList requests a columnar slice of int64s from a specified nullable column.
@@ -170,13 +170,13 @@ func SliceInt64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, int64(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Int64AsInterfaceSlice adapts a slice of int64 to []interface{}.
@@ -206,13 +206,13 @@ func SliceInt32List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceInt32PtrList requests a columnar slice of int32s from a specified nullable column.
@@ -230,13 +230,13 @@ func SliceInt32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, int32(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Int32AsInterfaceSlice adapts a slice of int32 to []interface{}.
@@ -266,13 +266,13 @@ func SliceInt16List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceInt16PtrList requests a columnar slice of int16s from a specified nullable column.
@@ -290,13 +290,13 @@ func SliceInt16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, int16(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Int16AsInterfaceSlice adapts a slice of int16 to []interface{}.
@@ -326,13 +326,13 @@ func SliceInt8List(tbl sqlapi.Table, req require.Requirement, sqlname string, wh
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceInt8PtrList requests a columnar slice of int8s from a specified nullable column.
@@ -350,13 +350,13 @@ func SliceInt8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string,
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, int8(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Int8AsInterfaceSlice adapts a slice of int8 to []interface{}.
@@ -386,13 +386,13 @@ func SliceUintList(tbl sqlapi.Table, req require.Requirement, sqlname string, wh
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceUintPtrList requests a columnar slice of uints from a specified nullable column.
@@ -410,13 +410,13 @@ func SliceUintPtrList(tbl sqlapi.Table, req require.Requirement, sqlname string,
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, uint(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // UintAsInterfaceSlice adapts a slice of uint to []interface{}.
@@ -446,13 +446,13 @@ func SliceUint64List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceUint64PtrList requests a columnar slice of uint64s from a specified nullable column.
@@ -470,13 +470,13 @@ func SliceUint64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, uint64(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Uint64AsInterfaceSlice adapts a slice of uint64 to []interface{}.
@@ -506,13 +506,13 @@ func SliceUint32List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceUint32PtrList requests a columnar slice of uint32s from a specified nullable column.
@@ -530,13 +530,13 @@ func SliceUint32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, uint32(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Uint32AsInterfaceSlice adapts a slice of uint32 to []interface{}.
@@ -566,13 +566,13 @@ func SliceUint16List(tbl sqlapi.Table, req require.Requirement, sqlname string, 
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceUint16PtrList requests a columnar slice of uint16s from a specified nullable column.
@@ -590,13 +590,13 @@ func SliceUint16PtrList(tbl sqlapi.Table, req require.Requirement, sqlname strin
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, uint16(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Uint16AsInterfaceSlice adapts a slice of uint16 to []interface{}.
@@ -626,13 +626,13 @@ func SliceUint8List(tbl sqlapi.Table, req require.Requirement, sqlname string, w
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceUint8PtrList requests a columnar slice of uint8s from a specified nullable column.
@@ -650,13 +650,13 @@ func SliceUint8PtrList(tbl sqlapi.Table, req require.Requirement, sqlname string
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, uint8(v.Int64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Uint8AsInterfaceSlice adapts a slice of uint8 to []interface{}.
@@ -686,13 +686,13 @@ func SliceFloat64List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceFloat64PtrList requests a columnar slice of float64s from a specified nullable column.
@@ -710,13 +710,13 @@ func SliceFloat64PtrList(tbl sqlapi.Table, req require.Requirement, sqlname stri
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, float64(v.Float64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Float64AsInterfaceSlice adapts a slice of float64 to []interface{}.
@@ -746,13 +746,13 @@ func SliceFloat32List(tbl sqlapi.Table, req require.Requirement, sqlname string,
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // SliceFloat32PtrList requests a columnar slice of float32s from a specified nullable column.
@@ -770,13 +770,13 @@ func SliceFloat32PtrList(tbl sqlapi.Table, req require.Requirement, sqlname stri
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, float32(v.Float64))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Float32AsInterfaceSlice adapts a slice of float32 to []interface{}.

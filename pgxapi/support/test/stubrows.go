@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgproto3/v2"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"reflect"
 )
@@ -14,7 +14,7 @@ type StubRows struct {
 	I          int
 	Rows       []StubRow
 	Error      error
-	Fields     []pgx.FieldDescription
+	Fields     []pgproto3.FieldDescription
 	ValueSlice []interface{}
 }
 
@@ -44,7 +44,7 @@ func (r *StubRows) Scan(dest ...interface{}) error {
 	return nil
 }
 
-func (r *StubRows) FieldDescriptions() []pgx.FieldDescription {
+func (r *StubRows) FieldDescriptions() []pgproto3.FieldDescription {
 	return r.Fields
 }
 

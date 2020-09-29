@@ -196,7 +196,7 @@ func (tbl RecordTable) Query(query string, args ...interface{}) (pgxapi.SqlRows,
 //
 // The args are for any placeholder parameters in the query.
 func (tbl RecordTable) QueryOneNullString(req require.Requirement, query string, args ...interface{}) (result sql.NullString, err error) {
-	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
+	err = support.QueryOneNullThing(tbl.Ctx(), tbl, req, &result, query, args...)
 	return result, err
 }
 
@@ -208,7 +208,7 @@ func (tbl RecordTable) QueryOneNullString(req require.Requirement, query string,
 //
 // The args are for any placeholder parameters in the query.
 func (tbl RecordTable) QueryOneNullInt64(req require.Requirement, query string, args ...interface{}) (result sql.NullInt64, err error) {
-	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
+	err = support.QueryOneNullThing(tbl.Ctx(), tbl, req, &result, query, args...)
 	return result, err
 }
 
@@ -220,6 +220,6 @@ func (tbl RecordTable) QueryOneNullInt64(req require.Requirement, query string, 
 //
 // The args are for any placeholder parameters in the query.
 func (tbl RecordTable) QueryOneNullFloat64(req require.Requirement, query string, args ...interface{}) (result sql.NullFloat64, err error) {
-	err = support.QueryOneNullThing(tbl, req, &result, query, args...)
+	err = support.QueryOneNullThing(tbl.Ctx(), tbl, req, &result, query, args...)
 	return result, err
 }

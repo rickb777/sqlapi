@@ -3,8 +3,8 @@
     <module name="sqlapi" />
     <working_directory value="$PROJECT_DIR$/pgxapi/support" />
     <framework value="gotest" />
-    <kind value="DIRECTORY" />
-    <package value="github.com/rickb777/sqlapi" />
+    <kind value="PACKAGE" />
+    <package value="github.com/rickb777/sqlapi/pgxapi/support" />
     <directory value="$PROJECT_DIR$/pgxapi/support" />
     <filePath value="$PROJECT_DIR$" />
     <method v="2" />

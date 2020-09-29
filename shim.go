@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/sqlapi/dialect"
 )
 
@@ -42,24 +42,24 @@ var _ SqlTx = new(shim)
 
 //-------------------------------------------------------------------------------------------------
 
-func (sh *shim) QueryContext(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
+func (sh *shim) Query(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
 	qr := sh.di.ReplacePlaceholders(query, nil)
 	return sh.ex.QueryContext(defaultCtx(ctx), qr, args...)
 }
 
-func (sh *shim) QueryRowContext(ctx context.Context, query string, args ...interface{}) SqlRow {
+func (sh *shim) QueryRow(ctx context.Context, query string, args ...interface{}) SqlRow {
 	qr := sh.di.ReplacePlaceholders(query, nil)
 	return sh.ex.QueryRowContext(defaultCtx(ctx), qr, args...)
 }
 
-func (sh *shim) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+func (sh *shim) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	if sh.di.HasLastInsertId() {
-		return sh.mysqlInsertContext(ctx, query, args...)
+		return sh.mysqlInsert(ctx, query, args...)
 	}
-	return sh.postgresInsertContext(ctx, pk, query, args...)
+	return sh.postgresInsert(ctx, pk, query, args...)
 }
 
-func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (sh *shim) mysqlInsert(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	res, err := sh.ex.ExecContext(defaultCtx(ctx), query, args...)
 	if err != nil {
 		return 0, wrap(err, query, args)
@@ -68,7 +68,7 @@ func (sh *shim) mysqlInsertContext(ctx context.Context, query string, args ...in
 	return id, wrap(err, query, args)
 }
 
-func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+func (sh *shim) postgresInsert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
 	qr := sh.di.ReplacePlaceholders(q2, nil)
 	row := sh.ex.QueryRowContext(defaultCtx(ctx), qr, args...)
@@ -80,7 +80,7 @@ func (sh *shim) postgresInsertContext(ctx context.Context, pk, query string, arg
 	return id, nil
 }
 
-func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (sh *shim) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	qr := sh.di.ReplacePlaceholders(query, nil)
 	res, err := sh.ex.ExecContext(defaultCtx(ctx), qr, args...)
 	if err != nil {
@@ -88,12 +88,6 @@ func (sh *shim) ExecContext(ctx context.Context, query string, args ...interface
 	}
 	n, err := res.RowsAffected()
 	return n, wrap(err, query, args)
-}
-
-func (sh *shim) PrepareContext(ctx context.Context, name, query string) (SqlStmt, error) {
-	qr := sh.di.ReplacePlaceholders(query, nil)
-	ps, err := sh.ex.PrepareContext(defaultCtx(ctx), qr)
-	return ps, wrap(err, query, nil)
 }
 
 func (sh *shim) IsTx() bool {
@@ -121,7 +115,31 @@ func (sh *shim) UserItem() interface{} {
 //-------------------------------------------------------------------------------------------------
 // sql.DB specific methods
 
-func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error) {
+func convertTxOptions(pgopts *pgx.TxOptions) *sql.TxOptions {
+	if pgopts == nil {
+		return nil
+	}
+
+	iso := sql.LevelDefault
+	switch pgopts.IsoLevel {
+	case pgx.ReadCommitted:
+		iso = sql.LevelReadCommitted
+	case pgx.ReadUncommitted:
+		iso = sql.LevelReadUncommitted
+	case pgx.RepeatableRead:
+		iso = sql.LevelRepeatableRead
+	case pgx.Serializable:
+		iso = sql.LevelSerializable
+	}
+
+	return &sql.TxOptions{
+		Isolation: iso,
+		ReadOnly:  pgopts.AccessMode == pgx.ReadOnly,
+	}
+}
+
+func (sh *shim) beginTx(ctx context.Context, pgopts *pgx.TxOptions) (SqlTx, error) {
+	opts := convertTxOptions(pgopts)
 	tx, err := sh.ex.(*sql.DB).BeginTx(defaultCtx(ctx), opts)
 	if err != nil {
 		return nil, err
@@ -133,7 +151,7 @@ func (sh *shim) beginTx(ctx context.Context, opts *sql.TxOptions) (SqlTx, error)
 }
 
 // Transact takes a function and executes it within a database transaction.
-func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(SqlTx) error) (err error) {
+func (sh *shim) Transact(ctx context.Context, txOptions *pgx.TxOptions, fn func(SqlTx) error) (err error) {
 	if sh.isTx {
 		if _, isTx := sh.ex.(*sql.Tx); isTx {
 			return fn(sh) // nested transactions are inlined
@@ -148,14 +166,14 @@ func (sh *shim) Transact(ctx context.Context, txOptions *sql.TxOptions, fn func(
 
 	defer func() {
 		if p := recover(); p != nil {
-			_ = tx.Rollback()
-			err = logPanicData(p, sh.lgr)
+			_ = tx.Rollback(ctx)
+			err = logPanicData(ctx, p, sh.lgr)
 
 		} else if err != nil {
-			_ = tx.Rollback()
+			_ = tx.Rollback(ctx)
 
 		} else {
-			err = tx.Commit()
+			err = tx.Commit(ctx)
 		}
 	}()
 
@@ -172,7 +190,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 
 	defer func() {
 		if p := recover(); p != nil {
-			err = logPanicData(p, sh.lgr)
+			err = logPanicData(ctx, p, sh.lgr)
 		}
 		e2 := conn.Close()
 		if err == nil {
@@ -190,7 +208,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	return fn(ex)
 }
 
-func logPanicData(p interface{}, lgr pgx.Logger) error {
+func logPanicData(ctx context.Context, p interface{}, lgr pgx.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = e
@@ -199,7 +217,7 @@ func logPanicData(p interface{}, lgr pgx.Logger) error {
 	}
 	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 	if lgr != nil {
-		lgr.Log(pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
+		lgr.Log(ctx, pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
 	} else {
 		log.Printf("panic recovered: %+v", p)
 	}
@@ -210,7 +228,7 @@ func (sh *shim) Close() error {
 	return sh.ex.(*sql.DB).Close()
 }
 
-func (sh *shim) PingContext(ctx context.Context) error {
+func (sh *shim) Ping(ctx context.Context) error {
 	return sh.ex.(*sql.DB).PingContext(ctx)
 }
 
@@ -221,11 +239,11 @@ func (sh *shim) Stats() sql.DBStats {
 //-------------------------------------------------------------------------------------------------
 // TX-specific methods
 
-func (sh *shim) Commit() error {
+func (sh *shim) Commit(ctx context.Context) error {
 	return sh.ex.(*sql.Tx).Commit()
 }
 
-func (sh *shim) Rollback() error {
+func (sh *shim) Rollback(ctx context.Context) error {
 	return sh.ex.(*sql.Tx).Rollback()
 }
 

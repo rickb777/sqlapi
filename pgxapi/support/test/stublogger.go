@@ -1,8 +1,9 @@
 package test
 
 import (
+	"context"
 	"fmt"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/collection"
 	"strings"
 )
@@ -21,7 +22,7 @@ type StubLogger struct {
 
 var _ pgx.Logger = new(StubLogger)
 
-func (r *StubLogger) Log(level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (r *StubLogger) Log(_ context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
 	m := collection.StringAnyMap(data)
 	args := m.OrderedSlice(m.Keys().Sorted()).MkString4("[", ", ", "]", "=")
 	buf := &strings.Builder{}

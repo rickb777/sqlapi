@@ -12,7 +12,7 @@ import (
 	"github.com/rickb777/sqlapi/support/test"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"

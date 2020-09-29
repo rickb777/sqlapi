@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/where/quote"
@@ -24,39 +24,24 @@ var _ pgxapi.Execer = &StubExecer{}
 
 // n.b. logging is included here because this emulates the behaviour of pgx
 
-func (e StubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
+func (e StubExecer) Query(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
+	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
 	return e.Rows, e.Err
 }
 
-func (e StubExecer) QueryExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) (pgxapi.SqlRows, error) {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
-	return nil, e.Err
-}
-
-func (e StubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) pgxapi.SqlRow {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
+func (e StubExecer) QueryRow(ctx context.Context, query string, args ...interface{}) pgxapi.SqlRow {
+	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
 	return e.Row
 }
 
-func (e StubExecer) QueryRowExRaw(ctx context.Context, query string, options *pgx.QueryExOptions, args ...interface{}) pgxapi.SqlRow {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
-	return e.Row
-}
-
-func (e StubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
+func (e StubExecer) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
 	return e.N, e.Err
 }
 
-func (e StubExecer) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
-	e.Lgr.Log(pgx.LogLevelInfo, query, argMap(args...))
+func (e StubExecer) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
 	return e.N, e.Err
-}
-
-// PrepareContext is not implemented
-func (e StubExecer) PrepareContext(ctx context.Context, name, query string) (*pgx.PreparedStatement, error) {
-	return nil, e.Err
 }
 
 func (StubExecer) IsTx() bool {
@@ -87,7 +72,7 @@ func (e StubExecer) Transact(_ context.Context, txOptions *pgx.TxOptions, fn fun
 	return fn(e)
 }
 
-func (e StubExecer) PingContext(_ context.Context) error {
+func (e StubExecer) Ping(_ context.Context) error {
 	return e.Err
 }
 
@@ -99,7 +84,9 @@ func (e StubExecer) SingleConn(_ context.Context, fn func(ex pgxapi.Execer) erro
 	return fn(e)
 }
 
-func (e StubExecer) Close() {}
+func (e StubExecer) Close() error {
+	return nil
+}
 
 func (e StubExecer) With(userItem interface{}) pgxapi.SqlDB {
 	e.User = userItem
@@ -112,11 +99,11 @@ func (e StubExecer) UserItem() interface{} {
 
 //-------------------------------------------------------------------------------------------------
 
-func (e StubExecer) Commit() error {
+func (e StubExecer) Commit(_ context.Context) error {
 	return e.Err
 }
 
-func (e StubExecer) Rollback() error {
+func (e StubExecer) Rollback(_ context.Context) error {
 	return e.Err
 }
 

@@ -1,6 +1,7 @@
 package support
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/rickb777/sqlapi/dialect"
@@ -18,7 +19,7 @@ func ReplaceTableName(tbl pgxapi.Table, query string) string {
 
 // QueryOneNullThing queries for one cell of one record. Normally, the holder will be sql.NullString or similar.
 // If required, the query can use "{TABLE}" in place of the table name.
-func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
+func QueryOneNullThing(ctx context.Context, tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
 
@@ -32,7 +33,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return tbl.Logger().LogIfError(ctx, require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -42,7 +43,7 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 		}
 	}
 
-	return tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return tbl.Logger().LogIfError(ctx, require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -67,9 +68,9 @@ func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.Que
 func Query(tbl pgxapi.Table, query string, args ...interface{}) (pgxapi.SqlRows, error) {
 	q2 := tbl.Dialect().ReplacePlaceholders(query, args)
 	lgr := tbl.Logger()
-	lgr.LogQuery(q2, args...)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), q2, args...)
-	return rows, lgr.LogIfError(err)
+	lgr.LogQuery(tbl.Ctx(), q2, args...)
+	rows, err := tbl.Execer().Query(tbl.Ctx(), q2, args...)
+	return rows, lgr.LogIfError(tbl.Ctx(), err)
 }
 
 // Exec executes a modification query (insert, update, delete, etc) and returns the number of items affected.
@@ -83,10 +84,10 @@ func Exec(tbl pgxapi.Table, req require.Requirement, query string, args ...inter
 
 func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) {
 	lgr := tbl.Logger()
-	lgr.LogQuery(query, args...)
-	n, err := tbl.Execer().ExecContext(tbl.Ctx(), query, args...)
+	lgr.LogQuery(tbl.Ctx(), query, args...)
+	n, err := tbl.Execer().Exec(tbl.Ctx(), query, args...)
 	if err != nil {
-		return 0, lgr.LogError(err)
+		return 0, lgr.LogError(tbl.Ctx(), err)
 	}
 	return n, err
 }
@@ -158,7 +159,7 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 		count += n
 	}
 
-	return count, tbl.Logger().LogIfError(require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
+	return count, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfExecNotSatisfiedBy(err, req, n))
 }
 
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
@@ -166,9 +167,9 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
+	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(err)
+		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 	}
 	defer rows.Close()
 
@@ -177,7 +178,7 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 		var k, v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(err)
+			return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 		}
 		index[k] = v
 	}
@@ -189,9 +190,9 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
+	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(err)
+		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 	}
 	defer rows.Close()
 
@@ -201,7 +202,7 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v int64
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(err)
+			return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 		}
 		index[k] = v
 	}
@@ -213,9 +214,9 @@ func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
-	rows, err := tbl.Execer().QueryContext(tbl.Ctx(), qr, args...)
+	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
-		return nil, tbl.Logger().LogError(err)
+		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 	}
 	defer rows.Close()
 
@@ -225,7 +226,7 @@ func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 		var v string
 		err = rows.Scan(&k, &v)
 		if err != nil {
-			return nil, tbl.Logger().LogError(err)
+			return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 		}
 		index[k] = v
 	}

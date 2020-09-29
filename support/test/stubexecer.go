@@ -2,8 +2,8 @@ package test
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/dialect"
 )
@@ -23,28 +23,24 @@ var _ sqlapi.Execer = &StubExecer{}
 
 // n.b. logging is absent here (it happens in the support functions)
 
-func (e StubExecer) QueryContext(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
+func (e StubExecer) Query(ctx context.Context, query string, args ...interface{}) (sqlapi.SqlRows, error) {
 	//e.Lgr.Log("%s %v", query, args)
 	return e.Rows, e.Err
 }
 
-func (e StubExecer) QueryRowContext(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
+func (e StubExecer) QueryRow(ctx context.Context, query string, args ...interface{}) sqlapi.SqlRow {
 	//e.Lgr.Log("%s %v", query, args)
 	return e.Row
 }
 
-func (e StubExecer) ExecContext(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (e StubExecer) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	//e.Lgr.Log("%s %v", query, args)
 	return e.N, e.Err
 }
 
-func (e StubExecer) InsertContext(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+func (e StubExecer) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	//e.Lgr.Log("%s [%s] %v", query, pk, args)
 	return e.N, e.Err
-}
-
-func (e StubExecer) PrepareContext(ctx context.Context, name, query string) (sqlapi.SqlStmt, error) {
-	return nil, e.Err
 }
 
 func (StubExecer) IsTx() bool {
@@ -61,11 +57,11 @@ func (e StubExecer) Dialect() dialect.Dialect {
 
 //-------------------------------------------------------------------------------------------------
 
-func (e StubExecer) Transact(_ context.Context, txOptions *sql.TxOptions, fn func(sqlapi.SqlTx) error) error {
+func (e StubExecer) Transact(_ context.Context, txOptions *pgx.TxOptions, fn func(sqlapi.SqlTx) error) error {
 	return fn(e)
 }
 
-func (e StubExecer) PingContext(_ context.Context) error {
+func (e StubExecer) Ping(_ context.Context) error {
 	return e.Err
 }
 
@@ -92,10 +88,10 @@ func (e StubExecer) UserItem() interface{} {
 
 //-------------------------------------------------------------------------------------------------
 
-func (e StubExecer) Commit() error {
+func (e StubExecer) Commit(_ context.Context) error {
 	return e.Err
 }
 
-func (e StubExecer) Rollback() error {
+func (e StubExecer) Rollback(_ context.Context) error {
 	return e.Err
 }

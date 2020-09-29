@@ -17,13 +17,13 @@ func Slice{{.Type.U}}List(tbl {{.SqlApi}}.Table, req require.Requirement, sqlnam
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else {
 			list = append(list, v)
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // Slice{{.Type.U}}PtrList requests a columnar slice of {{.Type}}s from a specified nullable column.
@@ -41,13 +41,13 @@ func Slice{{.Type.U}}PtrList(tbl {{.SqlApi}}.Table, req require.Requirement, sql
 	for rows.Next() {
 		err := rows.Scan(&v)
 		if err == sql.ErrNoRows {
-			return list, tbl.Logger().LogIfError(require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
+			return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, int64(len(list))))
 		} else if v.Valid {
 			list = append(list, {{.Type}}(v.{{.NT}}))
 		}
 	}
 
-	return list, tbl.Logger().LogIfError(require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
+	return list, tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, int64(len(list))))
 }
 
 // {{.Type.U}}AsInterfaceSlice adapts a slice of {{.Type}} to []interface{}.

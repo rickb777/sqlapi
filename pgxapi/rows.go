@@ -1,7 +1,7 @@
 package pgxapi
 
 import (
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgproto3/v2"
 	"github.com/rickb777/collection"
 )
 
@@ -10,7 +10,7 @@ type SqlRow interface {
 	Scan(dest ...interface{}) error
 }
 
-// SqlRows is a precis of *sql.Rows.
+// SqlRows is a precis of pgx.Rows.
 type SqlRows interface {
 	SqlRow
 
@@ -19,7 +19,7 @@ type SqlRows interface {
 	// when all rows are read.
 	Next() bool
 
-	FieldDescriptions() []pgx.FieldDescription
+	FieldDescriptions() []pgproto3.FieldDescription
 
 	// Values returns an array of the row values
 	Values() ([]interface{}, error)
@@ -31,24 +31,20 @@ type SqlRows interface {
 	Err() error
 }
 
-// Type conformance assertions
-var _ SqlRow = &pgx.Row{}
-var _ SqlRows = &pgx.Rows{}
-
 //-------------------------------------------------------------------------------------------------
 
 // Rows provides a tool for scanning result *sql.Rows of arbitrary or varying length.
 // The internal *sql.Rows field is exported and is usable as per normal via its Next
 // and Scan methods, or the Next and ScanToMap methods can be used instead.
 type Rows struct {
-	fields []pgx.FieldDescription
+	fields []pgproto3.FieldDescription
 	values []interface{}
 	Rows   SqlRows
 }
 
 // RowData holds a single row result from the database.
 type RowData struct {
-	Fields []pgx.FieldDescription
+	Fields []pgproto3.FieldDescription
 	Data   collection.StringAnyMap
 }
 
@@ -101,7 +97,7 @@ func (rams *Rows) ScanToMap() (RowData, error) {
 	m := make(collection.StringAnyMap)
 	for i, field := range rams.fields {
 		v := valuePointers[i].(*interface{})
-		m[field.Name] = *v
+		m[string(field.Name)] = *v
 	}
 
 	return RowData{rams.fields, m}, nil
@@ -121,6 +117,6 @@ func (rams *Rows) Err() error {
 	return rams.Rows.Err()
 }
 
-func (rams *Rows) FieldDescriptions() []pgx.FieldDescription {
+func (rams *Rows) FieldDescriptions() []pgproto3.FieldDescription {
 	return rams.fields
 }

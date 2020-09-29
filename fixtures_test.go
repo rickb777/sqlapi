@@ -14,7 +14,7 @@ func insertFixtures(t *testing.T, e sqlapi.Execer) (aid1, aid2, aid3, aid4 int64
 	g := gomega.NewGomegaWithT(t)
 
 	for _, s := range createTablesSql(e.Dialect()) {
-		_, err := e.ExecContext(context.Background(), s)
+		_, err := e.Exec(context.Background(), s)
 		g.Expect(err).To(gomega.BeNil())
 	}
 
@@ -31,7 +31,7 @@ func insertFixtures(t *testing.T, e sqlapi.Execer) (aid1, aid2, aid3, aid4 int64
 }
 
 func insertOne(g *gomega.GomegaWithT, e sqlapi.Execer, query string) int64 {
-	id, err := e.InsertContext(context.Background(), "id", query)
+	id, err := e.Insert(context.Background(), "id", query)
 	g.Expect(err).To(gomega.BeNil())
 	return id
 }

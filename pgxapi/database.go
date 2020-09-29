@@ -17,7 +17,7 @@ type DBStats = sql.DBStats
 // If the regular expression is nil, all table names are returned.
 func ListTables(ex Execer, re *regexp.Regexp) (collection.StringList, error) {
 	ss := make(collection.StringList, 0)
-	rows, err := ex.QueryContext(context.Background(), ex.Dialect().ShowTables())
+	rows, err := ex.Query(context.Background(), ex.Dialect().ShowTables())
 	if err != nil {
 		return nil, err
 	}

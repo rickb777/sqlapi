@@ -1,6 +1,7 @@
 package constraint
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/rickb777/collection"
@@ -165,7 +166,7 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl pgxapi.Table) (collection.Int
 		pfx, rel.Child.TableName,
 		rel.Parent.Column, rel.Child.Column,
 		rel.Child.Column)
-	return fetchIds(tbl, s)
+	return fetchIds(tbl.Ctx(), tbl, s)
 }
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
@@ -184,13 +185,13 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl pgxapi.Table) (collection.Int64
 		pfx, rel.Parent.TableName,
 		pfx, rel.Child.TableName,
 		rel.Parent.Column, rel.Child.Column)
-	return fetchIds(tbl, s)
+	return fetchIds(tbl.Ctx(), tbl, s)
 }
 
-func fetchIds(tbl pgxapi.Table, query string) (collection.Int64Set, error) {
+func fetchIds(ctx context.Context, tbl pgxapi.Table, query string) (collection.Int64Set, error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
-		return nil, tbl.Logger().LogError(err)
+		return nil, tbl.Logger().LogError(ctx, err)
 	}
 	defer rows.Close()
 
@@ -200,5 +201,5 @@ func fetchIds(tbl pgxapi.Table, query string) (collection.Int64Set, error) {
 		rows.Scan(&id)
 		set.Add(id)
 	}
-	return set, tbl.Logger().LogIfError(rows.Err())
+	return set, tbl.Logger().LogIfError(ctx, rows.Err())
 }
