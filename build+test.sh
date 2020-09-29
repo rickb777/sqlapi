@@ -36,11 +36,13 @@ rm -f reports/*.out reports/*.html */*.txt demo/*_sql.go
 
 ### Collection Types ###
 # these generated files hardly ever need to change (see github.com/rickb777/runtemplate to do so)
-[ -f schema/type_set.go ]  || runtemplate -tpl simple/set.tpl  -output schema/type_set.go Type=Type Comparable:true Ordered:false Numeric:false
-[ support/functions.tpl -ot support/functions_gen.go ] || rm -vf support/functions_gen.go
-[ support/functions.tpl -ot pgxapi/support/functions_gen.go ] || rm -vf pgxapi/support/functions_gen.go
-[ -f support/functions_gen.go ] || ./support/functions.sh
-[ -f pgxapi/support/functions_gen.go ] || ./pgxapi/support/functions.sh
+if [[ $1 != "travis" ]]; then
+  [ -f schema/type_set.go ]  || runtemplate -tpl simple/set.tpl  -output schema/type_set.go Type=Type Comparable:true Ordered:false Numeric:false
+  [ support/functions.tpl -ot support/functions_gen.go ] || rm -vf support/functions_gen.go
+  [ support/functions.tpl -ot pgxapi/support/functions_gen.go ] || rm -vf pgxapi/support/functions_gen.go
+  [ -f support/functions_gen.go ] || ./support/functions.sh
+  [ -f pgxapi/support/functions_gen.go ] || ./pgxapi/support/functions.sh
+fi
 
 ### Build Phase 1 ###
 
