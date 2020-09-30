@@ -11,7 +11,15 @@ import (
 )
 
 func SetEnvironmentForLocalPostgres() {
-	if os.Getenv("DB_DRIVER") != "" {
+	if os.Getenv("TEST_ENV") == "travis" {
+		log.Println("Attempting to connect to local postgres")
+		mustSetEnv("DB_DRIVER", "pgx")
+		mustSetEnv("PGHOST", "localhost")
+		mustSetEnv("PGPORT", "5432")
+		mustSetEnv("PGDATABASE", "postgres")
+		mustSetEnv("PGUSER", "postgres")
+		mustSetEnv("PGPASSWORD", "")
+	} else {
 		log.Println("Attempting to connect to local postgres")
 		mustSetEnv("DB_DRIVER", "pgx")
 		mustSetEnv("PGHOST", "localhost")

@@ -3,10 +3,12 @@ package sqlapi
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rickb777/where/quote"
@@ -36,6 +38,16 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (Sql
 	driver := os.Getenv("DB_DRIVER")
 	if driver == "" {
 		driver = "sqlite3"
+		if dbUrl == "" {
+			dbUrl = "file::memory:?mode=memory&cache=shared"
+		}
+	}
+
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	if dbUrl == "" && dbUser != "" && dbPassword != "" && dbName != "" {
+		dbUrl = fmt.Sprintf("%s:%s@/%s", dbUser, dbPassword, dbName)
 	}
 
 	di := dialect.PickDialect(driver)
@@ -68,7 +80,11 @@ func MustConnect(ctx context.Context, driverName, dataSourceName string, di dial
 	return db
 }
 
-func Connect(ctx context.Context, driverName, dataSourceName string, di dialect.Dialect, lgr Logger) (SqlDB, error) {
+func Connect(ctx context.Context, driver, dsn string, di dialect.Dialect, lgr Logger) (SqlDB, error) {
+	if (driver == "postgres" || driver == "pgx") && dsn != "" && !strings.HasPrefix("postgres://", dsn) {
+		dsn = "postgres://" + dsn
+	}
+
 	backOff := backoff.NewExponentialBackOff()
 	backOff.MaxElapsedTime = osGetEnvDuration("DB_CONNECT_TIMEOUT", 0)
 
@@ -85,7 +101,7 @@ func Connect(ctx context.Context, driverName, dataSourceName string, di dialect.
 	err = backoff.RetryNotify(
 		func() error {
 			lgr.Log(ctx, pgx.LogLevelInfo, "Connecting to "+di.String(), nil)
-			db, err = sql.Open(driverName, dataSourceName)
+			db, err = sql.Open(driver, dsn)
 			if err != nil {
 				e2, ok := err.(*net.OpError)
 				if ok && e2.Op == "dial" {

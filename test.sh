@@ -15,25 +15,25 @@ cd "$(dirname $0)"
 
 PATH=$HOME/go/bin:$PATH
 
-unset GOPATH DB_DRIVER GO_DSN PGQUOTE
+unset GOPATH DB_DRIVER GO_DSN DB_URL DB_DIALECT DB_QUOTE PGQUOTE
 export PGHOST=localhost
 
 #
 # accommodate different ways of running this script, including Travis
 #
 if [[ -n $PGUSER ]]; then
-  DBUSER=$PGUSER
-  DBPASS=$PASSWORD
+  DB_USER=$PGUSER
+  DB_PASSWORD=$PASSWORD
 fi
 
-if [[ -z $DBUSER ]]; then
-  export DBUSER=testuser
-  export DBPASS=TestPasswd.9.9.9
+if [[ -z $DB_USER ]]; then
+  export DB_USER=testuser
+  export DB_PASSWORD=TestPasswd.9.9.9
 fi
 
 if [[ -z $PGUSER ]]; then
-  export PGUSER=$DBUSER
-  export PGPASSWORD=$DBPASS
+  export PGUSER=$DB_USER
+  export PGPASSWORD=$DB_PASSWORD
   export PGDATABASE=test
 fi
 
@@ -57,27 +57,27 @@ for db in $DBS; do
     mysql)
       echo "MySQL...."
       go clean -testcache ||:
-      DB_DRIVER=mysql DB_URL=$DBUSER:$DBPASS@/test go test $V $PACKAGES
+      DB_DRIVER=mysql DB_URL=$DB_USER:$DB_PASSWORD@/test go test $V $PACKAGES
       ;;
 
     postgres)
       echo "PostgreSQL (no quotes)...."
       go clean -testcache ||:
-      DB_DRIVER=postgres DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=none go test $V $PACKAGES
+      DB_DRIVER=postgres DB_URL="$DB_USER:$DB_PASSWORD@/test" PGQUOTE=none go test $V $PACKAGES
       echo
       echo "PostgreSQL (ANSI)...."
       go clean -testcache ||:
-      DB_DRIVER=postgres DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=ansi go test $V $PACKAGES
+      DB_DRIVER=postgres DB_URL="$DB_USER:$DB_PASSWORD@/test" PGQUOTE=ansi go test $V $PACKAGES
       ;;
 
     pgx)
       echo "PGX (no quotes)...."
       go clean -testcache ||:
-      DB_DRIVER=pgx DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=none go test $V $PACKAGES
+      DB_DRIVER=pgx DB_URL="$DB_USER:$DB_PASSWORD@/test" PGQUOTE=none go test $V $PACKAGES
       echo
       echo "PGX (ANSI)...."
       go clean -testcache ||:
-      DB_DRIVER=pgx DB_URL="postgres://$DBUSER:$DBPASS@/test" PGQUOTE=ansi go test $V $PACKAGES
+      DB_DRIVER=pgx DB_URL="$DB_USER:$DB_PASSWORD@/test" PGQUOTE=ansi go test $V $PACKAGES
       echo
       echo "PGXAPI (ANSI)...."
       go clean -testcache ||:

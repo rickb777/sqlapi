@@ -59,10 +59,25 @@ v go install ./...
 v ./test.sh -v sqlite
 
 ### Build Phase 2 ###
-export DB_DRIVER='postgres'
-export PGDATABASE='test'
-export PGUSER='testuser'
-export PGPASSWORD='TestPasswd.9.9.9'
+echo "========== Build Phase 2 =========="
+if [[ $1 = "travis" ]]; then
+  export TEST_ENV=travis
+  export DB_DRIVER='postgres'
+  export DB_DATABASE='postgres'
+  export PGDATABASE='postgres'
+  export DB_USER='postgres'
+  export PGUSER='postgres'
+  export DB_PASSWORD=''
+  export PGPASSWORD=''
+else
+  export DB_DRIVER='postgres'
+  export DB_DATABASE='test'
+  export PGDATABASE='test'
+  export DB_USER='testuser'
+  export PGUSER='testuser'
+  export DB_PASSWORD='TestPasswd.9.9.9'
+  export PGPASSWORD='TestPasswd.9.9.9'
+fi
 
 rm -f reports/*
 

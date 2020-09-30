@@ -46,9 +46,9 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (Sql
 // ParseEnvConfig creates connection pool config information based on environment variables:
 // PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGCONNECT_TIMEOUT,
 // PGSSLMODE, PGSSLKEY, PGSSLCERT, PGSSLROOTCERT.
-// Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
+// Also available are DB_URL, DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 func ParseEnvConfig() *pgxpool.Config {
-	dbUrl := os.Getenv("DATABASE_URL")
+	dbUrl := os.Getenv("DB_URL")
 	if dbUrl != "" && !strings.HasPrefix("postgres://", dbUrl) {
 		dbUrl = "postgres://" + dbUrl
 	}
