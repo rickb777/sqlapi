@@ -19,6 +19,13 @@ func (d sqlite) Index() int {
 }
 
 func (d sqlite) String() string {
+	if d.q != nil {
+		return fmt.Sprintf("Sqlite/%s", d.q)
+	}
+	return "Sqlite"
+}
+
+func (d sqlite) Name() string {
 	return "Sqlite"
 }
 

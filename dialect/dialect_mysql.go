@@ -19,6 +19,13 @@ func (d mysql) Index() int {
 }
 
 func (d mysql) String() string {
+	if d.q != nil {
+		return fmt.Sprintf("Mysql/%s", d.q)
+	}
+	return "Mysql"
+}
+
+func (d mysql) Name() string {
 	return "Mysql"
 }
 

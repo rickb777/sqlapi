@@ -21,6 +21,13 @@ func (d postgres) Index() int {
 }
 
 func (d postgres) String() string {
+	if d.q != nil {
+		return fmt.Sprintf("Postgres/%s", d.q)
+	}
+	return "Postgres"
+}
+
+func (d postgres) Name() string {
 	return "Postgres"
 }
 

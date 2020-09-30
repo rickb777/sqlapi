@@ -59,6 +59,7 @@ v go install ./...
 v ./test.sh -v sqlite
 
 ### Build Phase 2 ###
+export DB_DRIVER='postgres'
 export PGDATABASE='test'
 export PGUSER='testuser'
 export PGPASSWORD='TestPasswd.9.9.9'
@@ -67,7 +68,7 @@ rm -f reports/*
 
 # sqlapi test coverage
 echo .
-go test . -covermode=count -coverprofile=reports/sqlapi.out .
+go test -covermode=count -coverprofile=reports/sqlapi.out .
 go tool cover -func=reports/sqlapi.out
 #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/sqlapi.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 

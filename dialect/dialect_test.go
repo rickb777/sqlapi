@@ -134,6 +134,6 @@ func TestFieldAsColumn(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.di.FieldAsColumn(c.field)
-		g.Expect(s).Should(Equal(c.expected), c.di.String())
+		g.Expect(s).Should(Equal(c.expected), c.di.Name())
 	}
 }

@@ -41,7 +41,7 @@ func createTablesSql(di dialect.Dialect) []string {
 		return createTablesSqlite
 	case dialect.MysqlIndex:
 		return createTablesMysql
-	case dialect.PostgresIndex:
+	case dialect.PostgresIndex, dialect.PgxIndex:
 		return createTablesPostgresql
 	}
 	panic(di.String() + " unsupported")

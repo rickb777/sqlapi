@@ -11,8 +11,10 @@ import (
 type Dialect interface {
 	// Index returns a consistent ID for this dialect, regardless of other settings.
 	Index() int
-	// String returns the name of this dialect.
+	// String returns the name (and quoter if present) of this dialect.
 	String() string
+	// Name returns the name of this dialect.
+	Name() string
 	// Alias is an alternative name for this dialect.
 	Alias() string
 	// Quoter is the tool used for quoting identifiers.
@@ -60,7 +62,7 @@ var AllDialects = []Dialect{Sqlite, Mysql, Postgres, Pgx}
 // It returns nil if not found.
 func PickDialect(name string) Dialect {
 	for _, d := range AllDialects {
-		if strings.EqualFold(name, d.String()) || strings.EqualFold(name, d.Alias()) {
+		if strings.EqualFold(name, d.Name()) || strings.EqualFold(name, d.Alias()) {
 			return d
 		}
 	}

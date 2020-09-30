@@ -1,5 +1,7 @@
 package dialect
 
+import "fmt"
+
 type pgx struct {
 	postgres
 }
@@ -11,6 +13,13 @@ func (d pgx) Index() int {
 }
 
 func (d pgx) String() string {
+	if d.q != nil {
+		return fmt.Sprintf("Pgx/%s", d.q)
+	}
+	return "Pgx"
+}
+
+func (d pgx) Name() string {
 	return "Pgx"
 }
 
