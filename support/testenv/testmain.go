@@ -26,21 +26,10 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 
 	lgr := testingadapter.NewLogger(simpleLogger{})
 
-	// first connection attempt: environment config for local DB
+	// first connection attempt: environment config for Travis DB
 	log.Printf("----- First attempt ----- (%s)\n", dfltDriver)
-	setEnvironmentForLocalDB(dfltDriver)
-	err := connectFunc(lgr, lvl, 1)
-	if err == nil {
-		log.Printf("Test using local DB\n")
-		os.Exit(m.Run())
-	}
-
-	abortIfNotConnectionError("Cannot connect to local DB", err)
-
-	// second connection attempt: environment config for Travis DB
-	log.Printf("----- Second attempt ----- (%s)\n", dfltDriver)
 	setEnvironmentForTravisDB(dfltDriver)
-	err = connectFunc(lgr, lvl, 1)
+	err := connectFunc(lgr, lvl, 1)
 	if err == nil {
 		log.Printf("Test using Travis DB\n")
 		os.Exit(m.Run())
@@ -48,8 +37,8 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 
 	abortIfNotConnectionError("Cannot connect to Travis DB", err)
 
-	// third connection attempt: use pre-existing Docker DB, if it exists
-	log.Printf("----- Third attempt ----- (%s)\n", dfltDriver)
+	// second connection attempt: use pre-existing Docker DB, if it exists
+	log.Printf("----- Second attempt ----- (%s)\n", dfltDriver)
 	setEnvironmentDockerDb()
 	err = connectFunc(lgr, lvl, 1)
 	if err == nil {
@@ -59,8 +48,8 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 
 	abortIfNotConnectionError("Cannot connect to pre-existing Docker DB", err)
 
-	// fourth connection attempt: spin up DB in Docker container and connect to it
-	log.Printf("----- Fourth attempt ----- (%s)\n", dfltDriver)
+	// third connection attempt: spin up DB in Docker container and connect to it
+	log.Printf("----- Third attempt ----- (%s)\n", dfltDriver)
 	setUpDockerDbForTest(m, "postgres", func() error {
 		return connectFunc(lgr, lvl, 0)
 	})
@@ -69,42 +58,6 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 //-------------------------------------------------------------------------------------------------
 // PostgresQL URL general form
 // postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
-
-func setEnvironmentForLocalDB(dfltDriver string) {
-	dbDriver := os.Getenv("DB_DRIVER")
-	if dbDriver == "" {
-		dbDriver = dfltDriver
-		mustSetEnv("DB_DRIVER", dbDriver)
-	}
-	log.Printf("set environment for local %s DB\n", dbDriver)
-
-	switch dbDriver {
-	case "sqlite3":
-		mustUnsetEnv("DB_DRIVER")
-		mustUnsetEnv("DB_URL")
-		mustUnsetEnv("PGHOST")
-		mustUnsetEnv("PGPORT")
-		mustUnsetEnv("PGDATABASE")
-		mustUnsetEnv("PGUSER")
-		mustUnsetEnv("PGPASSWORD")
-		mustUnsetEnv("MYUSER")
-		mustUnsetEnv("MYPASSWORD")
-
-	case "postgres", "pgx":
-		log.Println("Attempting to connect to local postgres")
-		mustSetEnv("PGHOST", "localhost")
-		mustSetEnv("PGPORT", "5432")
-		mustSetEnv("PGDATABASE", "test")
-		mustSetEnv("PGUSER", "testuser")
-		mustSetEnv("PGPASSWORD", "TestPasswd.9.9.9")
-		mustSetEnv("DB_URL", "testuser:TestPasswd.9.9.9@/test")
-
-	case "mysql":
-		log.Println("Attempting to connect to local mysql")
-		mustSetEnv("DB_DRIVER", "mysql")
-		mustSetEnv("DB_URL", "test:TestPasswd.9.9.9@/test")
-	}
-}
 
 func setEnvironmentForTravisDB(dfltDriver string) {
 	dbDriver := os.Getenv("DB_DRIVER")
