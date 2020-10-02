@@ -6,14 +6,6 @@ go:
 env:
   global:
     - GO111MODULE=on
-    - DB_DRIVER=dbx
-    - PGHOST=localhost
-    - PGPORT=5432
-    - PGDATABASE=test
-    - PGUSER=postgres
-    - PGPASSWORD=
-    - MYUSER=travis
-    - MYPASSWORD=
 
 services:
   - mysql

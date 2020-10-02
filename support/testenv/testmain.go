@@ -87,6 +87,8 @@ func setEnvironmentForLocalDB(dfltDriver string) {
 		mustUnsetEnv("PGDATABASE")
 		mustUnsetEnv("PGUSER")
 		mustUnsetEnv("PGPASSWORD")
+		mustUnsetEnv("MYUSER")
+		mustUnsetEnv("MYPASSWORD")
 
 	case "postgres", "pgx":
 		log.Println("Attempting to connect to local postgres")
@@ -121,6 +123,8 @@ func setEnvironmentForTravisDB(dfltDriver string) {
 		mustUnsetEnv("PGDATABASE")
 		mustUnsetEnv("PGUSER")
 		mustUnsetEnv("PGPASSWORD")
+		mustUnsetEnv("MYUSER")
+		mustUnsetEnv("MYPASSWORD")
 
 	case "postgres", "pgx":
 		log.Println("Attempting to connect to local postgres")
@@ -134,7 +138,9 @@ func setEnvironmentForTravisDB(dfltDriver string) {
 	case "mysql":
 		log.Println("Attempting to connect to local mysql")
 		mustSetEnv("DB_DRIVER", "mysql")
-		mustSetEnv("DB_URL", "test:TestPasswd.9.9.9@/test")
+		mustSetEnv("DB_URL", "travis:@/test")
+		mustSetEnv("MYUSER", "travis")
+		mustSetEnv("MYPASSWORD", "")
 	}
 }
 
