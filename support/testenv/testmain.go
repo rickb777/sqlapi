@@ -27,7 +27,7 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 	lgr := testingadapter.NewLogger(simpleLogger{})
 
 	// first connection attempt: environment config for local DB
-	log.Printf("----- First pass ----- (%s)\n", dfltDriver)
+	log.Printf("----- First attempt ----- (%s)\n", dfltDriver)
 	setEnvironmentForLocalDB(dfltDriver)
 	err := connectFunc(lgr, lvl, 1)
 	if err == nil {
@@ -38,7 +38,7 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 	abortIfNotConnectionError("Cannot connect to local DB", err)
 
 	// second connection attempt: environment config for Travis DB
-	log.Printf("----- Second pass ----- (%s)\n", dfltDriver)
+	log.Printf("----- Second attempt ----- (%s)\n", dfltDriver)
 	setEnvironmentForTravisDB(dfltDriver)
 	err = connectFunc(lgr, lvl, 1)
 	if err == nil {
@@ -49,7 +49,7 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 	abortIfNotConnectionError("Cannot connect to Travis DB", err)
 
 	// third connection attempt: use pre-existing Docker DB, if it exists
-	log.Printf("----- Third pass ----- (%s)\n", dfltDriver)
+	log.Printf("----- Third attempt ----- (%s)\n", dfltDriver)
 	setEnvironmentDockerDb()
 	err = connectFunc(lgr, lvl, 1)
 	if err == nil {
@@ -60,7 +60,7 @@ func Shebang(m *testing.M, dfltDriver string, connectFunc func(lgr pgx.Logger, l
 	abortIfNotConnectionError("Cannot connect to pre-existing Docker DB", err)
 
 	// fourth connection attempt: spin up DB in Docker container and connect to it
-	log.Printf("----- Fourth pass ----- (%s)\n", dfltDriver)
+	log.Printf("----- Fourth attempt ----- (%s)\n", dfltDriver)
 	setUpDockerDbForTest(m, "postgres", func() error {
 		return connectFunc(lgr, lvl, 0)
 	})
@@ -97,7 +97,7 @@ func setEnvironmentForLocalDB(dfltDriver string) {
 		mustSetEnv("PGDATABASE", "test")
 		mustSetEnv("PGUSER", "testuser")
 		mustSetEnv("PGPASSWORD", "TestPasswd.9.9.9")
-		mustSetEnv("DB_URL", "test:TestPasswd.9.9.9@/test")
+		mustSetEnv("DB_URL", "testuser:TestPasswd.9.9.9@/test")
 
 	case "mysql":
 		log.Println("Attempting to connect to local mysql")
