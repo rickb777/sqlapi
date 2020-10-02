@@ -2,13 +2,13 @@ package pgxapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -20,8 +20,8 @@ import (
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
-func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) SqlDB {
-	db, err := ConnectEnv(ctx, lgr, logLevel)
+func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) SqlDB {
+	db, err := ConnectEnv(ctx, lgr, logLevel, tries)
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
@@ -35,12 +35,12 @@ func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) 
 // Also available are PGQUOTE, DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 // Use PGQUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
 // is none).
-func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel) (SqlDB, error) {
+func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (SqlDB, error) {
 	poolConfig := ParseEnvConfig()
 	poolConfig.ConnConfig.Logger = lgr
 	poolConfig.ConnConfig.LogLevel = logLevel
 	quoter := quote.PickQuoter(os.Getenv("PGQUOTE"))
-	return Connect(ctx, poolConfig, quoter)
+	return Connect(ctx, poolConfig, quoter, tries)
 }
 
 // ParseEnvConfig creates connection pool config information based on environment variables:
@@ -64,8 +64,8 @@ func ParseEnvConfig() *pgxpool.Config {
 }
 
 // MustConnect is as per Connect but with a fatal termination on error.
-func MustConnect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter) SqlDB {
-	db, err := Connect(ctx, config, quoter)
+func MustConnect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter, tries int) SqlDB {
+	db, err := Connect(ctx, config, quoter, tries)
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
@@ -74,7 +74,9 @@ func MustConnect(ctx context.Context, config *pgxpool.Config, quoter quote.Quote
 }
 
 // Connect opens a database connection and pings the server.
-func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter) (SqlDB, error) {
+// If the connection fails, it is retried using an exponential backoff.
+// the maximum number of (re-)tries can be specified; if this is zero, there is no limit.
+func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter, tries int) (SqlDB, error) {
 	config.ConnConfig.Logger.Log(ctx, pgx.LogLevelInfo, "DB connection",
 		map[string]interface{}{
 			"host":     config.ConnConfig.Host,
@@ -83,7 +85,7 @@ func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter) (
 			"database": config.ConnConfig.Database},
 	)
 
-	pool, err := createConnectionPool(ctx, config.ConnConfig.Logger, config)
+	pool, err := createConnectionPool(ctx, config.ConnConfig.Logger, config, tries)
 	if err != nil {
 		return nil, fmt.Errorf("%w - unable to connect to the database.", err)
 	}
@@ -105,7 +107,7 @@ const (
 	psqlCannotConnectNow = "57P03"
 )
 
-func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.Config) (*pgxpool.Pool, error) {
+func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.Config, tries int) (*pgxpool.Pool, error) {
 	backOff := backoff.NewExponentialBackOff()
 	backOff.MaxElapsedTime = osGetenvDuration("DB_CONNECT_TIMEOUT", 0)
 
@@ -123,14 +125,23 @@ func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.C
 	// Construct a connection pool, retry until a connection pool can be established
 	err = backoff.RetryNotify(
 		func() error {
+			tries--
 			pool, err = pgxpool.ConnectConfig(ctx, config)
 			if err != nil {
-				e1, ok := err.(*pgconn.PgError)
+				if tries == 0 {
+					return backoff.Permanent(err) // no more tries
+				}
+
+				e0 := errors.Unwrap(err)
+				if e0 == nil {
+					e0 = err
+				}
+				e1, ok := e0.(*pgconn.PgError)
 				if ok && e1.Code == psqlCannotConnectNow {
 					// Retry connection on this specific error
 					return e1
 				}
-				e2, ok := err.(*net.OpError)
+				e2, ok := e0.(*net.OpError)
 				if ok && e2.Op == "dial" {
 					// Retry connection on this specific error
 					return e2
@@ -164,16 +175,6 @@ func notify(ctx context.Context, lgr pgx.Logger, err error, next time.Duration) 
 			"error":    err,
 			"retry_in": next.Truncate(time.Millisecond),
 		})
-}
-
-func requireEnv(name, defaultValue string) {
-	_, exists := syscall.Getenv(name)
-	if !exists {
-		err := syscall.Setenv(name, defaultValue)
-		if err != nil {
-			log.Fatalf("Failed to set %q=%q; %v\n", name, defaultValue, err)
-		}
-	}
 }
 
 func osGetenvDuration(name string, deflt time.Duration) time.Duration {

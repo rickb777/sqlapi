@@ -4,16 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
-	"net"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/testingadapter"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
@@ -208,53 +204,9 @@ func TestUserItemWrapper(t *testing.T) {
 
 //-------------------------------------------------------------------------------------------------
 
-type simpleLogger struct{}
-
-func (l simpleLogger) Log(args ...interface{}) {
-	if testing.Verbose() {
-		log.Println(args...)
-	}
-}
-
-//-------------------------------------------------------------------------------------------------
-
 func TestMain(m *testing.M) {
-	flag.Parse()
-
-	var lvl pgx.LogLevel = pgx.LogLevelWarn
-	if testing.Verbose() {
-		lvl = pgx.LogLevelInfo
-	}
-
-	// first connection attempt: environment config for local DB
-	testenv.SetEnvironmentForLocalPostgres()
-	testUsingLocalDB(m, lvl)
-
-	// second connection attempt: start up dockerised DB and use it
-	testUsingDockertest(m, lvl)
-}
-
-func testUsingLocalDB(m *testing.M, lvl pgx.LogLevel) {
-	lgr := testingadapter.NewLogger(simpleLogger{})
-	var err error
-	gdb, err = ConnectEnv(context.Background(), lgr, lvl)
-	if err == nil {
-		os.Exit(m.Run())
-	}
-
-	var connErr *net.OpError
-	if !errors.As(err, &connErr) {
-		log.Fatalf("Cannot connect via env: %s", err)
-	}
-}
-
-func testUsingDockertest(m *testing.M, lvl pgx.LogLevel) {
-	testenv.SetUpDockerDbForTest(m, "postgres", func() {
-		var err error
-		lgr := testingadapter.NewLogger(simpleLogger{})
-		gdb, err = ConnectEnv(context.Background(), lgr, lvl)
-		if err != nil {
-			log.Fatalf("Could not connect to DB in docker+postgres: %s", err)
-		}
+	testenv.Shebang(m, "pgx", func(lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (err error) {
+		gdb, err = ConnectEnv(context.Background(), lgr, logLevel, tries)
+		return err
 	})
 }

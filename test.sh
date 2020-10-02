@@ -85,14 +85,14 @@ for db in $DBS; do
       ;;
 
     sqlite)
-      unset DB_DRIVER DB_URL
+      unset DB_URL
       echo "SQLite3 (no quotes)..."
       go clean -testcache ||:
-      DB_QUOTE=none go test $V $PACKAGES
+      DB_DRIVER=sqlite3 DB_QUOTE=none go test $V $PACKAGES
       echo
       echo "SQLite3 (ANSI)..."
       go clean -testcache ||:
-      DB_QUOTE=ansi go test $V $PACKAGES
+      DB_DRIVER=sqlite3 DB_QUOTE=ansi go test $V $PACKAGES
       ;;
 
     *)

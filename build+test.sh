@@ -59,6 +59,7 @@ v go install ./...
 v ./test.sh -v sqlite
 
 ### Build Phase 2 ###
+echo
 echo "========== Build Phase 2 =========="
 if [[ $1 = "travis" ]]; then
   export TEST_ENV=travis
@@ -102,6 +103,7 @@ for d in constraint support; do
   #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/pgxapi-$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
+echo "./pgxapi/pgtest.sh $1"
 ./pgxapi/pgtest.sh $1
 
 echo

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go test sqlapi (only)" type="GoTestRunConfiguration" factoryName="Go Test">
+  <configuration default="false" name="go test sqlapi sqlite (only)" type="GoTestRunConfiguration" factoryName="Go Test">
     <module name="sqlapi" />
     <working_directory value="$PROJECT_DIR$" />
     <framework value="gotest" />

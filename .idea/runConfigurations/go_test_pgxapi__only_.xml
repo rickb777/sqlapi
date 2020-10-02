@@ -2,11 +2,6 @@
   <configuration default="false" name="go test pgxapi (only)" type="GoTestRunConfiguration" factoryName="Go Test">
     <module name="sqlapi" />
     <working_directory value="$PROJECT_DIR$/pgxapi" />
-    <envs>
-      <env name="PGUSER" value="testuser" />
-      <env name="PGPASSWORD" value="TestPasswd.9.9.9" />
-      <env name="PGDATABASE" value="test" />
-    </envs>
     <framework value="gotest" />
     <kind value="PACKAGE" />
     <package value="github.com/rickb777/sqlapi/pgxapi" />
