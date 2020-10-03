@@ -1,7 +1,6 @@
 package support
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"github.com/rickb777/sqlapi/dialect"
@@ -19,7 +18,7 @@ func ReplaceTableName(tbl pgxapi.Table, query string) string {
 
 // QueryOneNullThing queries for one cell of one record. Normally, the holder will be sql.NullString or similar.
 // If required, the query can use "{TABLE}" in place of the table name.
-func QueryOneNullThing(ctx context.Context, tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
+func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interface{}, query string, args ...interface{}) error {
 	var n int64 = 0
 	query = ReplaceTableName(tbl, query)
 
@@ -33,7 +32,7 @@ func QueryOneNullThing(ctx context.Context, tbl pgxapi.Table, req require.Requir
 		err = rows.Scan(holder)
 
 		if err == sql.ErrNoRows {
-			return tbl.Logger().LogIfError(ctx, require.ErrorIfQueryNotSatisfiedBy(req, 0))
+			return tbl.Logger().LogIfError(tbl.Ctx(), require.ErrorIfQueryNotSatisfiedBy(req, 0))
 		} else {
 			n++
 		}
@@ -43,7 +42,7 @@ func QueryOneNullThing(ctx context.Context, tbl pgxapi.Table, req require.Requir
 		}
 	}
 
-	return tbl.Logger().LogIfError(ctx, require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
+	return tbl.Logger().LogIfError(tbl.Ctx(), require.ChainErrorIfQueryNotSatisfiedBy(rows.Err(), req, n))
 }
 
 //-------------------------------------------------------------------------------------------------
