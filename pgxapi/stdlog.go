@@ -1,4 +1,4 @@
-package sqlapi
+package pgxapi
 
 import (
 	"context"

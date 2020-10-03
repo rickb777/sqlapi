@@ -16,6 +16,10 @@ type toggleLogger struct {
 	enabled int32
 }
 
+func NewStdLogger(lgr StdLog) Logger {
+	return NewLogger(stdLogAdapter{lgr})
+}
+
 func NewLogger(lgr pgx.Logger) Logger {
 	if lgr == nil {
 		return &toggleLogger{}
@@ -107,7 +111,11 @@ func (lgr *toggleLogger) LogQuery(_ context.Context, _ string, _ ...interface{})
 }
 
 func (lgr *toggleLogger) SetOutput(w io.Writer) {
-	// no-op
+	if lgr.lgr != nil {
+		if o, ok := lgr.lgr.(outable); ok {
+			o.SetOutput(w)
+		}
+	}
 }
 
 func derefArg(arg interface{}) interface{} {

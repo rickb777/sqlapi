@@ -17,6 +17,10 @@ type toggleLogger struct {
 	enabled int32
 }
 
+func NewStdLogger(lgr StdLog) Logger {
+	return NewLogger(stdLogAdapter{lgr})
+}
+
 func NewLogger(lgr pgx.Logger) Logger {
 	if lgr == nil {
 		return &toggleLogger{}
