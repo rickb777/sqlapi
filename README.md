@@ -1,7 +1,7 @@
 # sqlapi
 
 [![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg)](https://pkg.go.dev/github.com/rickb777/sqlapi)
-[![Build Status](https://travis-ci.org/rickb777/sqlapi.svg?branch=master)](https://travis-ci.org/rickb777/sqlapi)
+[![Build Status](https://travis-ci.org/rickb777/sqlapi.svg?branch=master)](https://travis-ci.org/rickb777/sqlapi/builds)
 [![Code Coverage](https://img.shields.io/coveralls/rickb777/sqlapi.svg)](https://coveralls.io/r/rickb777/sqlapi)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rickb777/sqlapi)](https://goreportcard.com/report/github.com/rickb777/sqlapi)
 [![Issues](https://img.shields.io/github/issues/rickb777/sqlapi.svg)](https://github.com/rickb777/sqlapi/issues)
