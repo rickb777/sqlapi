@@ -1,4 +1,4 @@
-package dialect
+package driver
 
 import (
 	"bytes"
@@ -58,15 +58,15 @@ func TestPlaceholders(t *testing.T) {
 		n        int
 		expected string
 	}{
-		{Mysql, 0, ""},
-		{Mysql, 1, "?"},
-		{Mysql, 3, "?,?,?"},
-		{Mysql, 11, "?,?,?,?,?,?,?,?,?,?,?"},
+		{Mysql(), 0, ""},
+		{Mysql(), 1, "?"},
+		{Mysql(), 3, "?,?,?"},
+		{Mysql(), 11, "?,?,?,?,?,?,?,?,?,?,?"},
 
-		{Postgres, 0, ""},
-		{Postgres, 1, "$1"},
-		{Postgres, 3, "$1,$2,$3"},
-		{Postgres, 11, "$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"},
+		{Postgres(), 0, ""},
+		{Postgres(), 1, "$1"},
+		{Postgres(), 3, "$1,$2,$3"},
+		{Postgres(), 11, "$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"},
 	}
 	for _, c := range cases {
 		s := c.di.Placeholders(c.n)
@@ -77,10 +77,10 @@ func TestPlaceholders(t *testing.T) {
 func TestReplacePlaceholders(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	s := Mysql.ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
+	s := Mysql().ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
 	g.Expect(s).Should(Equal("?,?,?,?,?,?,?,?,?,?,?"))
 
-	s = Postgres.ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
+	s = Postgres().ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
 	g.Expect(s).Should(Equal("$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"))
 }
 
@@ -91,11 +91,11 @@ func TestPickDialect(t *testing.T) {
 		di   Dialect
 		name string
 	}{
-		{Mysql, "MySQL"},
-		{Postgres, "Postgres"},
-		{Postgres, "PostgreSQL"},
-		{Sqlite, "SQLite"},
-		{Sqlite, "sqlite3"},
+		{Mysql(), "MySQL"},
+		{Postgres(), "Postgres"},
+		{Postgres(), "PostgreSQL"},
+		{Sqlite(), "SQLite"},
+		{Sqlite(), "sqlite3"},
 	}
 	for _, c := range cases {
 		s := PickDialect(c.name)
@@ -111,26 +111,26 @@ func TestFieldAsColumn(t *testing.T) {
 		field    *schema.Field
 		expected string
 	}{
-		{Mysql, id, "bigint not null primary key auto_increment"},
-		{Mysql, name, "varchar(2048) not null"},
-		{Mysql, active, "boolean not null"},
-		{Mysql, age, "int unsigned default null"},
-		{Mysql, bmi, "float default null"},
-		{Mysql, labels, "json"},
+		{Mysql(), id, "bigint not null primary key auto_increment"},
+		{Mysql(), name, "varchar(2048) not null"},
+		{Mysql(), active, "boolean not null"},
+		{Mysql(), age, "int unsigned default null"},
+		{Mysql(), bmi, "float default null"},
+		{Mysql(), labels, "json"},
 
-		{Postgres, id, "bigserial not null primary key"},
-		{Postgres, name, "text not null"},
-		{Postgres, active, "boolean not null"},
-		{Postgres, age, "bigint default null"},
-		{Postgres, bmi, "real default null"},
-		{Postgres, labels, "json"},
+		{Postgres(), id, "bigserial not null primary key"},
+		{Postgres(), name, "text not null"},
+		{Postgres(), active, "boolean not null"},
+		{Postgres(), age, "bigint default null"},
+		{Postgres(), bmi, "real default null"},
+		{Postgres(), labels, "json"},
 
-		{Sqlite, id, "integer not null primary key autoincrement"},
-		{Sqlite, name, "text not null"},
-		{Sqlite, active, "boolean not null"},
-		{Sqlite, age, "int unsigned default null"},
-		{Sqlite, bmi, "float default null"},
-		{Sqlite, labels, "text"},
+		{Sqlite(), id, "integer not null primary key autoincrement"},
+		{Sqlite(), name, "text not null"},
+		{Sqlite(), active, "boolean not null"},
+		{Sqlite(), age, "int unsigned default null"},
+		{Sqlite(), bmi, "float default null"},
+		{Sqlite(), labels, "text"},
 	}
 	for _, c := range cases {
 		s := c.di.FieldAsColumn(c.field)

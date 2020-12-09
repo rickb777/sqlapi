@@ -9,7 +9,7 @@ import (
 
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/constraint"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/sqlapi/support"
 )
@@ -24,7 +24,7 @@ type RecordTable struct {
 	ctx         context.Context
 	pk          string
 	lgr         sqlapi.Logger
-	di          dialect.Dialect
+	di          driver.Dialect
 }
 
 // Type conformance checks
@@ -113,7 +113,7 @@ func (tbl RecordTable) Ctx() context.Context {
 }
 
 // Dialect gets the database dialect.
-func (tbl RecordTable) Dialect() dialect.Dialect {
+func (tbl RecordTable) Dialect() driver.Dialect {
 	return tbl.di
 }
 

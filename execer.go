@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 )
 
 // Logger provides the specialised logging operations within this API.
@@ -58,7 +58,7 @@ type Execer interface {
 	Logger() Logger
 
 	// Dialect gets the database dialect.
-	Dialect() dialect.Dialect
+	Dialect() driver.Dialect
 }
 
 //-------------------------------------------------------------------------------------------------

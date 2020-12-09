@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/rickb777/where/dialect"
+
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/support/test"
 
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
 	"github.com/rickb777/where/quote"
@@ -48,31 +50,50 @@ func TestSliceSql(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		dialect  dialect.Dialect
+		dialect  func() driver.Dialect
 		expected string
 	}{
 		{
-			dialect:  dialect.Mysql.WithQuoter(quote.NoQuoter),
 			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
+			dialect: func() driver.Dialect {
+				dialect.MysqlConfig.Quoter = quote.NoQuoter
+				return driver.Mysql()
+			},
 		},
 		{
-			dialect:  dialect.Mysql,
 			expected: "SELECT `foo` FROM `p`.`table` WHERE (`room`=?) AND (`fun`=?) ORDER BY `xyz`",
+			dialect: func() driver.Dialect {
+				dialect.MysqlConfig.Quoter = quote.MySqlQuoter
+				return driver.Mysql()
+			},
 		},
 		{
-			dialect:  dialect.Mysql.WithQuoter(quote.AnsiQuoter),
 			expected: `SELECT "foo" FROM "p"."table" WHERE ("room"=?) AND ("fun"=?) ORDER BY "xyz"`,
+			dialect: func() driver.Dialect {
+				dialect.MysqlConfig.Quoter = quote.AnsiQuoter
+				return driver.Mysql()
+			},
 		},
 		{
-			dialect:  dialect.Postgres,
+			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
+			dialect: func() driver.Dialect {
+				dialect.PostgresConfig.Quoter = quote.NoQuoter
+				return driver.Postgres()
+			},
+		},
+		{
 			expected: `SELECT "foo" FROM "p"."table" WHERE ("room"=?) AND ("fun"=?) ORDER BY "xyz"`,
+			dialect: func() driver.Dialect {
+				dialect.PostgresConfig.Quoter = quote.AnsiQuoter
+				return driver.Postgres()
+			},
 		},
 	}
 
 	for _, c := range cases {
 		stdLog := &test.StubLogger{}
 		lgr := sqlapi.NewLogger(stdLog)
-		ex := &test.StubExecer{Di: c.dialect, Lgr: lgr}
+		ex := &test.StubExecer{Di: c.dialect(), Lgr: lgr}
 		tbl := sqlapi.CoreTable{
 			Nm: sqlapi.TableName{
 				Prefix: "p.",
@@ -94,7 +115,7 @@ func TestQuery_happy(t *testing.T) {
 
 	stdLog := &test.StubLogger{Testing: t}
 	lgr := sqlapi.NewLogger(stdLog)
-	ex := &test.StubExecer{Di: dialect.Postgres, Lgr: lgr}
+	ex := &test.StubExecer{Di: driver.Postgres(), Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -114,7 +135,7 @@ func TestExec_happy(t *testing.T) {
 
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
-	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: lgr}
+	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -134,7 +155,7 @@ func TestUpdateFields(t *testing.T) {
 
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
-	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: lgr}
+	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -154,7 +175,7 @@ func TestDeleteByColumn(t *testing.T) {
 
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
-	ex := &test.StubExecer{Di: dialect.Postgres, N: 2, Lgr: lgr}
+	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -176,7 +197,7 @@ func TestGetIntIntIndex_happy(t *testing.T) {
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{int64(2), int64(16)}, {int64(3), int64(81)}},
-	}, Di: dialect.Postgres, Lgr: lgr}
+	}, Di: driver.Postgres(), Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -199,7 +220,7 @@ func TestGetStringIntIndex_happy(t *testing.T) {
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{"two", int64(16)}, {"three", int64(81)}},
-	}, Di: dialect.Postgres, Lgr: lgr}
+	}, Di: driver.Postgres(), Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",
@@ -222,7 +243,7 @@ func TestGetIntStringIndex_happy(t *testing.T) {
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
 		Rows: []test.StubRow{{int64(2), "16"}, {int64(3), "81"}},
-	}, Di: dialect.Postgres, Lgr: lgr}
+	}, Di: driver.Postgres(), Lgr: lgr}
 	tbl := sqlapi.CoreTable{
 		Nm: sqlapi.TableName{
 			Prefix: "p.",

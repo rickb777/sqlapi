@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/rickb777/where/dialect"
+
 	"github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 )
 
 func insertFixtures(t *testing.T, e Execer) (aid1, aid2, aid3, aid4 int64) {
@@ -35,13 +37,13 @@ func insertOne(g *gomega.GomegaWithT, e Execer, query string) int64 {
 	return id
 }
 
-func createTablesSql(di dialect.Dialect) []string {
+func createTablesSql(di driver.Dialect) []string {
 	switch di.Index() {
-	case dialect.SqliteIndex:
+	case dialect.Sqlite:
 		return createTablesSqlite
-	case dialect.MysqlIndex:
+	case dialect.Mysql:
 		return createTablesMysql
-	case dialect.PostgresIndex, dialect.PgxIndex:
+	case dialect.Postgres:
 		return createTablesPostgresql
 	}
 	panic(di.String() + " unsupported")

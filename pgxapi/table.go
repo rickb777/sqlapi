@@ -3,7 +3,7 @@ package pgxapi
 import (
 	"context"
 
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 )
 
 // Table provides the generic features of each generated table handler.
@@ -33,7 +33,7 @@ type Table interface {
 	Ctx() context.Context
 
 	// Dialect gets the database dialect.
-	Dialect() dialect.Dialect
+	Dialect() driver.Dialect
 
 	// Logger gets the trace logger.
 	Logger() Logger
@@ -133,7 +133,7 @@ func (tbl CoreTable) IsTx() bool {
 	return ok
 }
 
-func (tbl CoreTable) Dialect() dialect.Dialect {
+func (tbl CoreTable) Dialect() driver.Dialect {
 	return tbl.Ex.Dialect()
 }
 

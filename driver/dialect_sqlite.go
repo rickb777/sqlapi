@@ -1,26 +1,29 @@
-package dialect
+package driver
 
 import (
 	"fmt"
 
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 )
 
 type sqlite struct {
-	q quote.Quoter
+	d dialect.DialectConfig
 }
 
-var Sqlite Dialect = sqlite{q: quote.AnsiQuoter}
+func Sqlite(d ...dialect.DialectConfig) Dialect {
+	return sqlite{d: of(dialect.SqliteConfig, d...)}
+}
 
-func (d sqlite) Index() int {
-	return SqliteIndex
+func (d sqlite) Index() dialect.Dialect {
+	return dialect.Sqlite
 }
 
 func (d sqlite) String() string {
-	if d.q != nil {
-		return fmt.Sprintf("Sqlite/%s", d.q)
+	if d.d.Quoter != nil {
+		return fmt.Sprintf("Sqlite/%s", d.d.Quoter)
 	}
 	return "Sqlite"
 }
@@ -33,12 +36,16 @@ func (d sqlite) Alias() string {
 	return "SQLite3"
 }
 
+func (d sqlite) Config() dialect.DialectConfig {
+	return d.d
+}
+
 func (d sqlite) Quoter() quote.Quoter {
-	return d.q
+	return d.d.Quoter
 }
 
 func (d sqlite) WithQuoter(q quote.Quoter) Dialect {
-	d.q = q
+	d.d.Quoter = q
 	return d
 }
 

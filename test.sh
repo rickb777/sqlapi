@@ -49,7 +49,7 @@ elif [[ $1 = "all" ]]; then
   DBS="sqlite mysql postgres pgx"
 fi
 
-PACKAGES=". ./constraint ./dialect"
+PACKAGES=". ./constraint ./driver"
 
 for db in $DBS; do
   echo

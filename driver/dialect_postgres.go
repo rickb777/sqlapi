@@ -1,4 +1,4 @@
-package dialect
+package driver
 
 import (
 	"bytes"
@@ -7,22 +7,25 @@ import (
 
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 )
 
 type postgres struct {
-	q quote.Quoter
+	d dialect.DialectConfig
 }
 
-var Postgres Dialect = postgres{q: quote.AnsiQuoter}
+func Postgres(d ...dialect.DialectConfig) Dialect {
+	return postgres{d: of(dialect.PostgresConfig, d...)}
+}
 
-func (d postgres) Index() int {
-	return PostgresIndex
+func (d postgres) Index() dialect.Dialect {
+	return dialect.Postgres
 }
 
 func (d postgres) String() string {
-	if d.q != nil {
-		return fmt.Sprintf("Postgres/%s", d.q)
+	if d.d.Quoter != nil {
+		return fmt.Sprintf("Postgres/%s", d.d.Quoter)
 	}
 	return "Postgres"
 }
@@ -35,12 +38,16 @@ func (d postgres) Alias() string {
 	return "PostgreSQL"
 }
 
+func (d postgres) Config() dialect.DialectConfig {
+	return d.d
+}
+
 func (d postgres) Quoter() quote.Quoter {
-	return d.q
+	return d.d.Quoter
 }
 
 func (d postgres) WithQuoter(q quote.Quoter) Dialect {
-	d.q = q
+	d.d.Quoter = q
 	return d
 }
 

@@ -6,7 +6,7 @@ package vanilla
 import (
 	"context"
 	"database/sql"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/pgxapi/constraint"
 	"github.com/rickb777/sqlapi/pgxapi/support"
@@ -23,7 +23,7 @@ type RecordTable struct {
 	ctx         context.Context
 	pk          string
 	lgr         pgxapi.Logger
-	di          dialect.Dialect
+	di          driver.Dialect
 }
 
 // Type conformance checks
@@ -112,7 +112,7 @@ func (tbl RecordTable) Ctx() context.Context {
 }
 
 // Dialect gets the database dialect.
-func (tbl RecordTable) Dialect() dialect.Dialect {
+func (tbl RecordTable) Dialect() driver.Dialect {
 	return tbl.di
 }
 

@@ -1,26 +1,36 @@
-package dialect
+package driver
 
 import (
 	"fmt"
 
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 )
 
 type mysql struct {
-	q quote.Quoter
+	d dialect.DialectConfig
 }
 
-var Mysql Dialect = mysql{q: quote.MySqlQuoter}
+func of(dflt dialect.DialectConfig, d ...dialect.DialectConfig) dialect.DialectConfig {
+	if len(d) > 0 {
+		return d[0]
+	}
+	return dflt
+}
 
-func (d mysql) Index() int {
-	return MysqlIndex
+func Mysql(d ...dialect.DialectConfig) Dialect {
+	return mysql{d: of(dialect.MysqlConfig, d...)}
+}
+
+func (d mysql) Index() dialect.Dialect {
+	return dialect.Mysql
 }
 
 func (d mysql) String() string {
-	if d.q != nil {
-		return fmt.Sprintf("Mysql/%s", d.q)
+	if d.d.Quoter != nil {
+		return fmt.Sprintf("Mysql/%s", d.d.Quoter)
 	}
 	return "Mysql"
 }
@@ -33,12 +43,16 @@ func (d mysql) Alias() string {
 	return "MySQL"
 }
 
+func (d mysql) Config() dialect.DialectConfig {
+	return d.d
+}
+
 func (d mysql) Quoter() quote.Quoter {
-	return d.q
+	return d.d.Quoter
 }
 
 func (d mysql) WithQuoter(q quote.Quoter) Dialect {
-	d.q = q
+	d.d.Quoter = q
 	return d
 }
 

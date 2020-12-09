@@ -8,12 +8,12 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 )
 
 // WrapDB wraps a *sql.DB as SqlDB. The dialect is required.
 // The logger is optional and can be nil, which disables logging.
-func WrapDB(ex *sql.DB, di dialect.Dialect, lgr Logger) SqlDB {
+func WrapDB(ex *sql.DB, di driver.Dialect, lgr Logger) SqlDB {
 	return &shim{ex: ex, di: di, lgr: lgr, isTx: false}
 }
 
@@ -31,7 +31,7 @@ var _ basicExecer = new(sql.Tx)
 
 type shim struct {
 	ex      basicExecer
-	di      dialect.Dialect
+	di      driver.Dialect
 	lgr     Logger
 	isTx    bool
 	wrapped interface{}
@@ -98,7 +98,7 @@ func (sh *shim) Logger() Logger {
 	return sh.lgr
 }
 
-func (sh *shim) Dialect() dialect.Dialect {
+func (sh *shim) Dialect() driver.Dialect {
 	return sh.di
 }
 

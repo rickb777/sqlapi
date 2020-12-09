@@ -50,8 +50,8 @@ func QueryOneNullThing(tbl sqlapi.Table, req require.Requirement, holder interfa
 func sliceSql(tbl sqlapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
 	q := tbl.Dialect().Quoter()
 	whs, args := where.Where(wh, q)
-	orderBy := where.Build(qc, q)
-	return fmt.Sprintf("SELECT %s FROM %s %s %s",
+	orderBy := where.Build(qc, tbl.Dialect().Index())
+	return fmt.Sprintf("SELECT %s FROM %s%s%s",
 		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
 
@@ -101,7 +101,7 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 	list := sqlapi.NamedArgList(fields)
 	assignments := strings.Join(list.Assignments(q, 1), ", ")
 	whs, wargs := where.Where(wh, q)
-	query := fmt.Sprintf("UPDATE %s SET %s %s", q.Quote(tblName), assignments, whs)
+	query := fmt.Sprintf("UPDATE %s SET %s%s", q.Quote(tblName), assignments, whs)
 	args := append(list.Values(), wargs...)
 	return query, args
 }
@@ -164,7 +164,7 @@ func DeleteByColumn(tbl sqlapi.Table, req require.Requirement, column string, v 
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
 func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -186,7 +186,7 @@ func GetIntIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn strin
 // GetStringIntIndex reads a string column and an integer column from a specified database table and returns an index built from them.
 func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -209,7 +209,7 @@ func GetStringIntIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn st
 // GetIntStringIndex reads an integer column and a string column from a specified database table and returns an index built from them.
 func GetIntStringIndex(tbl sqlapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
 	rows, err := Query(tbl, query, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)

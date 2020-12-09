@@ -3,10 +3,10 @@ package support
 import (
 	"database/sql"
 	"fmt"
-	"github.com/rickb777/sqlapi/dialect"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 	"strings"
 )
@@ -50,8 +50,8 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
 	q := tbl.Dialect().Quoter()
 	whs, args := where.Where(wh, q)
-	orderBy := where.Build(qc, q)
-	return fmt.Sprintf("SELECT %s FROM %s %s %s",
+	orderBy := where.Build(qc, tbl.Dialect().Index())
+	return fmt.Sprintf("SELECT %s FROM %s%s%s",
 		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
 
@@ -101,7 +101,7 @@ func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields
 	list := pgxapi.NamedArgList(fields)
 	assignments := strings.Join(list.Assignments(q, 1), ", ")
 	whs, wargs := where.Where(wh, q)
-	query := fmt.Sprintf("UPDATE %s SET %s %s", q.Quote(tblName), assignments, whs)
+	query := fmt.Sprintf("UPDATE %s SET %s%s", q.Quote(tblName), assignments, whs)
 	args := append(list.Values(), wargs...)
 	return query, args
 }
@@ -164,8 +164,8 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 // GetIntIntIndex reads two integer columns from a specified database table and returns an index built from them.
 func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -187,8 +187,8 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 // GetStringIntIndex reads a string column and an integer column from a specified database table and returns an index built from them.
 func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -211,8 +211,8 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 // GetIntStringIndex reads an integer column and a string column from a specified database table and returns an index built from them.
 func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
-	query := fmt.Sprintf("SELECT %s, %s FROM %s %s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
+	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)

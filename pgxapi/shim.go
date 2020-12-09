@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/rickb777/where/dialect"
+
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/where/quote"
 )
 
@@ -20,7 +22,7 @@ func WrapDB(pool *pgxpool.Pool, lgr pgx.Logger, quoter quote.Quoter) SqlDB {
 	if quoter == nil {
 		quoter = quote.NoQuoter
 	}
-	di := dialect.Postgres.WithQuoter(quoter)
+	di := driver.Postgres().WithQuoter(quoter)
 	return &shim{ex: pool, di: di, lgr: NewLogger(lgr), isTx: false}
 }
 
@@ -41,7 +43,7 @@ var _ basicExecer = new(pgxpool.Pool)
 
 type shim struct {
 	ex      basicExecer
-	di      dialect.Dialect
+	di      driver.Dialect
 	lgr     Logger
 	isTx    bool
 	wrapped interface{}
@@ -53,7 +55,7 @@ var _ SqlTx = new(shim)
 //-------------------------------------------------------------------------------------------------
 
 func (sh *shim) Query(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	qr := driver.Postgres().ReplacePlaceholders(query, nil)
 	rows, err := sh.ex.Query(defaultCtx(ctx), qr, args...)
 	if err != nil {
 		return nil, wrap(err, query, args)
@@ -62,13 +64,13 @@ func (sh *shim) Query(ctx context.Context, query string, args ...interface{}) (S
 }
 
 func (sh *shim) QueryRow(ctx context.Context, query string, args ...interface{}) SqlRow {
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	qr := driver.Postgres().ReplacePlaceholders(query, nil)
 	return sh.ex.QueryRow(defaultCtx(ctx), qr, args...)
 }
 
 func (sh *shim) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
-	qr := dialect.Postgres.ReplacePlaceholders(q2, nil)
+	qr := driver.Postgres().ReplacePlaceholders(q2, nil)
 	row := sh.ex.QueryRow(defaultCtx(ctx), qr, args...)
 	var id int64
 	err := row.Scan(&id)
@@ -79,7 +81,7 @@ func (sh *shim) Insert(ctx context.Context, pk, query string, args ...interface{
 }
 
 func (sh *shim) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	qr := dialect.Postgres.ReplacePlaceholders(query, nil)
+	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
 	tag, err := sh.ex.Exec(defaultCtx(ctx), qr, args...)
 	if err != nil {
 		return 0, wrap(err, query, args)
@@ -95,7 +97,7 @@ func (sh *shim) Logger() Logger {
 	return sh.lgr
 }
 
-func (sh *shim) Dialect() dialect.Dialect {
+func (sh *shim) Dialect() driver.Dialect {
 	return sh.di
 }
 

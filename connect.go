@@ -11,11 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rickb777/where/quote"
-
 	"github.com/cenkalti/backoff/v3"
 	"github.com/jackc/pgx/v4"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
+	"github.com/rickb777/where/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
@@ -37,9 +36,9 @@ const sqliteInMemory = "file::memory:?mode=memory&cache=shared"
 // is none).
 func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (SqlDB, error) {
 	dbUrl := os.Getenv("DB_URL")
-	driver := os.Getenv("DB_DRIVER")
-	if driver == "" {
-		driver = "sqlite3"
+	dbDriver := os.Getenv("DB_DRIVER")
+	if dbDriver == "" {
+		dbDriver = "sqlite3"
 		if dbUrl == "" {
 			dbUrl = sqliteInMemory
 		}
@@ -54,9 +53,9 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, trie
 		}
 	}
 
-	di := dialect.PickDialect(driver)
+	di := driver.PickDialect(dbDriver)
 	if di == nil {
-		di = dialect.Sqlite
+		di = driver.Sqlite()
 	}
 
 	quoter := quote.PickQuoter(os.Getenv("DB_QUOTE"))
@@ -66,7 +65,7 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, trie
 
 	lgr.Log(ctx, logLevel, "Connecting to DB", map[string]interface{}{
 		"url":      dbUrl,
-		"driver":   driver,
+		"driver":   dbDriver,
 		"dialect":  di,
 		"quote":    quoter,
 		"user":     dbUser,
@@ -74,11 +73,11 @@ func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, trie
 	})
 	logger := NewLogger(lgr)
 
-	return Connect(ctx, driver, dbUrl, di, logger, tries)
+	return Connect(ctx, dbDriver, dbUrl, di, logger, tries)
 }
 
 // MustConnect is as per Connect but with a fatal termination on error.
-func MustConnect(ctx context.Context, driverName, dataSourceName string, di dialect.Dialect, lgr Logger, tries int) SqlDB {
+func MustConnect(ctx context.Context, driverName, dataSourceName string, di driver.Dialect, lgr Logger, tries int) SqlDB {
 	db, err := Connect(ctx, driverName, dataSourceName, di, lgr, tries)
 	if err != nil {
 		log.Fatalf("%v\n", err)
@@ -90,7 +89,7 @@ func MustConnect(ctx context.Context, driverName, dataSourceName string, di dial
 // Connect opens a database connection and pings the server.
 // If the connection fails, it is retried using an exponential backoff.
 // the maximum number of (re-)tries can be specified; if this is zero, there is no limit.
-func Connect(ctx context.Context, driver, dsn string, di dialect.Dialect, lgr Logger, tries int) (SqlDB, error) {
+func Connect(ctx context.Context, driver, dsn string, di driver.Dialect, lgr Logger, tries int) (SqlDB, error) {
 	if dsn == "" {
 		return nil, fmt.Errorf("DB connect to %s failed: DSN is blank", driver)
 	}

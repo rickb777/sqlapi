@@ -1,4 +1,4 @@
-package dialect
+package driver
 
 import (
 	. "github.com/rickb777/sqlapi/schema"

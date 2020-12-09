@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/where/quote"
 )
@@ -57,14 +57,14 @@ func (e StubExecer) BeginBatch() *pgx.Batch {
 	panic("implement me")
 }
 
-func (e StubExecer) Dialect() dialect.Dialect {
+func (e StubExecer) Dialect() driver.Dialect {
 	if e.Q == nil {
 		return postgresNoQuotes
 	}
-	return dialect.Postgres.WithQuoter(e.Q)
+	return driver.Postgres().WithQuoter(e.Q)
 }
 
-var postgresNoQuotes = dialect.Postgres.WithQuoter(quote.NoQuoter)
+var postgresNoQuotes = driver.Postgres().WithQuoter(quote.NoQuoter)
 
 //-------------------------------------------------------------------------------------------------
 

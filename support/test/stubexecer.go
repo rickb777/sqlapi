@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/sqlapi"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 )
 
 // StubExecer provides a non-functioning Execer for testing purposes.
@@ -15,7 +15,7 @@ type StubExecer struct {
 	Rows sqlapi.SqlRows
 	Err  error
 	Lgr  sqlapi.Logger
-	Di   dialect.Dialect
+	Di   driver.Dialect
 	User interface{}
 }
 
@@ -51,7 +51,7 @@ func (e StubExecer) Logger() sqlapi.Logger {
 	return e.Lgr
 }
 
-func (e StubExecer) Dialect() dialect.Dialect {
+func (e StubExecer) Dialect() driver.Dialect {
 	return e.Di
 }
 

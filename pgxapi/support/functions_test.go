@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"github.com/benmoss/matchers"
 	. "github.com/onsi/gomega"
-	"github.com/rickb777/sqlapi/dialect"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/pgxapi/support/test"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 	"testing"
 )
@@ -46,15 +47,16 @@ func TestSliceSql(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cases := []struct {
-		dialect  dialect.Dialect
+		quoter   quote.Quoter
+		dialect  func() driver.Dialect
 		expected string
 	}{
 		{
-			dialect:  dialect.Postgres.WithQuoter(quote.NoQuoter),
+			quoter:   quote.NoQuoter,
 			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
 		},
 		{
-			dialect:  dialect.Postgres,
+			quoter:   quote.AnsiQuoter,
 			expected: `SELECT "foo" FROM "p"."table" WHERE ("room"=?) AND ("fun"=?) ORDER BY "xyz"`,
 		},
 	}
@@ -62,7 +64,8 @@ func TestSliceSql(t *testing.T) {
 	for _, c := range cases {
 		stdLog := &test.StubLogger{}
 		lgr := pgxapi.NewLogger(stdLog)
-		ex := &test.StubExecer{Lgr: lgr, Q: c.dialect.Quoter()}
+		dialect.PostgresConfig.Quoter = c.quoter
+		ex := &test.StubExecer{Lgr: lgr, Q: c.quoter}
 		tbl := pgxapi.CoreTable{
 			Nm: pgxapi.TableName{
 				Prefix: "p.",
