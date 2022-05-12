@@ -11,11 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	"github.com/cenkalti/backoff/v3"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rickb777/where/quote"
 )
 

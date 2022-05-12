@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgx/v4"
 	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/where/quote"
