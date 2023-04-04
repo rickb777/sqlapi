@@ -5,7 +5,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/docker/cli v20.10.15+incompatible // indirect
-	github.com/docker/docker v20.10.15+incompatible // indirect
+	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
