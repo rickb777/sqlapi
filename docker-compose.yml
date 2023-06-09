@@ -1,0 +1,34 @@
+version: "3.4"
+
+services:
+  postgres:
+    container_name: postgres-db
+    user: postgres
+    image: postgres:13-alpine
+    command: "postgres -c max_stack_depth=7MB"
+    ports:
+      - "15432:5432" # external port avoids any pre-existing PostgresQL
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    container_name: mysql-db
+    user: mysql
+    image: mysql:8-debian
+    ports:
+      - "13306:3306" # external port avoids any pre-existing MySQL
+    environment:
+      - MYSQL_USER=mysql
+      - MYSQL_PASSWORD=mysql
+      - MYSQL_ROOT_PASSWORD=mysql
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5

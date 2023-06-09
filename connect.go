@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/where/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
-func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) SqlDB {
+func MustConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) SqlDB {
 	db, err := ConnectEnv(ctx, lgr, logLevel, tries)
 	if err != nil {
 		log.Fatalf("%v\n", err)
@@ -34,7 +34,7 @@ const sqliteInMemory = "file::memory:?mode=memory&cache=shared"
 // Also available are DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 // Use DB_QUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
 // is none).
-func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (SqlDB, error) {
+func ConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (SqlDB, error) {
 	dbUrl := os.Getenv("DB_URL")
 	dbDriver := os.Getenv("DB_DRIVER")
 	if dbDriver == "" {
@@ -103,7 +103,7 @@ func Connect(ctx context.Context, driver, dsn string, di driver.Dialect, lgr Log
 
 	dbConnectDelay := osGetEnvDuration("DB_CONNECT_DELAY", 0)
 	if dbConnectDelay > 0 {
-		lgr.Log(ctx, pgx.LogLevelInfo, "Waiting to connect to "+di.String(), nil)
+		lgr.Log(ctx, tracelog.LogLevelInfo, "Waiting to connect to "+di.String(), nil)
 		time.Sleep(dbConnectDelay)
 	}
 
@@ -121,7 +121,7 @@ func Connect(ctx context.Context, driver, dsn string, di driver.Dialect, lgr Log
 	err = backoff.RetryNotify(
 		func() error {
 			tries--
-			lgr.Log(ctx, pgx.LogLevelInfo, "Connecting to Docker DB", info)
+			lgr.Log(ctx, tracelog.LogLevelInfo, "Connecting to Docker DB", info)
 			db, err = sql.Open(driver, dsn)
 			if err != nil {
 				if tries == 0 {
@@ -159,13 +159,13 @@ func Connect(ctx context.Context, driver, dsn string, di driver.Dialect, lgr Log
 		return nil, fmt.Errorf("%w - unable to communicate with to the database.", err)
 	}
 
-	lgr.Log(ctx, pgx.LogLevelInfo, "Connected successfully to "+driver, nil)
+	lgr.Log(ctx, tracelog.LogLevelInfo, "Connected successfully to "+driver, nil)
 
 	return WrapDB(db, di, lgr), nil
 }
 
 func notify(ctx context.Context, lgr Logger, err error, next time.Duration) {
-	lgr.Log(ctx, pgx.LogLevelWarn, "Failed to open DB connection",
+	lgr.Log(ctx, tracelog.LogLevelWarn, "Failed to open DB connection",
 		map[string]interface{}{
 			"error":    err,
 			"retry_in": next.Truncate(time.Millisecond),

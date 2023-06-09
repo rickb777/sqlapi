@@ -3,7 +3,9 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/where/quote"
@@ -25,22 +27,22 @@ var _ pgxapi.Execer = &StubExecer{}
 // n.b. logging is included here because this emulates the behaviour of pgx
 
 func (e StubExecer) Query(ctx context.Context, query string, args ...interface{}) (pgxapi.SqlRows, error) {
-	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
+	e.Lgr.Log(ctx, tracelog.LogLevelInfo, query, argMap(args...))
 	return e.Rows, e.Err
 }
 
 func (e StubExecer) QueryRow(ctx context.Context, query string, args ...interface{}) pgxapi.SqlRow {
-	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
+	e.Lgr.Log(ctx, tracelog.LogLevelInfo, query, argMap(args...))
 	return e.Row
 }
 
 func (e StubExecer) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
+	e.Lgr.Log(ctx, tracelog.LogLevelInfo, query, argMap(args...))
 	return e.N, e.Err
 }
 
 func (e StubExecer) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
-	e.Lgr.Log(ctx, pgx.LogLevelInfo, query, argMap(args...))
+	e.Lgr.Log(ctx, tracelog.LogLevelInfo, query, argMap(args...))
 	return e.N, e.Err
 }
 

@@ -1,9 +1,10 @@
 package test
 
 import (
-	"github.com/jackc/pgproto3/v2"
-	"github.com/rickb777/sqlapi/pgxapi"
 	"reflect"
+
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/rickb777/sqlapi/pgxapi"
 )
 
 // StubRow provides a non-functioning pgxapi.SqlRow for testing purposes.
@@ -14,7 +15,7 @@ type StubRows struct {
 	I          int
 	Rows       []StubRow
 	Error      error
-	Fields     []pgproto3.FieldDescription
+	Fields     []pgconn.FieldDescription
 	ValueSlice []interface{}
 }
 
@@ -44,7 +45,7 @@ func (r *StubRows) Scan(dest ...interface{}) error {
 	return nil
 }
 
-func (r *StubRows) FieldDescriptions() []pgproto3.FieldDescription {
+func (r *StubRows) FieldDescriptions() []pgconn.FieldDescription {
 	return r.Fields
 }
 

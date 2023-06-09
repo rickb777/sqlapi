@@ -8,11 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
 type toggleLogger struct {
-	lgr     pgx.Logger
+	lgr     tracelog.Logger
 	enabled int32
 }
 
@@ -20,7 +20,7 @@ func NewStdLogger(lgr StdLog) Logger {
 	return NewLogger(stdLogAdapter{lgr})
 }
 
-func NewLogger(lgr pgx.Logger) Logger {
+func NewLogger(lgr tracelog.Logger) Logger {
 	if lgr == nil {
 		return &toggleLogger{}
 	}
@@ -32,7 +32,7 @@ func NewLogger(lgr pgx.Logger) Logger {
 	return &toggleLogger{lgr: lgr, enabled: 1}
 }
 
-func (lgr *toggleLogger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (lgr *toggleLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]interface{}) {
 	if lgr.loggingEnabled() {
 		lgr.lgr.Log(ctx, level, msg, data)
 	}
@@ -40,7 +40,7 @@ func (lgr *toggleLogger) Log(ctx context.Context, level pgx.LogLevel, msg string
 
 // LogT emits a log event, supporting an elapsed-time calculation and providing an easier
 // way to supply data parameters as name,value pairs.
-func (lgr *toggleLogger) LogT(ctx context.Context, level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{}) {
+func (lgr *toggleLogger) LogT(ctx context.Context, level tracelog.LogLevel, msg string, startTime *time.Time, data ...interface{}) {
 	if lgr.loggingEnabled() {
 		m := make(map[string]interface{})
 		if startTime != nil {
@@ -60,14 +60,14 @@ func (lgr *toggleLogger) LogT(ctx context.Context, level pgx.LogLevel, msg strin
 // It returns the error.
 func (lgr *toggleLogger) LogIfError(ctx context.Context, err error) error {
 	if err != nil {
-		lgr.LogT(ctx, pgx.LogLevelError, "Error", nil, "error", err)
+		lgr.LogT(ctx, tracelog.LogLevelError, "Error", nil, "error", err)
 	}
 	return err
 }
 
 // LogError writes error info to the logger, if the logger is not nil. It returns the error.
 func (lgr *toggleLogger) LogError(ctx context.Context, err error) error {
-	lgr.LogT(ctx, pgx.LogLevelError, "Error", nil, "error", err)
+	lgr.LogT(ctx, tracelog.LogLevelError, "Error", nil, "error", err)
 	return err
 }
 
@@ -76,7 +76,7 @@ func (lgr *toggleLogger) TraceLogging(on bool) {
 		return
 	}
 
-	// because pgx.Logger is an interface, it might be not nil yet hold a nil pointer
+	// because tracelog.Logger is an interface, it might be not nil yet hold a nil pointer
 	value := reflect.ValueOf(lgr.lgr)
 	if value.Kind() == reflect.Ptr && value.IsNil() {
 		return
@@ -101,7 +101,7 @@ func (lgr *toggleLogger) LogQueryWithError(ctx context.Context, err error, query
 			m[k] = derefArg(v)
 		}
 		m["error"] = err
-		lgr.Log(ctx, pgx.LogLevelError, query, m)
+		lgr.Log(ctx, tracelog.LogLevelError, query, m)
 	}
 	// else no-op: pgx handles this
 }

@@ -5,14 +5,15 @@ import (
 	"io"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
 )
 
 // Logger provides the specialised logging operations within this API.
 type Logger interface {
-	pgx.Logger
-	LogT(ctx context.Context, level pgx.LogLevel, msg string, startTime *time.Time, data ...interface{})
+	tracelog.Logger
+	LogT(ctx context.Context, level tracelog.LogLevel, msg string, startTime *time.Time, data ...interface{})
 	LogQuery(ctx context.Context, query string, args ...interface{})
 	LogIfError(ctx context.Context, err error) error
 	LogError(ctx context.Context, err error) error

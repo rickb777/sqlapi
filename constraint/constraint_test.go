@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/tracelog"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
@@ -119,7 +119,8 @@ func TestFkConstraintOfField(t *testing.T) {
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
-	testenv.Shebang(m, "sqlite3", func(lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (err error) {
+	testenv.SetDefaultDbDriver("sqlite3")
+	testenv.Shebang(m, func(lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (err error) {
 		gdb, err = sqlapi.ConnectEnv(context.Background(), lgr, logLevel, tries)
 		return err
 	})

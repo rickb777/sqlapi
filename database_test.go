@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/tracelog"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
@@ -30,7 +30,7 @@ func TestLoggingOnOff(t *testing.T) {
 	tl := NewLogger(logger)
 
 	tl.LogQuery(ctx, "one")
-	tl.Log(ctx, pgx.LogLevelInfo, "two", nil)
+	tl.Log(ctx, tracelog.LogLevelInfo, "two", nil)
 	tl.TraceLogging(false)
 	tl.LogQuery(ctx, "three")
 	tl.TraceLogging(true)
@@ -208,7 +208,7 @@ func TestUserItemWrapper(t *testing.T) {
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
-	testenv.Shebang(m, "sqlite3", func(lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (err error) {
+	testenv.Shebang(m, func(lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (err error) {
 		gdb, err = ConnectEnv(context.Background(), lgr, logLevel, tries)
 		return err
 	})

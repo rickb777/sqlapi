@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
 type StdLog interface {
@@ -25,7 +25,7 @@ type stdLogAdapter struct {
 	std StdLog
 }
 
-func (s stdLogAdapter) Log(_ context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (s stdLogAdapter) Log(_ context.Context, level tracelog.LogLevel, msg string, data map[string]interface{}) {
 	ss := make([]interface{}, 2, 2+len(data))
 	ss[0] = fmt.Sprintf("%-5s", level)
 	ss[1] = msg

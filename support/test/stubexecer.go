@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/driver"
 )

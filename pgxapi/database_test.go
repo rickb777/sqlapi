@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
@@ -27,11 +27,11 @@ func TestLoggingOnOff(t *testing.T) {
 	tl := NewLogger(logger)
 
 	tl.LogQuery(ctx, "one") // silently dropped
-	tl.Log(ctx, pgx.LogLevelInfo, "two", nil)
+	tl.Log(ctx, tracelog.LogLevelInfo, "two", nil)
 	tl.TraceLogging(false)
-	tl.Log(ctx, pgx.LogLevelInfo, "three", nil)
+	tl.Log(ctx, tracelog.LogLevelInfo, "three", nil)
 	tl.TraceLogging(true)
-	tl.Log(ctx, pgx.LogLevelInfo, "four", nil)
+	tl.Log(ctx, tracelog.LogLevelInfo, "four", nil)
 
 	s := buf.String()
 	g.Expect(s).To(Equal("X.two []\nX.four []\n"))
@@ -205,7 +205,8 @@ func TestUserItemWrapper(t *testing.T) {
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
-	testenv.Shebang(m, "pgx", func(lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (err error) {
+	testenv.SetDefaultDbDriver("pgx")
+	testenv.Shebang(m, func(lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (err error) {
 		gdb, err = ConnectEnv(context.Background(), lgr, logLevel, tries)
 		return err
 	})

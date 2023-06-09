@@ -13,13 +13,13 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/where/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
-func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) SqlDB {
+func MustConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) SqlDB {
 	db, err := ConnectEnv(ctx, lgr, logLevel, tries)
 	if err != nil {
 		log.Fatalf("%v\n", err)
@@ -34,10 +34,9 @@ func MustConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, 
 // Also available are PGQUOTE, DB_MAX_CONNECTIONS, DB_CONNECT_DELAY and DB_CONNECT_TIMEOUT.
 // Use PGQUOTE to set "ansi", "mysql" or "none" as the policy for quoting identifiers (the default
 // is none).
-func ConnectEnv(ctx context.Context, lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (SqlDB, error) {
+func ConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (SqlDB, error) {
 	poolConfig := ParseEnvConfig()
-	poolConfig.ConnConfig.Logger = lgr
-	poolConfig.ConnConfig.LogLevel = logLevel
+	poolConfig.ConnConfig.Tracer = &tracelog.TraceLog{Logger: lgr, LogLevel: logLevel}
 	quoter := quote.PickQuoter(os.Getenv("PGQUOTE"))
 	return Connect(ctx, poolConfig, quoter, tries)
 }
@@ -76,7 +75,8 @@ func MustConnect(ctx context.Context, config *pgxpool.Config, quoter quote.Quote
 // If the connection fails, it is retried using an exponential backoff.
 // the maximum number of (re-)tries can be specified; if this is zero, there is no limit.
 func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter, tries int) (SqlDB, error) {
-	config.ConnConfig.Logger.Log(ctx, pgx.LogLevelInfo, "DB connection",
+	logger := config.ConnConfig.Tracer.(*tracelog.TraceLog).Logger
+	logger.Log(ctx, tracelog.LogLevelInfo, "DB connection",
 		map[string]interface{}{
 			"host":     config.ConnConfig.Host,
 			"port":     config.ConnConfig.Port,
@@ -84,7 +84,7 @@ func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter, t
 			"database": config.ConnConfig.Database},
 	)
 
-	pool, err := createConnectionPool(ctx, config.ConnConfig.Logger, config, tries)
+	pool, err := createConnectionPool(ctx, logger, config, tries)
 	if err != nil {
 		return nil, fmt.Errorf("%w - unable to connect to the database.", err)
 	}
@@ -95,7 +95,7 @@ func Connect(ctx context.Context, config *pgxpool.Config, quoter quote.Quoter, t
 		return nil, fmt.Errorf("%w - unable to communicate with to the database.", err)
 	}
 
-	return WrapDB(pool, config.ConnConfig.Logger, quoter), nil
+	return WrapDB(pool, logger, quoter), nil
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ const (
 	psqlCannotConnectNow = "57P03"
 )
 
-func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.Config, tries int) (*pgxpool.Pool, error) {
+func createConnectionPool(ctx context.Context, lgr tracelog.Logger, config *pgxpool.Config, tries int) (*pgxpool.Pool, error) {
 	backOff := backoff.NewExponentialBackOff()
 	backOff.MaxElapsedTime = osGetenvDuration("DB_CONNECT_TIMEOUT", 0)
 
@@ -115,17 +115,17 @@ func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.C
 
 	dbConnectDelay := osGetenvDuration("DB_CONNECT_DELAY", 0)
 	if dbConnectDelay > 0 {
-		lgr.Log(ctx, pgx.LogLevelInfo, "Waiting to connect to Postgres.", nil)
+		lgr.Log(ctx, tracelog.LogLevelInfo, "Waiting to connect to Postgres.", nil)
 		time.Sleep(dbConnectDelay)
 	}
 
-	lgr.Log(ctx, pgx.LogLevelInfo, "Connecting to Postgres.", nil)
+	lgr.Log(ctx, tracelog.LogLevelInfo, "Connecting to Postgres.", nil)
 
 	// Construct a connection pool, retry until a connection pool can be established
 	err = backoff.RetryNotify(
 		func() error {
 			tries--
-			pool, err = pgxpool.ConnectConfig(ctx, config)
+			pool, err = pgxpool.NewWithConfig(ctx, config)
 			if err != nil {
 				if tries == 0 {
 					return backoff.Permanent(err) // no more tries
@@ -164,12 +164,12 @@ func createConnectionPool(ctx context.Context, lgr pgx.Logger, config *pgxpool.C
 		}
 	}()
 
-	lgr.Log(ctx, pgx.LogLevelInfo, "Connected to Postgres successfully.", nil)
+	lgr.Log(ctx, tracelog.LogLevelInfo, "Connected to Postgres successfully.", nil)
 	return pool, nil
 }
 
-func notify(ctx context.Context, lgr pgx.Logger, err error, next time.Duration) {
-	lgr.Log(ctx, pgx.LogLevelWarn, "Failed to create Postgres connection pool",
+func notify(ctx context.Context, lgr tracelog.Logger, err error, next time.Duration) {
+	lgr.Log(ctx, tracelog.LogLevelWarn, "Failed to create Postgres connection pool",
 		map[string]interface{}{
 			"error":    err,
 			"retry_in": next.Truncate(time.Millisecond),

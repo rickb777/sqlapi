@@ -3,9 +3,10 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
-	"github.com/rickb777/collection"
 	"strings"
+
+	"github.com/jackc/pgx/v5/tracelog"
+	"github.com/rickb777/collection"
 )
 
 // TestingLogger interface defines the subset of testing.TB methods used by this adapter.
@@ -20,9 +21,9 @@ type StubLogger struct {
 	Logged  []string
 }
 
-var _ pgx.Logger = new(StubLogger)
+var _ tracelog.Logger = new(StubLogger)
 
-func (r *StubLogger) Log(_ context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (r *StubLogger) Log(_ context.Context, level tracelog.LogLevel, msg string, data map[string]interface{}) {
 	m := collection.StringAnyMap(data)
 	args := m.OrderedSlice(m.Keys().Sorted()).MkString4("[", ", ", "]", "=")
 	buf := &strings.Builder{}

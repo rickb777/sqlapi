@@ -1,7 +1,7 @@
 package pgxapi
 
 import (
-	"github.com/jackc/pgproto3/v2"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rickb777/collection"
 )
 
@@ -19,7 +19,7 @@ type SqlRows interface {
 	// when all rows are read.
 	Next() bool
 
-	FieldDescriptions() []pgproto3.FieldDescription
+	FieldDescriptions() []pgconn.FieldDescription
 
 	// Values returns an array of the row values
 	Values() ([]interface{}, error)
@@ -37,14 +37,14 @@ type SqlRows interface {
 // The internal *sql.Rows field is exported and is usable as per normal via its Next
 // and Scan methods, or the Next and ScanToMap methods can be used instead.
 type Rows struct {
-	fields []pgproto3.FieldDescription
+	fields []pgconn.FieldDescription
 	values []interface{}
 	Rows   SqlRows
 }
 
 // RowData holds a single row result from the database.
 type RowData struct {
-	Fields []pgproto3.FieldDescription
+	Fields []pgconn.FieldDescription
 	Data   collection.StringAnyMap
 }
 
@@ -117,6 +117,6 @@ func (rams *Rows) Err() error {
 	return rams.Rows.Err()
 }
 
-func (rams *Rows) FieldDescriptions() []pgproto3.FieldDescription {
+func (rams *Rows) FieldDescriptions() []pgconn.FieldDescription {
 	return rams.fields
 }

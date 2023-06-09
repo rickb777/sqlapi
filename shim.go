@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
 )
 
@@ -208,7 +209,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	return fn(ex)
 }
 
-func logPanicData(ctx context.Context, p interface{}, lgr pgx.Logger) error {
+func logPanicData(ctx context.Context, p interface{}, lgr tracelog.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = e
@@ -217,7 +218,7 @@ func logPanicData(ctx context.Context, p interface{}, lgr pgx.Logger) error {
 	}
 	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 	if lgr != nil {
-		lgr.Log(ctx, pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
+		lgr.Log(ctx, tracelog.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
 	} else {
 		log.Printf("panic recovered: %+v", p)
 	}
@@ -239,11 +240,11 @@ func (sh *shim) Stats() sql.DBStats {
 //-------------------------------------------------------------------------------------------------
 // TX-specific methods
 
-func (sh *shim) Commit(ctx context.Context) error {
+func (sh *shim) Commit(_ context.Context) error {
 	return sh.ex.(*sql.Tx).Commit()
 }
 
-func (sh *shim) Rollback(ctx context.Context) error {
+func (sh *shim) Rollback(_ context.Context) error {
 	return sh.ex.(*sql.Tx).Rollback()
 }
 

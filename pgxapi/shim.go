@@ -6,19 +6,19 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/rickb777/where/dialect"
-
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 )
 
 // WrapDB wraps a *pgx.ConnPool as SqlDB.
 // The logger is optional and can be nil, which disables logging.
 // The quoter is optional and can be nil, defaulting to no quotes.
-func WrapDB(pool *pgxpool.Pool, lgr pgx.Logger, quoter quote.Quoter) SqlDB {
+func WrapDB(pool *pgxpool.Pool, lgr tracelog.Logger, quoter quote.Quoter) SqlDB {
 	if quoter == nil {
 		quoter = quote.NoQuoter
 	}
@@ -27,9 +27,9 @@ func WrapDB(pool *pgxpool.Pool, lgr pgx.Logger, quoter quote.Quoter) SqlDB {
 }
 
 type basicExecer interface {
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, query string, args ...interface{}) pgx.Row
-	Exec(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, query string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, query string, args ...any) pgx.Row
+	Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error)
 	//PrepareEx(ctx context.Context, name, query string, opts *pgx.PrepareExOptions) (*pgx.PreparedStatement, error)
 	//BeginBatch() *pgx.Batch
 }
@@ -54,7 +54,7 @@ var _ SqlTx = new(shim)
 
 //-------------------------------------------------------------------------------------------------
 
-func (sh *shim) Query(ctx context.Context, query string, args ...interface{}) (SqlRows, error) {
+func (sh *shim) Query(ctx context.Context, query string, args ...any) (SqlRows, error) {
 	qr := driver.Postgres().ReplacePlaceholders(query, nil)
 	rows, err := sh.ex.Query(defaultCtx(ctx), qr, args...)
 	if err != nil {
@@ -63,12 +63,12 @@ func (sh *shim) Query(ctx context.Context, query string, args ...interface{}) (S
 	return rows, nil
 }
 
-func (sh *shim) QueryRow(ctx context.Context, query string, args ...interface{}) SqlRow {
+func (sh *shim) QueryRow(ctx context.Context, query string, args ...any) SqlRow {
 	qr := driver.Postgres().ReplacePlaceholders(query, nil)
 	return sh.ex.QueryRow(defaultCtx(ctx), qr, args...)
 }
 
-func (sh *shim) Insert(ctx context.Context, pk, query string, args ...interface{}) (int64, error) {
+func (sh *shim) Insert(ctx context.Context, pk, query string, args ...any) (int64, error) {
 	q2 := fmt.Sprintf("%s RETURNING %s", query, pk)
 	qr := driver.Postgres().ReplacePlaceholders(q2, nil)
 	row := sh.ex.QueryRow(defaultCtx(ctx), qr, args...)
@@ -80,7 +80,7 @@ func (sh *shim) Insert(ctx context.Context, pk, query string, args ...interface{
 	return id, nil
 }
 
-func (sh *shim) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (sh *shim) Exec(ctx context.Context, query string, args ...any) (int64, error) {
 	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
 	tag, err := sh.ex.Exec(defaultCtx(ctx), qr, args...)
 	if err != nil {
@@ -179,7 +179,7 @@ func (sh *shim) SingleConn(ctx context.Context, fn func(ex Execer) error) (err e
 	return fn(ex)
 }
 
-func logPanicData(ctx context.Context, p interface{}, lgr pgx.Logger) error {
+func logPanicData(ctx context.Context, p interface{}, lgr tracelog.Logger) error {
 	// capture a stack trace using github.com/pkg/errors
 	if e, ok := p.(error); ok {
 		p = e
@@ -188,7 +188,7 @@ func logPanicData(ctx context.Context, p interface{}, lgr pgx.Logger) error {
 	}
 	// using Sprintf so that the stack trace is printed (a feature of github.com/pkg/errors)
 	if lgr != nil {
-		lgr.Log(ctx, pgx.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
+		lgr.Log(ctx, tracelog.LogLevelError, fmt.Sprintf("panic recovered: %+v", p), nil)
 	} else {
 		log.Printf("panic recovered: %+v", p)
 	}

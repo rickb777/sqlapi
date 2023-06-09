@@ -2,7 +2,9 @@ package constraint_test
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"testing"
+
+	"github.com/jackc/pgx/v5/tracelog"
 	. "github.com/onsi/gomega"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/pgxapi/constraint"
@@ -11,7 +13,6 @@ import (
 	"github.com/rickb777/sqlapi/support/testenv"
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/where/quote"
-	"testing"
 )
 
 var gdb pgxapi.SqlDB
@@ -114,7 +115,8 @@ func TestPgxFkConstraintOfField(t *testing.T) {
 //-------------------------------------------------------------------------------------------------
 
 func TestMain(m *testing.M) {
-	testenv.Shebang(m, "pgx", func(lgr pgx.Logger, logLevel pgx.LogLevel, tries int) (err error) {
+	testenv.SetDefaultDbDriver("pgx")
+	testenv.Shebang(m, func(lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (err error) {
 		gdb, err = pgxapi.ConnectEnv(context.Background(), lgr, logLevel, tries)
 		return err
 	})

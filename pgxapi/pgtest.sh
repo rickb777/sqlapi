@@ -2,10 +2,10 @@
 # Setup
 # -----
 # This script can run some of the tests against real PostgreSQL. Therefore,
-# it is necessary to create testuser accounts in each one beforehand.
+# it is necessary to create test accounts in each one beforehand.
 # These all assume the existence of either
 #   postgres:postgres@/postgres
-#   testuser:TestPasswd.9.9.9@/test
+#   test:test@/test
 
 cd "$(dirname $0)"
 
@@ -24,8 +24,8 @@ if [[ $1 = "travis" ]]; then
   export PGPASSWORD=''
 elif [[ -z $PGUSER ]]; then
   export PGDATABASE='test'
-  export PGUSER='testuser'
-  export PGPASSWORD='TestPasswd.9.9.9'
+  export PGUSER='test'
+  export PGPASSWORD='test'
 fi
 
 echo

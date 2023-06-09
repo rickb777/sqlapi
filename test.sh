@@ -2,14 +2,14 @@
 # Setup
 # -----
 # This script can run some of the tests against real databases. Therefore,
-# it is necessary to create testuser accounts in each one beforehand.
+# it is necessary to create test accounts in each one beforehand.
 # These all assume the existence of
-#   testuser:TestPasswd.9.9.9@/test
+#   test:test@/test
 #
 # e.g.
-# create user testuser@localhost identified by 'TestPasswd.9.9.9';
+# create user test@localhost identified by 'test9';
 # create database test;
-# grant all on test.* to testuser@localhost;
+# grant all on test.* to test@localhost;
 
 cd "$(dirname $0)"
 
