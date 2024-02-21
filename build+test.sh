@@ -16,15 +16,13 @@ function v
   $@
 }
 
-if ! type -p goveralls; then
-  v go install github.com/mattn/goveralls
-fi
-
 if ! type -p shadow; then
+  v go get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
   v go install golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
 fi
 
 if ! type -p goreturns; then
+  v go get github.com/sqs/goreturns
   v go install github.com/sqs/goreturns
 fi
 
@@ -68,13 +66,11 @@ rm -f reports/*
 echo .
 go test -covermode=count -coverprofile=reports/sqlapi.out .
 go tool cover -func=reports/sqlapi.out
-#[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/sqlapi.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 
 for d in constraint require schema support types; do
   announce ./$d
   go test -covermode=count -coverprofile=reports/$d.out ./$d
   go tool cover -func=reports/$d.out
-  #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
 # pgxapi sub-package test coverage
@@ -82,7 +78,6 @@ for d in constraint support; do
   announce ./pgxapi/$d
   go test -covermode=count -coverprofile=reports/pgxapi-$d.out ./pgxapi/$d
   go tool cover -func=reports/pgxapi-$d.out
-  #[ -z "$COVERALLS_TOKEN" ] || goveralls -coverprofile=reports/pgxapi-$d.out -service=travis-ci -repotoken $COVERALLS_TOKEN || echo "Push to coveralls failed"
 done
 
 echo "./pgxapi/pgtest.sh $1"
