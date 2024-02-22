@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bobg/go-generics/v3/maps"
+	"github.com/bobg/go-generics/v3/slices"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/rickb777/collection"
 )
 
 // TestingLogger interface defines the subset of testing.TB methods used by this adapter.
@@ -23,14 +24,23 @@ type StubLogger struct {
 
 var _ tracelog.Logger = new(StubLogger)
 
-func (r *StubLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]interface{}) {
-	m := collection.StringAnyMap(data)
-	args := m.OrderedSlice(m.Keys().Sorted()).MkString4("[", ", ", "]", "=")
+func (r *StubLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
+	m := maps.Clone(data)
+	skeys := maps.Keys(m)
+	slices.Sort(skeys)
 	buf := &strings.Builder{}
-	fmt.Fprintf(buf, "%-5s %s %s", level, msg, args)
+	fmt.Fprintf(buf, "%-5s %s [", level, msg)
+	comma := ""
+	for _, k := range skeys {
+		v := data[k]
+		fmt.Fprintf(buf, "%s%v=%v", comma, k, v)
+		comma = ", "
+	}
+	buf.WriteString("]")
 	s := buf.String()
 	r.Logged = append(r.Logged, s)
 	if r.Testing != nil {
 		r.Testing.Log(s)
 	}
+
 }

@@ -3,7 +3,7 @@ package constraint
 import (
 	"fmt"
 
-	"github.com/rickb777/collection"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/support"
@@ -137,7 +137,7 @@ type Relationship struct {
 // IdsUnusedAsForeignKeys finds all the primary keys in the parent table that have no foreign key
 // in the dependent (child) table. The table tbl provides the database or transaction handle; either
 // the parent or the child table can be used for thi purpose.
-func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
+func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int64], error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, fmt.Errorf("%s: IdsUnusedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
@@ -170,7 +170,7 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (collection.Int
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
 // in the dependent (child) table.
-func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (collection.Int64Set, error) {
+func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int64], error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, fmt.Errorf("%s: IdsUsedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
@@ -187,14 +187,14 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (collection.Int64
 	return fetchIds(tbl, s)
 }
 
-func fetchIds(tbl sqlapi.Table, query string) (collection.Int64Set, error) {
+func fetchIds(tbl sqlapi.Table, query string) (mapset.Set[int64], error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 	}
 	defer rows.Close()
 
-	set := collection.NewInt64Set()
+	set := mapset.NewThreadUnsafeSet[int64]()
 	for rows.Next() {
 		var id int64
 		rows.Scan(&id)

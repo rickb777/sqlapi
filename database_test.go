@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"testing"
 
@@ -65,11 +66,11 @@ func TestListTables(t *testing.T) {
 
 	list, err := ListTables(gdb, nil)
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(list.Filter(func(s string) bool {
-		return strings.HasPrefix(s, "sql_")
+	g.Expect(slices.DeleteFunc(list, func(s string) bool {
+		return !strings.HasPrefix(s, "sql_")
 	})).To(HaveLen(0))
-	g.Expect(list.Filter(func(s string) bool {
-		return strings.HasPrefix(s, "pg_")
+	g.Expect(slices.DeleteFunc(list, func(s string) bool {
+		return !strings.HasPrefix(s, "pg_")
 	})).To(HaveLen(0))
 }
 
