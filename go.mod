@@ -4,7 +4,6 @@ require (
 	github.com/benmoss/matchers v0.0.0-20181101202349-c279145bd967
 	github.com/bobg/go-generics/v3 v3.4.0
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.4.3

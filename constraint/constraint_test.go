@@ -82,12 +82,12 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m1.ToSlice()).To(ConsistOf(aid1, aid2))
+	g.Expect(m1.Slice()).To(ConsistOf(aid1, aid2))
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
 	g.Expect(err).To(BeNil())
-	g.Expect(m2.ToSlice()).To(ConsistOf(aid3, aid4))
+	g.Expect(m2.Slice()).To(ConsistOf(aid3, aid4))
 }
 
 func TestFkConstraintOfField(t *testing.T) {

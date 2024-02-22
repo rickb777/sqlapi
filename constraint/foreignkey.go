@@ -3,7 +3,8 @@ package constraint
 import (
 	"fmt"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/bobg/go-generics/v3/set"
+
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/support"
@@ -137,7 +138,7 @@ type Relationship struct {
 // IdsUnusedAsForeignKeys finds all the primary keys in the parent table that have no foreign key
 // in the dependent (child) table. The table tbl provides the database or transaction handle; either
 // the parent or the child table can be used for thi purpose.
-func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int64], error) {
+func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (set.Of[int64], error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, fmt.Errorf("%s: IdsUnusedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
@@ -170,7 +171,7 @@ func (rel Relationship) IdsUnusedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int
 
 // IdsUsedAsForeignKeys finds all the primary keys in the parent table that have at least one foreign key
 // in the dependent (child) table.
-func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int64], error) {
+func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (set.Of[int64], error) {
 	if rel.Parent.Column == "" || rel.Child.Column == "" {
 		return nil, fmt.Errorf("%s: IdsUsedAsForeignKeys requires the column names to be specified", tbl.Name())
 	}
@@ -187,14 +188,14 @@ func (rel Relationship) IdsUsedAsForeignKeys(tbl sqlapi.Table) (mapset.Set[int64
 	return fetchIds(tbl, s)
 }
 
-func fetchIds(tbl sqlapi.Table, query string) (mapset.Set[int64], error) {
+func fetchIds(tbl sqlapi.Table, query string) (set.Of[int64], error) {
 	rows, err := support.Query(tbl, query)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
 	}
 	defer rows.Close()
 
-	set := mapset.NewThreadUnsafeSet[int64]()
+	set := set.New[int64]()
 	for rows.Next() {
 		var id int64
 		rows.Scan(&id)
