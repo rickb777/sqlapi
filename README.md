@@ -31,7 +31,7 @@ Currently, support is included for **MySQL**, **PostgreSQL** and **SQLite**. Oth
 
 ### package where
 
-* Fluent construction of WHERE and HAVING clauses: this is now [github.com/rickb777/sqlapi](https://github
+* Fluent construction of WHERE and HAVING clauses: this is now [github.com/rickb777/where](https://github
 .com/rickb777/where). This also provides control over identifier quoting, e.g. ANSI SQL, back-ticks, etc.
  
 ## Install

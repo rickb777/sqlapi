@@ -84,7 +84,7 @@ for db in $DBS; do
       PGQUOTE=ansi go test $V ./pgxapi/...
       ;;
 
-    sqlite)
+    sqlite|sqlite3)
       unset DB_URL
       echo "SQLite3 (no quotes)..."
       go clean -testcache ||:
