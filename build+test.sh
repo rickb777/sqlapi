@@ -44,8 +44,6 @@ fi
 
 ### Build Phase 1 ###
 
-./version.sh
-
 v goreturns -l -w *.go */*.go
 
 v go vet ./...
