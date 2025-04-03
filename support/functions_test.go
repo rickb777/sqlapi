@@ -4,22 +4,17 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/rickb777/where/dialect"
-
-	"github.com/rickb777/sqlapi/driver"
-	"github.com/rickb777/sqlapi/support/test"
-
-	"github.com/benmoss/matchers"
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/require"
+	"github.com/rickb777/sqlapi/support/test"
 	"github.com/rickb777/where"
+	"github.com/rickb777/where/dialect"
 	"github.com/rickb777/where/quote"
 )
 
 func TestUpdateFieldsSQL(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		quoter   quote.Quoter
 		expected string
@@ -41,14 +36,12 @@ func TestUpdateFieldsSQL(t *testing.T) {
 
 		q, a := updateFieldsSQL("foo", c.quoter, wh, f1, f2)
 
-		g.Expect(q).To(Equal(c.expected))
-		g.Expect(a).To(matchers.DeepEqual([]interface{}{111, 222, 101, true}))
+		expect.String(q).ToBe(t, c.expected)
+		expect.Slice(a).ToBe(t, 111, 222, 101, true)
 	}
 }
 
 func TestSliceSql(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		dialect  func() driver.Dialect
 		expected string
@@ -105,14 +98,12 @@ func TestSliceSql(t *testing.T) {
 
 		q, a := sliceSql(tbl, "foo", wh, where.OrderBy("xyz"))
 
-		g.Expect(q).To(Equal(c.expected))
-		g.Expect(a).To(matchers.DeepEqual([]interface{}{101, true}))
+		expect.String(q).ToBe(t, c.expected)
+		expect.Slice(a).ToBe(t, 101, true)
 	}
 }
 
 func TestQuery_happy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{Testing: t}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Di: driver.Postgres(), Lgr: lgr}
@@ -126,13 +117,11 @@ func TestQuery_happy(t *testing.T) {
 
 	_, err := Query(tbl, "SELECT foo FROM p.table WHERE x=?", 123)
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT foo FROM p.table WHERE x=$1 [$1=123]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Slice(stdLog.Logged).ToBe(t, `info  SELECT foo FROM p.table WHERE x=$1 [$1=123]`)
 }
 
 func TestExec_happy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
@@ -146,13 +135,11 @@ func TestExec_happy(t *testing.T) {
 
 	_, err := Exec(tbl, require.Exactly(2), "DELETE FROM p.table WHERE x=?", 123)
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  DELETE FROM p.table WHERE x=$1 [$1=123]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Slice(stdLog.Logged).ToBe(t, `info  DELETE FROM p.table WHERE x=$1 [$1=123]`)
 }
 
 func TestUpdateFields(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
@@ -166,13 +153,11 @@ func TestUpdateFields(t *testing.T) {
 
 	_, err := UpdateFields(tbl, require.Exactly(2), where.Eq("foo", "bar"), sql.Named("c1", 1), sql.Named("c2", 2))
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [$1=1, $2=2, $3=bar]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Slice(stdLog.Logged).ToBe(t, `info  UPDATE "p"."table" SET "c1"=$1, "c2"=$2 WHERE "foo"=$3 [$1=1, $2=2, $3=bar]`)
 }
 
 func TestDeleteByColumn(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Di: driver.Postgres(), N: 2, Lgr: lgr}
@@ -186,13 +171,11 @@ func TestDeleteByColumn(t *testing.T) {
 
 	_, err := DeleteByColumn(tbl, require.Exactly(2), "foo", 1, 2, 3, 4)
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [$1=1, $2=2, $3=3, $4=4]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Slice(stdLog.Logged).ToBe(t, `info  DELETE FROM "p"."table" WHERE "foo" IN ($1,$2,$3,$4) [$1=1, $2=2, $3=3, $4=4]`)
 }
 
 func TestGetIntIntIndex_happy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
@@ -208,14 +191,12 @@ func TestGetIntIntIndex_happy(t *testing.T) {
 
 	m, err := GetIntIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(m).To(Equal(map[int64]int64{2: 16, 3: 81}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Map(m).ToBe(t, map[int64]int64{2: 16, 3: 81})
+	expect.Slice(stdLog.Logged).ToBe(t, `info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`)
 }
 
 func TestGetStringIntIndex_happy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
@@ -231,14 +212,12 @@ func TestGetStringIntIndex_happy(t *testing.T) {
 
 	m, err := GetStringIntIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(m).To(Equal(map[string]int64{"two": 16, "three": 81}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Map(m).ToBe(t, map[string]int64{"two": 16, "three": 81})
+	expect.Slice(stdLog.Logged).ToBe(t, `info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`)
 }
 
 func TestGetIntStringIndex_happy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	stdLog := &test.StubLogger{}
 	lgr := sqlapi.NewLogger(stdLog)
 	ex := &test.StubExecer{Rows: &test.StubRows{
@@ -254,7 +233,7 @@ func TestGetIntStringIndex_happy(t *testing.T) {
 
 	m, err := GetIntStringIndex(tbl, quote.AnsiQuoter, "aa", "bb", where.Eq("foo", "bar"))
 
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(m).To(Equal(map[int64]string{2: "16", 3: "81"}))
-	g.Expect(stdLog.Logged).To(ConsistOf(`info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Map(m).ToBe(t, map[int64]string{2: "16", 3: "81"})
+	expect.Slice(stdLog.Logged).ToBe(t, `info  SELECT "aa", "bb" FROM "p"."table" WHERE "foo"=$1 [$1=bar]`)
 }

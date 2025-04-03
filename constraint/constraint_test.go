@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/constraint"
 	"github.com/rickb777/sqlapi/schema"
@@ -22,8 +22,6 @@ import (
 var gdb sqlapi.SqlDB
 
 func TestCheckConstraint(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cc0 := constraint.CheckConstraint{
 		Expression: "role < 3",
 	}
@@ -31,12 +29,10 @@ func TestCheckConstraint(t *testing.T) {
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(cc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" CHECK (role < 3)`), s)
+	expect.String(s).Info(s).ToBe(t, `CONSTRAINT "constraint_persons_c0" CHECK (role < 3)`)
 }
 
 func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
 		Parent:           constraint.Reference{TableName: "addresses", Column: "identity"},
@@ -46,12 +42,10 @@ func TestForeignKeyConstraint_withParentColumn(t *testing.T) {
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints()[0]
 	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT "constraint_persons_c0" foreign key ("addresspk") references "constraint_addresses" ("identity") on update restrict on delete cascade`), s)
+	expect.String(s).Info(s).ToBe(t, `CONSTRAINT "constraint_persons_c0" foreign key ("addresspk") references "constraint_addresses" ("identity") on update restrict on delete cascade`)
 }
 
 func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	fkc0 := constraint.FkConstraint{
 		ForeignKeyColumn: "addresspk",
 		Parent:           constraint.Reference{TableName: "addresses", Column: ""},
@@ -61,12 +55,10 @@ func TestForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T) {
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints().FkConstraints()[0]
 	s := fkc.ConstraintSql(quote.NoQuoter, persons.Name(), 0)
-	g.Expect(s).To(Equal(`CONSTRAINT constraint_persons_c0 foreign key (addresspk) references constraint_addresses on update restrict on delete cascade`), s)
+	expect.String(s).Info(s).ToBe(t, `CONSTRAINT constraint_persons_c0 foreign key (addresspk) references constraint_addresses on update restrict on delete cascade`)
 }
 
 func TestIdsUsedAsForeignKeys(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	aid1, aid2, aid3, aid4 := insertFixtures(t, gdb)
 
 	fkc0 := constraint.FkConstraint{
@@ -81,18 +73,16 @@ func TestIdsUsedAsForeignKeys(t *testing.T) {
 
 	m1, err := fkc.RelationshipWith(persons.Name()).IdsUsedAsForeignKeys(persons)
 
-	g.Expect(err).To(BeNil())
-	g.Expect(m1.Slice()).To(ConsistOf(aid1, aid2))
+	expect.Error(err).ToBeNil(t)
+	expect.Slice(m1.Slice()).ToContainAll(t, aid1, aid2)
 
 	m2, err := fkc.RelationshipWith(persons.Name()).IdsUnusedAsForeignKeys(persons)
 
-	g.Expect(err).To(BeNil())
-	g.Expect(m2.Slice()).To(ConsistOf(aid3, aid4))
+	expect.Error(err).ToBeNil(t)
+	expect.Slice(m2.Slice()).ToContainAll(t, aid3, aid4)
 }
 
 func TestFkConstraintOfField(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	i64 := schema.Type{Name: "int64", Base: types.Int64}
 	field := &schema.Field{
 		Node:    schema.Node{Name: "Cat", Type: i64},
@@ -105,7 +95,7 @@ func TestFkConstraintOfField(t *testing.T) {
 	}
 
 	fkc := constraint.FkConstraintOfField(field)
-	g.Expect(fkc).To(Equal(constraint.FkConstraint{
+	expect.Any(fkc).ToBe(t, constraint.FkConstraint{
 		ForeignKeyColumn: "cat",
 		Parent: constraint.Reference{
 			TableName: "something",
@@ -113,7 +103,7 @@ func TestFkConstraintOfField(t *testing.T) {
 		},
 		Update: "restrict",
 		Delete: "cascade",
-	}))
+	})
 }
 
 //-------------------------------------------------------------------------------------------------

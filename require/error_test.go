@@ -3,25 +3,21 @@ package require
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 )
 
 func TestWrongSizeZero(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	err := ErrWrongSize(0, "wanted %d", 5)
-	g.Expect(err.Error()).To(Equal("wanted 5"))
-	g.Expect(err.(Sizer).Size()).To(BeEquivalentTo(0))
-	g.Expect(IsNotFound(err)).To(BeTrue())
-	g.Expect(IsNotUnique(err)).To(BeFalse())
+	expect.Error(err).ToContain(t, "wanted 5")
+	expect.Number(err.(Sizer).Size()).ToBe(t, 0)
+	expect.Bool(IsNotFound(err)).ToBeTrue(t)
+	expect.Bool(IsNotUnique(err)).ToBeFalse(t)
 }
 
 func TestWrongSizeMany(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	err := ErrWrongSize(3, "wanted %d", 5)
-	g.Expect(err.Error()).To(Equal("wanted 5"))
-	g.Expect(err.(Sizer).Size()).To(BeEquivalentTo(3))
-	g.Expect(IsNotFound(err)).To(BeFalse())
-	g.Expect(IsNotUnique(err)).To(BeTrue())
+	expect.Error(err).ToContain(t, "wanted 5")
+	expect.Number(err.(Sizer).Size()).ToBe(t, 3)
+	expect.Bool(IsNotFound(err)).ToBeFalse(t)
+	expect.Bool(IsNotUnique(err)).ToBeTrue(t)
 }

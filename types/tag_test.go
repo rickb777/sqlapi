@@ -1,16 +1,13 @@
 package types
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 )
 
 func TestParseTag(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	tagTests := []struct {
 		raw string
 		tag *Tag
@@ -70,15 +67,11 @@ func TestParseTag(t *testing.T) {
 	}
 
 	for _, test := range tagTests {
-		got, err := ParseTag(test.raw)
-		g.Expect(err).To(BeNil(), test.raw)
-		g.Expect(got).To(Equal(test.tag), test.raw)
+		expect.Any(ParseTag(test.raw)).Info(test.raw).ToBe(t, test.tag)
 	}
 }
 
 func TestParseValidation(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	tagTests := []struct {
 		raw string
 		err string
@@ -142,15 +135,11 @@ func TestParseValidation(t *testing.T) {
 	}
 
 	for _, test := range tagTests {
-		_, err := ParseTag(test.raw)
-		g.Expect(err).To(Not(BeNil()), test.raw)
-		g.Expect(err.Error()).To(Equal(test.err), test.raw)
+		expect.Error(ParseTag(test.raw)).I(test.raw).ToContain(t, test.err)
 	}
 }
 
 func TestReadTagsFile(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	file := os.TempDir() + "/sqlgen2-test.yaml"
 	defer os.Remove(file)
 
@@ -164,16 +153,16 @@ Foo:
   type: blob
 `
 
-	err := ioutil.WriteFile(file, []byte(yml), 0644)
-	g.Expect(err).To(BeNil())
+	err := os.WriteFile(file, []byte(yml), 0644)
+	expect.Error(err).ToBeNil(t)
 
 	tags, err := ReadTagsFile(file)
-	g.Expect(err).To(BeNil())
-	g.Expect(tags).To(HaveLen(2))
+	expect.Error(err).ToBeNil(t)
+	expect.Map(tags).ToHaveLength(t, 2)
 
 	id := tags["Id"]
-	g.Expect(id).To(Equal(&Tag{Primary: true, Auto: true}))
+	expect.Any(id).ToBe(t, &Tag{Primary: true, Auto: true})
 
 	foo := tags["Foo"]
-	g.Expect(foo).To(Equal(&Tag{Name: "fooish", Type: "blob"}))
+	expect.Any(foo).ToBe(t, &Tag{Name: "fooish", Type: "blob"})
 }

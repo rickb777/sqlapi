@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 )
 
 var e0 = fmt.Errorf("foo")
 
 func TestChainErrorIfQueryNotSatisfiedBy_and_ChainErrorIfExecNotSatisfiedBy(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		input    error
 		req      Requirement
@@ -43,20 +41,20 @@ func TestChainErrorIfQueryNotSatisfiedBy_and_ChainErrorIfExecNotSatisfiedBy(t *t
 	for _, c := range cases {
 		e1 := ChainErrorIfQueryNotSatisfiedBy(c.input, c.req, c.actual)
 		if c.req != nil {
-			g.Expect(c.req.String()).To(Equal(c.sMessage))
+			expect.String(c.req.String()).ToBe(t, c.sMessage)
 		}
 
 		if c.expected {
-			g.Expect(e1.Error()).To(Equal(c.qMessage))
+			expect.Error(e1).ToContain(t, c.qMessage)
 		} else {
-			g.Expect(e1).To(BeNil())
+			expect.Error(e1).ToBeNil(t)
 		}
 
 		e2 := ChainErrorIfExecNotSatisfiedBy(c.input, c.req, c.actual)
 		if c.expected {
-			g.Expect(e2.Error()).To(Equal(c.eMessage))
+			expect.Error(e2).ToContain(t, c.eMessage)
 		} else {
-			g.Expect(e2).To(BeNil())
+			expect.Error(e2).ToBeNil(t)
 		}
 	}
 }

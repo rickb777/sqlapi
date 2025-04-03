@@ -5,35 +5,32 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/rickb777/where/dialect"
-
-	"github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi/driver"
+	"github.com/rickb777/where/dialect"
 )
 
 func insertFixtures(t *testing.T, e Execer) (aid1, aid2, aid3, aid4 int64) {
-	g := gomega.NewGomegaWithT(t)
-
 	for _, s := range createTablesSql(e.Dialect()) {
 		_, err := e.Exec(context.Background(), s)
-		g.Expect(err).To(gomega.BeNil())
+		expect.Error(err).ToBeNil(t)
 	}
 
-	aid1 = insertOne(g, e, address1)
-	aid2 = insertOne(g, e, address2)
-	aid3 = insertOne(g, e, address3)
-	aid4 = insertOne(g, e, address4)
+	aid1 = insertOne(t, e, address1)
+	aid2 = insertOne(t, e, address2)
+	aid3 = insertOne(t, e, address3)
+	aid4 = insertOne(t, e, address4)
 
-	insertOne(g, e, fmt.Sprintf(person1a, aid1))
-	insertOne(g, e, fmt.Sprintf(person1b, aid1))
-	insertOne(g, e, fmt.Sprintf(person2a, aid2))
+	insertOne(t, e, fmt.Sprintf(person1a, aid1))
+	insertOne(t, e, fmt.Sprintf(person1b, aid1))
+	insertOne(t, e, fmt.Sprintf(person2a, aid2))
 
 	return aid1, aid2, aid3, aid4
 }
 
-func insertOne(g *gomega.GomegaWithT, e Execer, query string) int64 {
+func insertOne(t *testing.T, e Execer, query string) int64 {
 	id, err := e.Insert(context.Background(), "id", query)
-	g.Expect(err).To(gomega.BeNil())
+	expect.Error(err).ToBeNil(t)
 	return id
 }
 

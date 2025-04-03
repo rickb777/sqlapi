@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/where/quote"
 )
@@ -13,8 +13,6 @@ import (
 var _ StringWriter = &bytes.Buffer{}
 
 func TestQuote(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		q        quote.Quoter
 		expected string
@@ -25,17 +23,15 @@ func TestQuote(t *testing.T) {
 	}
 	for _, c := range cases {
 		s1 := c.q.Quote("x.Aaaa")
-		g.Expect(s1).Should(Equal(c.expected))
+		expect.String(s1).ToBe(t, c.expected)
 
 		b2 := &bytes.Buffer{}
 		c.q.QuoteW(b2, "x.Aaaa")
-		g.Expect(b2.String()).Should(Equal(c.expected))
+		expect.String(b2.String()).ToBe(t, c.expected)
 	}
 }
 
 func TestSplitAndQuote(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		q        quote.Quoter
 		expected []string
@@ -46,13 +42,11 @@ func TestSplitAndQuote(t *testing.T) {
 	}
 	for _, c := range cases {
 		s1 := c.q.QuoteN([]string{"aa", "bb", "cc"})
-		g.Expect(s1).Should(Equal(c.expected))
+		expect.Slice(s1).ToBe(t, c.expected...)
 	}
 }
 
 func TestPlaceholders(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		di       Dialect
 		n        int
@@ -70,23 +64,19 @@ func TestPlaceholders(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.di.Placeholders(c.n)
-		g.Expect(s).Should(Equal(c.expected))
+		expect.String(s).ToBe(t, c.expected)
 	}
 }
 
 func TestReplacePlaceholders(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	s := Mysql().ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
-	g.Expect(s).Should(Equal("?,?,?,?,?,?,?,?,?,?,?"))
+	expect.String(s).ToBe(t, "?,?,?,?,?,?,?,?,?,?,?")
 
 	s = Postgres().ReplacePlaceholders("?,?,?,?,?,?,?,?,?,?,?", nil)
-	g.Expect(s).Should(Equal("$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11"))
+	expect.String(s).ToBe(t, "$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11")
 }
 
 func TestPickDialect(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		di   Dialect
 		name string
@@ -99,13 +89,11 @@ func TestPickDialect(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := PickDialect(c.name)
-		g.Expect(s).Should(Equal(c.di))
+		expect.Any(s).ToBe(t, c.di)
 	}
 }
 
 func TestFieldAsColumn(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	cases := []struct {
 		di       Dialect
 		field    *schema.Field
@@ -134,6 +122,6 @@ func TestFieldAsColumn(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := c.di.FieldAsColumn(c.field)
-		g.Expect(s).Should(Equal(c.expected), c.di.Name())
+		expect.String(s).I(c.di.Name()).ToBe(t, c.expected)
 	}
 }

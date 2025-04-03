@@ -5,33 +5,31 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi/pgxapi"
 )
 
 func insertFixtures(t *testing.T, d pgxapi.Execer) (aid1, aid2, aid3, aid4 int64) {
-	g := gomega.NewGomegaWithT(t)
-
 	for _, s := range createTablesPostgresql {
 		_, err := d.Exec(context.Background(), s)
-		g.Expect(err).To(gomega.BeNil())
+		expect.Error(err).ToBeNil(t)
 	}
 
-	aid1 = insertOne(g, d, address1)
-	aid2 = insertOne(g, d, address2)
-	aid3 = insertOne(g, d, address3)
-	aid4 = insertOne(g, d, address4)
+	aid1 = insertOne(t, d, address1)
+	aid2 = insertOne(t, d, address2)
+	aid3 = insertOne(t, d, address3)
+	aid4 = insertOne(t, d, address4)
 
-	insertOne(g, d, fmt.Sprintf(person1a, aid1))
-	insertOne(g, d, fmt.Sprintf(person1b, aid1))
-	insertOne(g, d, fmt.Sprintf(person2a, aid2))
+	insertOne(t, d, fmt.Sprintf(person1a, aid1))
+	insertOne(t, d, fmt.Sprintf(person1b, aid1))
+	insertOne(t, d, fmt.Sprintf(person2a, aid2))
 
 	return aid1, aid2, aid3, aid4
 }
 
-func insertOne(g *gomega.GomegaWithT, d pgxapi.Execer, query string) int64 {
+func insertOne(t *testing.T, d pgxapi.Execer, query string) int64 {
 	id, err := d.Insert(context.Background(), "id", query)
-	g.Expect(err).To(gomega.BeNil())
+	expect.Error(err).ToBeNil(t)
 	return id
 }
 

@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	. "github.com/onsi/gomega"
+	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi/pgxapi/logadapter"
 	"github.com/rickb777/sqlapi/support/testenv"
 )
@@ -23,8 +23,6 @@ import (
 var gdb SqlDB
 
 func TestLoggingOnOff(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
@@ -38,12 +36,10 @@ func TestLoggingOnOff(t *testing.T) {
 	tl.LogQuery(ctx, "four")
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.one []\nX.two []\nX.four []\n"))
+	expect.String(s).ToBe(t, "X.one []\nX.two []\nX.four []\n")
 }
 
 func TestLoggingError(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	buf := &bytes.Buffer{}
 	logger := logadapter.NewLogger(log.New(buf, "X.", 0))
@@ -58,25 +54,21 @@ func TestLoggingError(t *testing.T) {
 	tl.LogIfError(ctx, fmt.Errorf("four"))
 
 	s := buf.String()
-	g.Expect(s).To(Equal("X.Error [error:one]\nX.Error [error:three]\nX.Error [error:four]\n"))
+	expect.String(s).ToBe(t, "X.Error [error:one]\nX.Error [error:three]\nX.Error [error:four]\n")
 }
 
 func TestListTables(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	list, err := ListTables(gdb, nil)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(slices.DeleteFunc(list, func(s string) bool {
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Slice(slices.DeleteFunc(list, func(s string) bool {
 		return !strings.HasPrefix(s, "sql_")
-	})).To(HaveLen(0))
-	g.Expect(slices.DeleteFunc(list, func(s string) bool {
+	})).ToHaveLength(t, 0)
+	expect.Slice(slices.DeleteFunc(list, func(s string) bool {
 		return !strings.HasPrefix(s, "pg_")
-	})).To(HaveLen(0))
+	})).ToHaveLength(t, 0)
 }
 
 func TestQueryRowContext(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	_, aid2, _, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
@@ -84,54 +76,48 @@ func TestQueryRowContext(t *testing.T) {
 
 	var xlines string
 	err := row.Scan(&xlines)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(xlines).To(Equal("2 Nutmeg Lane"))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.String(xlines).ToBe(t, "2 Nutmeg Lane")
 }
 
 func TestQueryContext(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	_, aid2, _, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
 	rows, err := gdb.Query(context.Background(), q, aid2)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(rows.Next()).To(BeTrue())
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Bool(rows.Next()).ToBeTrue(t)
 
 	var xlines string
 	err = rows.Scan(&xlines)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(xlines).To(Equal("2 Nutmeg Lane"))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.String(xlines).ToBe(t, "2 Nutmeg Lane")
 
-	g.Expect(rows.Next()).NotTo(BeTrue())
+	expect.Bool(rows.Next()).Not().ToBeTrue(t)
 }
 
 func TestSingleConnQuery(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	_, aid2, _, _ := insertFixtures(t, gdb)
 
 	q := gdb.Dialect().ReplacePlaceholders("select xlines from pfx_addresses where id=?", nil)
 	e2 := gdb.SingleConn(ctx, func(ex Execer) error {
 		rows, err := ex.Query(ctx, q, aid2)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(rows.Next()).To(BeTrue())
+		expect.Error(err).Not().ToHaveOccurred(t)
+		expect.Bool(rows.Next()).ToBeTrue(t)
 
 		var xlines string
 		err = rows.Scan(&xlines)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(xlines).To(Equal("2 Nutmeg Lane"))
+		expect.Error(err).Not().ToHaveOccurred(t)
+		expect.String(xlines).ToBe(t, "2 Nutmeg Lane")
 
-		g.Expect(rows.Next()).NotTo(BeTrue())
+		expect.Bool(rows.Next()).Not().ToBeTrue(t)
 		return err
 	})
-	g.Expect(e2).NotTo(HaveOccurred())
+	expect.Error(e2).Not().ToHaveOccurred(t)
 }
 
 func TestTransactCommitUsingInsert(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	insertFixtures(t, gdb)
 
@@ -145,19 +131,17 @@ func TestTransactCommitUsingInsert(t *testing.T) {
 		}
 		return nil
 	})
-	g.Expect(err).NotTo(HaveOccurred())
+	expect.Error(err).Not().ToHaveOccurred(t)
 
 	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(count).To(Equal(14))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Number(count).ToBe(t, 14)
 }
 
 func TestTransactCommitUsingExec(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
@@ -166,19 +150,17 @@ func TestTransactCommitUsingExec(t *testing.T) {
 		_, e2 := tx.Exec(ctx, q, aid2, aid3)
 		return e2
 	})
-	g.Expect(err).NotTo(HaveOccurred())
+	expect.Error(err).Not().ToHaveOccurred(t)
 
 	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(count).To(Equal(2))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Number(count).ToBe(t, 2)
 }
 
 func TestTransactRollback(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	ctx := context.Background()
 	_, aid2, aid3, _ := insertFixtures(t, gdb)
 
@@ -187,23 +169,21 @@ func TestTransactRollback(t *testing.T) {
 		tx.Exec(ctx, q, aid2, aid3)
 		return errors.New("Bang")
 	})
-	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(Equal("Bang"))
+	expect.Error(err).ToHaveOccurred(t)
+	expect.Error(err).ToContain(t, "Bang")
 
 	row := gdb.QueryRow(ctx, "select count(1) from pfx_addresses")
 
 	var count int
 	err = row.Scan(&count)
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(count).To(Equal(4))
+	expect.Error(err).Not().ToHaveOccurred(t)
+	expect.Number(count).ToBe(t, 4)
 }
 
 func TestUserItemWrapper(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	d2 := gdb.With("hello")
-	g.Expect(gdb.UserItem()).To(BeNil())
-	g.Expect(d2.UserItem().(string)).To(Equal("hello"))
+	expect.Any(gdb.UserItem()).ToBeNil(t)
+	expect.String(d2.UserItem().(string)).ToBe(t, "hello")
 }
 
 //-------------------------------------------------------------------------------------------------
