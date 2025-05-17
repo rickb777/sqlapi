@@ -54,6 +54,15 @@ v go install ./...
 
 v ./test.sh -v sqlite
 
+### Check Docker is available
+
+if ! type -p docker; then
+  echo
+  echo "*** Docker is not installed. The remaining tests will be skipped, which is inconclusive."
+  echo
+  exit 0
+fi
+
 ### Build Phase 2 ###
 echo
 echo "========== Build Phase 2 =========="
