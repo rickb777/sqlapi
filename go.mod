@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/pkg/errors v0.9.1
-	github.com/rickb777/expect v0.23.0
+	github.com/rickb777/expect v0.24.0
 	github.com/rickb777/where v0.18.0
 	gopkg.in/yaml.v2 v2.4.0
 )
