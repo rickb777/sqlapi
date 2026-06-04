@@ -12,7 +12,7 @@ import (
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/support/testenv"
 	"github.com/rickb777/sqlapi/types"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 var gdb pgxapi.SqlDB
@@ -24,7 +24,7 @@ func TestPgxCheckConstraint(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(cc0)
 	fkc := persons.Constraints()[0]
-	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.ANSI, persons.Name(), 0)
 	expect.String(s).I(s).ToBe(t, `CONSTRAINT "constraint_persons_c0" CHECK (role < 3)`)
 }
 
@@ -37,7 +37,7 @@ func TestPgxForeignKeyConstraint_withParentColumn(t *testing.T) {
 
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints()[0]
-	s := fkc.ConstraintSql(quote.AnsiQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.ANSI, persons.Name(), 0)
 	expect.String(s).I(s).ToBe(t, `CONSTRAINT "constraint_persons_c0" foreign key ("addresspk") references "constraint_addresses" ("identity") on update restrict on delete cascade`)
 }
 
@@ -50,7 +50,7 @@ func TestPgxForeignKeyConstraint_withoutParentColumn_withoutQuotes(t *testing.T)
 
 	persons := vanilla.NewRecordTable("persons", gdb).WithPrefix("constraint_").WithConstraint(fkc0)
 	fkc := persons.Constraints().FkConstraints()[0]
-	s := fkc.ConstraintSql(quote.NoQuoter, persons.Name(), 0)
+	s := fkc.ConstraintSql(quote.None, persons.Name(), 0)
 	expect.String(s).I(s).ToBe(t, `CONSTRAINT constraint_persons_c0 foreign key (addresspk) references constraint_addresses on update restrict on delete cascade`)
 }
 

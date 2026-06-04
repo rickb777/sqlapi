@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // Named creates NamedArg values; it is synonymous with sql.Named().

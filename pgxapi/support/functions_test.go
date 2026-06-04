@@ -8,8 +8,8 @@ import (
 	"github.com/rickb777/sqlapi/pgxapi/support/test"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/where"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 	"testing"
 )
 

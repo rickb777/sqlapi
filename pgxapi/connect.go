@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
@@ -37,7 +37,7 @@ func MustConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.
 func ConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) (SqlDB, error) {
 	poolConfig := ParseEnvConfig()
 	poolConfig.ConnConfig.Tracer = &tracelog.TraceLog{Logger: lgr, LogLevel: logLevel}
-	quoter := quote.PickQuoter(os.Getenv("PGQUOTE"))
+	quoter := quote.Pick(os.Getenv("PGQUOTE"))
 	return Connect(ctx, poolConfig, quoter, tries)
 }
 

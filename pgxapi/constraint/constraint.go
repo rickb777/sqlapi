@@ -8,7 +8,7 @@ package constraint
 import (
 	"fmt"
 	"github.com/rickb777/sqlapi/pgxapi"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // Constraint represents data that augments the data-definition SQL statements such as CREATE TABLE.

@@ -14,6 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rickb777/expect v1.3.0
 	github.com/rickb777/where v0.18.0
+	github.com/rickb777/where/v2 v2.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

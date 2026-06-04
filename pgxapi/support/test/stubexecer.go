@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // StubExecer provides a non-functioning Execer for testing purposes.
@@ -66,7 +66,7 @@ func (e StubExecer) Dialect() driver.Dialect {
 	return driver.Postgres().WithQuoter(e.Q)
 }
 
-var postgresNoQuotes = driver.Postgres().WithQuoter(quote.NoQuoter)
+var postgresNoQuotes = driver.Postgres().WithQuoter(quote.None)
 
 //-------------------------------------------------------------------------------------------------
 

@@ -14,7 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // MustConnectEnv is as per ConnectEnv but with a fatal termination on error.
@@ -58,7 +58,7 @@ func ConnectEnv(ctx context.Context, lgr tracelog.Logger, logLevel tracelog.LogL
 		di = driver.Sqlite()
 	}
 
-	quoter := quote.PickQuoter(os.Getenv("DB_QUOTE"))
+	quoter := quote.Pick(os.Getenv("DB_QUOTE"))
 	if quoter != nil {
 		di = di.WithQuoter(quoter)
 	}

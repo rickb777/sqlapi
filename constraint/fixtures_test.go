@@ -8,7 +8,7 @@ import (
 	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/driver"
-	"github.com/rickb777/where/dialect"
+	"github.com/rickb777/where/v2/dialect"
 )
 
 func insertFixtures(t *testing.T, d sqlapi.Execer) (aid1, aid2, aid3, aid4 int64) {

@@ -8,7 +8,7 @@ import (
 	"github.com/rickb777/sqlapi"
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/support"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // FkConstraints holds foreign key constraints.

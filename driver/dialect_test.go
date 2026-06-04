@@ -6,7 +6,7 @@ import (
 
 	"github.com/rickb777/expect"
 	"github.com/rickb777/sqlapi/schema"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // assertion of conformance
@@ -17,9 +17,9 @@ func TestQuote(t *testing.T) {
 		q        quote.Quoter
 		expected string
 	}{
-		{quote.AnsiQuoter, `"x"."Aaaa"`},
-		{quote.MySqlQuoter, "`x`.`Aaaa`"},
-		{quote.NoQuoter, `x.Aaaa`},
+		{quote.ANSI, `"x"."Aaaa"`},
+		{quote.Backticks, "`x`.`Aaaa`"},
+		{quote.None, `x.Aaaa`},
 	}
 	for _, c := range cases {
 		s1 := c.q.Quote("x.Aaaa")
@@ -34,15 +34,15 @@ func TestQuote(t *testing.T) {
 func TestSplitAndQuote(t *testing.T) {
 	cases := []struct {
 		q        quote.Quoter
-		expected []string
+		expected string
 	}{
-		{quote.AnsiQuoter, []string{`"aa"`, `"bb"`, `"cc"`}},
-		{quote.MySqlQuoter, []string{"`aa`", "`bb`", "`cc`"}},
-		{quote.NoQuoter, []string{`aa`, `bb`, `cc`}},
+		{quote.ANSI, `"aa" "bb" "cc"`},
+		{quote.Backticks, "`aa` `bb` `cc`"},
+		{quote.None, `aa bb cc`},
 	}
 	for _, c := range cases {
-		s1 := c.q.QuoteN([]string{"aa", "bb", "cc"})
-		expect.Slice(s1).ToBe(t, c.expected...)
+		s1 := c.q.Quote("aa bb cc")
+		expect.String(s1).ToBe(t, c.expected)
 	}
 }
 

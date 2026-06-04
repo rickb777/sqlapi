@@ -5,60 +5,20 @@ import (
 
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
-type mysql struct {
-	d dialect.DialectConfig
-}
-
-func of(dflt dialect.DialectConfig, d ...dialect.DialectConfig) dialect.DialectConfig {
-	if len(d) > 0 {
-		return d[0]
+func Mysql(q ...quote.Quoter) Dialect {
+	if len(q) > 0 {
+		dialect.MySqlQuoter = q[0]
 	}
-	return dflt
-}
-
-func Mysql(d ...dialect.DialectConfig) Dialect {
-	return mysql{d: of(dialect.MysqlConfig, d...)}
-}
-
-func (d mysql) Index() dialect.Dialect {
-	return dialect.Mysql
-}
-
-func (d mysql) String() string {
-	if d.d.Quoter != nil {
-		return fmt.Sprintf("Mysql/%s", d.d.Quoter)
-	}
-	return "Mysql"
-}
-
-func (d mysql) Name() string {
-	return "Mysql"
-}
-
-func (d mysql) Alias() string {
-	return "MySQL"
-}
-
-func (d mysql) Config() dialect.DialectConfig {
-	return d.d
-}
-
-func (d mysql) Quoter() quote.Quoter {
-	return d.d.Quoter
-}
-
-func (d mysql) WithQuoter(q quote.Quoter) Dialect {
-	d.d.Quoter = q
-	return d
+	return Dialect{d: dialect.Mysql}
 }
 
 // see https://dev.mysql.com/doc/refman/5.7/en/data-types.html
 
-func (dialect mysql) FieldAsColumn(field *schema.Field) string {
+func mysqlFieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 	indexed := len(tags.Index) > 0 || len(tags.Unique) > 0
 
@@ -128,12 +88,8 @@ func varchar(size int, indexed bool) string {
 
 // see https://dev.mysql.com/doc/refman/5.7/en/integer-types.html
 
-func (dialect mysql) InsertHasReturningPhrase() bool {
-	return false
-}
-
-func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
-	truncate := fmt.Sprintf("TRUNCATE %s", dialect.Quoter().Quote(tableName))
+func mysqlTruncateDDL(tableName string, force bool) []string {
+	truncate := fmt.Sprintf("TRUNCATE %s", dialect.MySqlQuoter.Quote(tableName))
 	if !force {
 		return []string{truncate}
 	}
@@ -145,30 +101,21 @@ func (dialect mysql) TruncateDDL(tableName string, force bool) []string {
 	}
 }
 
-func (dialect mysql) ShowTables() string {
-	return `SHOW TABLES`
-}
-
 //-------------------------------------------------------------------------------------------------
 
-func (dialect mysql) HasNumberedPlaceholders() bool {
-	return false
-}
+const (
+	mysqlShowTables              = `SHOW TABLES`
+	mysqlHasNumberedPlaceholders = false
+	mysqlHasLastInsertId         = true
+	mysqlCreateTableSettings     = " ENGINE=InnoDB DEFAULT CHARSET=utf8"
+)
 
-func (dialect mysql) HasLastInsertId() bool {
-	return true
-}
-
-func (dialect mysql) Placeholders(n int) string {
+func mysqlPlaceholders(n int) string {
 	return simpleQueryPlaceholders(n)
 }
 
 // ReplacePlaceholders converts a string containing '?' placeholders to
 // the form used by MySQL and SQLite - i.e. unchanged.
-func (dialect mysql) ReplacePlaceholders(sql string, _ []interface{}) string {
+func mysqlReplacePlaceholders(sql string, _ []interface{}) string {
 	return sql
-}
-
-func (dialect mysql) CreateTableSettings() string {
-	return " ENGINE=InnoDB DEFAULT CHARSET=utf8"
 }

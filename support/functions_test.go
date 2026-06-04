@@ -9,22 +9,25 @@ import (
 	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/require"
 	"github.com/rickb777/sqlapi/support/test"
-	"github.com/rickb777/where"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
 func TestUpdateFieldsSQL(t *testing.T) {
 	cases := []struct {
+		dialect  driver.Dialect
 		quoter   quote.Quoter
 		expected string
 	}{
 		{
-			quoter:   quote.MySqlQuoter,
+			dialect:  driver.Mysql(),
+			quoter:   quote.Backticks,
 			expected: "UPDATE `foo` SET `col1`=?, `col2`=? WHERE (`room`=?) AND (`fun`=?)",
 		},
 		{
-			quoter:   quote.AnsiQuoter,
+			dialect:  driver.Postgres(),
+			quoter:   quote.ANSI,
 			expected: `UPDATE "foo" SET "col1"=?, "col2"=? WHERE ("room"=?) AND ("fun"=?)`,
 		},
 	}
@@ -34,7 +37,7 @@ func TestUpdateFieldsSQL(t *testing.T) {
 		f2 := sql.Named("col2", 222)
 		wh := where.Eq("room", 101).And(where.Eq("fun", true))
 
-		q, a := updateFieldsSQL("foo", c.quoter, wh, f1, f2)
+		q, a := updateFieldsSQL("foo", c.dialect, wh, f1, f2)
 
 		expect.String(q).ToBe(t, c.expected)
 		expect.Slice(a).ToBe(t, 111, 222, 101, true)
@@ -49,7 +52,7 @@ func TestSliceSql(t *testing.T) {
 		{
 			expected: "SELECT foo FROM p.table WHERE (room=?) AND (fun=?) ORDER BY xyz",
 			dialect: func() driver.Dialect {
-				dialect.MysqlConfig.Quoter = quote.NoQuoter
+				dialect.MySqlQuoter = quote.None
 				return driver.Mysql()
 			},
 		},

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/where"
+	"github.com/rickb777/where/v2"
 )
 
 //-------------------------------------------------------------------------------------------------

@@ -7,54 +7,21 @@ import (
 
 	"github.com/rickb777/sqlapi/schema"
 	"github.com/rickb777/sqlapi/types"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
-type postgres struct {
-	d dialect.DialectConfig
-}
-
-func Postgres(d ...dialect.DialectConfig) Dialect {
-	return postgres{d: of(dialect.PostgresConfig, d...)}
-}
-
-func (d postgres) Index() dialect.Dialect {
-	return dialect.Postgres
-}
-
-func (d postgres) String() string {
-	if d.d.Quoter != nil {
-		return fmt.Sprintf("Postgres/%s", d.d.Quoter)
+func Postgres(q ...quote.Quoter) Dialect {
+	if len(q) > 0 {
+		dialect.PostgresQuoter = q[0]
 	}
-	return "Postgres"
-}
-
-func (d postgres) Name() string {
-	return "Postgres"
-}
-
-func (d postgres) Alias() string {
-	return "PostgreSQL"
-}
-
-func (d postgres) Config() dialect.DialectConfig {
-	return d.d
-}
-
-func (d postgres) Quoter() quote.Quoter {
-	return d.d.Quoter
-}
-
-func (d postgres) WithQuoter(q quote.Quoter) Dialect {
-	d.d.Quoter = q
-	return d
+	return Dialect{d: dialect.Postgres}
 }
 
 // https://www.postgresql.org/docs/9.6/static/datatype.html
 // https://www.convert-in.com/mysql-to-postgres-types-mapping.htm
 
-func (dialect postgres) FieldAsColumn(field *schema.Field) string {
+func postgresFieldAsColumn(field *schema.Field) string {
 	tags := field.GetTags()
 
 	switch field.Encode {
@@ -114,42 +81,31 @@ func (dialect postgres) FieldAsColumn(field *schema.Field) string {
 	return fieldTags(field.Type.IsPtr, tags, column, dflt)
 }
 
-func (dialect postgres) InsertHasReturningPhrase() bool {
-	return true
-}
-
-func (dialect postgres) TruncateDDL(tableName string, force bool) []string {
+func postgresTruncateDDL(tableName string, force bool) []string {
 	if force {
-		return []string{fmt.Sprintf("TRUNCATE %s CASCADE", dialect.Quoter().Quote(tableName))}
+		return []string{fmt.Sprintf("TRUNCATE %s CASCADE", dialect.PostgresQuoter.Quote(tableName))}
 	}
 
-	return []string{fmt.Sprintf("TRUNCATE %s RESTRICT", dialect.Quoter().Quote(tableName))}
+	return []string{fmt.Sprintf("TRUNCATE %s RESTRICT", dialect.PostgresQuoter.Quote(tableName))}
 }
-
-func (dialect postgres) ShowTables() string {
-	//return `SELECT tablename FROM pg_catalog.pg_tables`
-	return showTableNamePostgres
-}
-
-const showTableNamePostgres = `SELECT table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')`
 
 //-------------------------------------------------------------------------------------------------
 
-func (dialect postgres) HasNumberedPlaceholders() bool {
-	return true
-}
+const (
+	showTableNamePostgres = `SELECT table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')`
 
-func (dialect postgres) HasLastInsertId() bool {
-	return false
-}
+	postgresHasNumberedPlaceholders = true
+	postgresHasLastInsertId         = false
+	postgresCreateTableSettings     = ""
+)
 
-func (dialect postgres) Placeholders(n int) string {
+func postgresPlaceholders(n int) string {
 	if n == 0 {
 		return ""
 	} else if n <= 9 {
-		return postgresPlaceholders[:n*3-1]
+		return postgresPlaceholdersS[:n*3-1]
 	}
-	buf := bytes.NewBufferString(postgresPlaceholders)
+	buf := bytes.NewBufferString(postgresPlaceholdersS)
 	for idx := 10; idx <= n; idx++ {
 		if idx > 1 {
 			buf.WriteByte(',')
@@ -160,11 +116,11 @@ func (dialect postgres) Placeholders(n int) string {
 	return buf.String()
 }
 
-const postgresPlaceholders = "$1,$2,$3,$4,$5,$6,$7,$8,$9"
+const postgresPlaceholdersS = "$1,$2,$3,$4,$5,$6,$7,$8,$9"
 
 // ReplacePlaceholders converts a string containing '?' placeholders to
 // the form used by PostgreSQL.
-func (dialect postgres) ReplacePlaceholders(sql string, _ []interface{}) string {
+func postgresReplacePlaceholders(sql string, _ []interface{}) string {
 	buf := &bytes.Buffer{}
 	idx := 1
 	for _, r := range sql {
@@ -177,8 +133,4 @@ func (dialect postgres) ReplacePlaceholders(sql string, _ []interface{}) string 
 		}
 	}
 	return buf.String()
-}
-
-func (dialect postgres) CreateTableSettings() string {
-	return ""
 }

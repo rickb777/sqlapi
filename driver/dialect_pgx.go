@@ -3,15 +3,16 @@ package driver
 import (
 	"fmt"
 
-	"github.com/rickb777/where/dialect"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
 type pgx struct {
 	postgres
 }
 
-func Pgx(d ...dialect.DialectConfig) Dialect {
-	return pgx{postgres: postgres{of(dialect.PostgresConfig, d...)}}
+func Pgx(q ...quote.Quoter) Dialect {
+	return pgx{postgres: postgres{d: dialect.Postgres, o: dialect.Dollar, q: of(dialect.PostgresQuoter, q...)}}
 }
 
 func (d pgx) Index() dialect.Dialect {
@@ -19,8 +20,8 @@ func (d pgx) Index() dialect.Dialect {
 }
 
 func (d pgx) String() string {
-	if d.d.Quoter != nil {
-		return fmt.Sprintf("Pgx/%s", d.d.Quoter)
+	if d.q != nil {
+		return fmt.Sprintf("Pgx/%s", d.q)
 	}
 	return "Pgx"
 }

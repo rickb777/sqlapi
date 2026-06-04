@@ -3,12 +3,15 @@ package support
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/rickb777/sqlapi"
+	"github.com/rickb777/sqlapi/driver"
 	"github.com/rickb777/sqlapi/pgxapi"
 	"github.com/rickb777/sqlapi/require"
-	"github.com/rickb777/where"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
-	"strings"
+	"github.com/rickb777/where/v2"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // ReplaceTableName replaces all occurrences of "{TABLE}" with the table's name.
@@ -48,9 +51,10 @@ func QueryOneNullThing(tbl pgxapi.Table, req require.Requirement, holder interfa
 //-------------------------------------------------------------------------------------------------
 
 func sliceSql(tbl pgxapi.Table, column string, wh where.Expression, qc where.QueryConstraint) (string, []interface{}) {
+	fo := tbl.Dialect().Format()
 	q := tbl.Dialect().Quoter()
-	whs, args := where.Where(wh, q)
-	orderBy := where.Build(qc, tbl.Dialect().Index())
+	whs, args := where.Where(wh, fo)
+	orderBy := where.OrderBy(column)
 	return fmt.Sprintf("SELECT %s FROM %s%s%s",
 		q.Quote(column), q.Quote(tbl.Name().String()), whs, orderBy), args
 }
@@ -93,14 +97,15 @@ func doExec(tbl pgxapi.Table, query string, args ...interface{}) (int64, error) 
 
 // UpdateFields writes certain fields of all the records matching a 'where' expression.
 func UpdateFields(tbl pgxapi.Table, req require.Requirement, wh where.Expression, fields ...sql.NamedArg) (int64, error) {
-	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect().Quoter(), wh, fields...)
+	query, args := updateFieldsSQL(tbl.Name().String(), tbl.Dialect(), wh, fields...)
 	return Exec(tbl, req, query, args...)
 }
 
-func updateFieldsSQL(tblName string, q quote.Quoter, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
-	list := pgxapi.NamedArgList(fields)
+func updateFieldsSQL(tblName string, d driver.Dialect, wh where.Expression, fields ...sql.NamedArg) (string, []interface{}) {
+	list := sqlapi.NamedArgList(fields)
+	q := d.Quoter()
 	assignments := strings.Join(list.Assignments(q, 1), ", ")
-	whs, wargs := where.Where(wh, q)
+	whs, wargs := where.Where(wh, d.Format())
 	query := fmt.Sprintf("UPDATE %s SET %s%s", q.Quote(tblName), assignments, whs)
 	args := append(list.Values(), wargs...)
 	return query, args
@@ -165,7 +170,7 @@ func DeleteByColumn(tbl pgxapi.Table, req require.Requirement, column string, v 
 func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
+	qr := where.ReplacePlaceholders(query, dialect.Dollar)
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -188,7 +193,7 @@ func GetIntIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn strin
 func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[string]int64, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
+	qr := where.ReplacePlaceholders(query, dialect.Dollar)
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)
@@ -212,7 +217,7 @@ func GetStringIntIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn st
 func GetIntStringIndex(tbl pgxapi.Table, q quote.Quoter, keyColumn, valColumn string, wh where.Expression) (map[int64]string, error) {
 	whs, args := where.Where(wh)
 	query := fmt.Sprintf("SELECT %s, %s FROM %s%s", q.Quote(keyColumn), q.Quote(valColumn), q.Quote(tbl.Name().String()), whs)
-	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
+	qr := where.ReplacePlaceholders(query, dialect.Dollar)
 	rows, err := tbl.Execer().Query(tbl.Ctx(), qr, args...)
 	if err != nil {
 		return nil, tbl.Logger().LogError(tbl.Ctx(), err)

@@ -11,8 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rickb777/sqlapi/driver"
-	"github.com/rickb777/where/dialect"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2"
+	"github.com/rickb777/where/v2/dialect"
+	"github.com/rickb777/where/v2/quote"
 )
 
 // WrapDB wraps a *pgx.ConnPool as SqlDB.
@@ -20,7 +21,7 @@ import (
 // The quoter is optional and can be nil, defaulting to no quotes.
 func WrapDB(pool *pgxpool.Pool, lgr tracelog.Logger, quoter quote.Quoter) SqlDB {
 	if quoter == nil {
-		quoter = quote.NoQuoter
+		quoter = quote.None
 	}
 	di := driver.Postgres().WithQuoter(quoter)
 	return &shim{ex: pool, di: di, lgr: NewLogger(lgr), isTx: false}
@@ -81,7 +82,7 @@ func (sh *shim) Insert(ctx context.Context, pk, query string, args ...any) (int6
 }
 
 func (sh *shim) Exec(ctx context.Context, query string, args ...any) (int64, error) {
-	qr := dialect.ReplacePlaceholdersWithNumbers(query, "$")
+	qr := where.ReplacePlaceholders(query, dialect.Dollar)
 	tag, err := sh.ex.Exec(defaultCtx(ctx), qr, args...)
 	if err != nil {
 		return 0, wrap(err, query, args)

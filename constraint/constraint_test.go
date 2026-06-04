@@ -16,7 +16,7 @@ import (
 	"github.com/rickb777/sqlapi/support/testenv"
 	"github.com/rickb777/sqlapi/types"
 	"github.com/rickb777/sqlapi/vanilla"
-	"github.com/rickb777/where/quote"
+	"github.com/rickb777/where/v2/quote"
 )
 
 var gdb sqlapi.SqlDB
