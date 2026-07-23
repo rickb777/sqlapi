@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.48
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/pkg/errors v0.9.1
-	github.com/rickb777/expect v1.3.0
+	github.com/rickb777/expect v1.3.2
 	github.com/rickb777/where v0.18.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -32,7 +32,7 @@ require (
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -51,7 +51,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runc v1.3.3 // indirect
-	github.com/rickb777/plural v1.4.10 // indirect
+	github.com/rickb777/plural/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
