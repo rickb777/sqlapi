@@ -1,6 +1,7 @@
 package testenv
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"log"
@@ -12,9 +13,8 @@ import (
 
 	"github.com/jackc/pgx/v5/log/testingadapter"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
-	pkgerrors "github.com/pkg/errors"
+	"github.com/moby/moby/api/types/network"
+	"github.com/ory/dockertest/v4"
 )
 
 func Shebang(m *testing.M, connectFunc func(lgr tracelog.Logger, logLevel tracelog.LogLevel, tries int) error) {
@@ -129,61 +129,44 @@ func setEnvironmentDockerDb() {
 	}
 }
 
+var pool dockertest.ClosablePool
+
 func setUpDockerDbForTest(m *testing.M, repo string, runTestSetup func() error) {
-	log.Printf("Spinning up docker %s\n", repo)
+	log.Printf("Spinning up docker %s\n", "postgres")
 
 	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
-	pool, err := dockertest.NewPool("")
+	ctx := context.Background()
+	var err error
+	pool, err = dockertest.NewPool(ctx, "", dockertest.WithMaxWait(2*time.Minute))
 	if err != nil {
-		log.Fatalf("Could not connect to docker %s for %s: %s", repo, os.Getenv("DB_DRIVER"), err)
+		log.Fatalf("Could not connect to docker postgres for %s: %s", os.Getenv("DB_DRIVER"), err)
 	}
 
-	// pulls an image, creates a container based on it and runs it
-	opts := &dockertest.RunOptions{
-		Name:       "postgres4test",
-		Repository: repo,
-		Tag:        "13-alpine",
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			"5432/tcp": {{HostPort: "15432/tcp"}},
-		},
-		Env: []string{"PGPASSWORD=simple", "POSTGRES_PASSWORD=simple"},
-	}
-
-	resource, err := pool.RunWithOptions(opts)
-	if err != nil {
-		e2 := pkgerrors.Cause(err)
-		if e2 != docker.ErrContainerAlreadyExists {
-			switch e3 := e2.(type) {
-			case *docker.Error:
-				if e3.Status != 500 {
-					log.Fatalf("Could not start docker+postgres resource: %v, %#v", err, e3)
-				}
-			default:
-				log.Fatalf("Could not start docker+postgres resource: %v", err)
-			}
-		}
-	}
+	resource, err := pool.Run(ctx, "postgres",
+		dockertest.WithTag("14-alpine"),
+		dockertest.WithEnv([]string{"PGPASSWORD=simple", "POSTGRES_PASSWORD=simple"}),
+		dockertest.WithPortBindings(map[network.Port][]network.PortBinding{
+			network.MustParsePort("5432/tcp"): {{HostPort: "15432/tcp"}},
+		}),
+	)
+	defer resource.Close(ctx)
 
 	// docker always takes some time to start
 	time.Sleep(5000 * time.Millisecond)
 
 	err = runTestSetup()
-	if err != nil {
-		if resource != nil {
-			pool.Purge(resource)
-		}
-		log.Fatalf("Could not connect to DB in docker+postgres: %s", err)
-	}
+	//if err != nil {
+	//	if resource != nil {
+	//		pool.Purge(resource)
+	//	}
+	//	log.Fatalf("Could not connect to DB in docker+postgres: %s", err)
+	//}
 
 	code := m.Run()
 
-	// You can't defer this because os.Exit doesn't care for defer
-	if resource != nil {
-		if err = pool.Purge(resource); err != nil {
-			log.Fatalf("Could not purge docker+postgres resource: %s", err)
-		}
-	}
-
+	// Close removes all tracked containers/networks and closes the client.
+	// Call before os.Exit — deferred functions do not run after os.Exit.
+	pool.Close(ctx)
 	os.Exit(code)
 }
 
